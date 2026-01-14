@@ -1,0 +1,203 @@
+.bg {
+    background-color: black;
+    color: blueviolet;
+}
+
+.izquierda {
+    display: flex;
+    align-items: left;
+}
+
+.centrar {
+    display: grid;
+    align-items: center;
+    text-align: center;
+}
+
+.derecha {
+    display: flex;
+    align-items: right;
+}
+
+.boton1 {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 100px;
+    height: 50px;
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid blueviolet;
+    color: white;
+}
+
+.boton1:hover {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 100px;
+    height: 50px;
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid rgb(63, 21, 102);
+    color: white;
+}
+
+.boton2 {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 80px;
+    height: 50px;
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(150%);
+    border: 4px solid blueviolet;
+    color: white;
+}
+
+.boton2:hover {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 80px;
+    height: 50px;
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(150%);
+    border: 4px solid rgb(63, 21, 102);
+    color: white;
+}
+
+.boton3 {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 80px;
+    height: 50px;
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-250%);
+    border: 4px solid blueviolet;
+    color: white;
+}
+
+.boton3:hover {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 80px;
+    height: 50px;
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-250%);
+    border: 4px solid rgb(63, 21, 102);
+    color: white;
+}
+
+.botonA {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 130px;
+    height: 100px;
+    bottom: -10px;
+    left: 380px;
+    position: relative;
+    border: 4px solid blueviolet;
+    color: white;
+}
+
+.botonA:hover {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 130px;
+    height: 100px;
+    bottom: -12px;
+    position: relative;
+    border: 4px solid rgb(63, 21, 102);
+    color: white;
+}
+
+.botonB {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 130px;
+    height: 100px;
+    bottom: -10px;
+    left: 420px;
+    position: relative;
+    border: 4px solid blueviolet;
+    color: white;
+}
+
+.botonB:hover {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 130px;
+    height: 100px;
+    bottom: -12px;
+    position: relative;
+    border: 4px solid rgb(63, 21, 102);
+    color: white;
+}
+
+.perfil {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 80px;
+    height: 50px;
+    bottom: 480px;
+    position: fixed;
+    border: 4px solid blueviolet;
+    color: white;
+}
+
+.perfil:hover {
+    z-index: 3;
+    background-color: black;
+    border-radius: 10px;
+    width: 80px;
+    height: 50px;
+    bottom: 478px;
+    position: fixed;
+    border: 4px solid rgb(63, 21, 102);
+    color: white;
+}
+
+.panel {
+    z-index: 1;
+    position: relative;
+    bottom: -20px;
+    border: 1px solid darkgoldenrod;
+    background-color: rgba(44, 44, 44, 0.469);
+    color: aliceblue;
+    padding: 1px;
+    border: 4px;
+    border-radius: 10px;
+    margin-top: 4px;
+}
+
+.lineaa {
+    z-index: 2;
+    position: fixed;
+    bottom: 0px;
+    background-color: rgba(11, 11, 11, 0.912);
+    padding: 1px;
+    border: 4px;
+    margin-top: 4px;
+    width: 100%;
+    height: 70px;
+}
