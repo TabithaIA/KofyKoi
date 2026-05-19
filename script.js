@@ -117,23 +117,37 @@ function publicar() {
 }
 
 function enviarLike(idPost) {
-    // 1. Revisar si ya le dimos like a este post antes (en este navegador)
-    const yaDioLike = localStorage.getItem(`like_${idPost}`);
-    
-    if (yaDioLike) {
-        alert("¡Ya le diste amor a este mensaje! 🌸");
-        return; // Detiene la función aquí
+    // 1. Obtener la lista de mis likes del almacenamiento
+    let misLikes = JSON.parse(localStorage.getItem('kofy_mis_likes')) || [];
+    const yaDiLike = misLikes.includes(idPost);
+
+    const postRef = database.ref('posts/' + idPost + '/likes');
+
+    if (yaDiLike) {
+        // QUITAR LIKE: Restamos 1 en Firebase y lo sacamos de mi lista
+        postRef.transaction((currentLikes) => (currentLikes || 1) - 1);
+        misLikes = misLikes.filter(id => id !== idPost);
+    } else {
+        // DAR LIKE: Sumamos 1 en Firebase y lo agregamos a mi lista
+        postRef.transaction((currentLikes) => (currentLikes || 0) + 1);
+        misLikes.push(idPost);
     }
 
-    // 2. Si no ha dado like, procedemos a sumar en Firebase
-    const likesRef = database.ref(`posts/${idPost}/likes`);
-    likesRef.transaction((currentLikes) => {
-        return (currentLikes || 0) + 1;
-    }).then(() => {
-        // 3. Guardamos en la memoria del navegador que ya dio like
-        localStorage.setItem(`like_${idPost}`, true);
-    });
+    // 2. Guardar mi nueva lista en la "mochila"
+    localStorage.setItem('kofy_mis_likes', JSON.stringify(misLikes));
+    
+    // 3. Opcional: Cambiar el color del corazón inmediatamente (visual)
+    actualizarEstadoCorazon(idPost, !yaDiLike);
 }
+
+// Función extra para que el corazón se vea rojo si ya le diste like
+function actualizarEstadoCorazon(idPost, activo) {
+    const btnLike = document.querySelector(`.kofy-post[data-id="${idPost}"] .actions span`);
+    if (btnLike) {
+        btnLike.style.color = activo ? "#ff4d4d" : "var(--morado-deep)";
+        btnLike.style.fontWeight = activo ? "bold" : "normal";
+    }
+
 
 database.ref('posts/').on('child_changed', (snapshot) => {
     const idS = snapshot.key;
