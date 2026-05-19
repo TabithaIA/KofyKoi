@@ -68,24 +68,29 @@ database.ref('posts/').on('child_added', (snapshot) => {
         postDiv.className = 'card kofy-post';
         postDiv.dataset.id = idS; 
         
-        postDiv.innerHTML = `
-            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm">
-                    <strong onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
-                        ${datos.usuario}
-                    </strong>
-                </div>
-                <button onclick="borrarPost('${idS}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
-            </div>
-            <p>${datos.mensaje}</p>
-            <div class="actions" style="display: flex; align-items: center; width: 100%;">
-                <span onclick="enviarLike('${idS}')" style="cursor:pointer">❤️ <span id="likes-${idS}">${datos.likes || 0}</span> Me gusta</span>
-                <button class="btn-report" onclick="reportarPost('${idS}', '${datos.usuario}', '${datos.mensaje}')">
-                    Reportar 🚩
-                </button>
-            </div>
-        `;
+        // ... dentro de database.ref('posts/').on('child_added')
+postDiv.innerHTML = `
+    <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm">
+            <strong onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
+                ${datos.usuario}
+            </strong>
+        </div>
+        <button onclick="borrarPost('${idS}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
+    </div>
+    
+    <p>${datos.mensaje}</p>
+
+    ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
+
+    <div class="actions" style="display: flex; align-items: center; width: 100%; margin-top: 10px;">
+        <span onclick="enviarLike('${idS}')" style="cursor:pointer">❤️ <span id="likes-${idS}">${datos.likes || 0}</span> Me gusta</span>
+        <button class="btn-report" onclick="reportarPost('${idS}', '${datos.usuario}', '${datos.mensaje}')">
+            Reportar 🚩
+        </button>
+    </div>
+`;
         feed.prepend(postDiv);
 
         // Llamar a la notificación si el mensaje es nuevo
@@ -123,37 +128,35 @@ function enviarPost(usuario, mensaje, imagenData) {
     database.ref('posts/').push({
         usuario: usuario,
         mensaje: mensaje,
-        imagen: imagenData, // Aquí se guarda la foto para que otros la vean
+        imagen: imagenData,
         avatar: currentAvatarUrl,
         fecha: Date.now(),
         likes: 0
     });
 
-    // Limpiar los campos después de publicar
     document.getElementById('postText').value = "";
-    if(document.getElementById('postImage')) document.getElementById('postImage').value = "";
+    // Esto asegura que el input de archivo se resetee
+    const fileInput = document.getElementById('postImage');
+    if(fileInput) fileInput.value = ""; 
 }
 
 // --- FUNCIÓN DE LIKE CORREGIDA (PONER Y QUITAR) ---
 function enviarLike(idPost) {
-    const yaDioLike = localStorage.getItem(`like_${idPost}`);
-    const likesRef = database.ref(`posts/${idPost}/likes`);
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser"; //
+    const postRef = database.ref(`posts/${idPost}`);
+    const userLikeRef = database.ref(`posts/${idPost}/usuariosLikes/${miNombre.replace(/[.#$[\]]/g, "_")}`);
 
-    if (yaDioLike) {
-        // Si ya tiene like, restamos uno
-        likesRef.transaction((currentLikes) => {
-            return (currentLikes || 1) - 1;
-        }).then(() => {
-            localStorage.removeItem(`like_${idPost}`);
-        });
-    } else {
-        // Si no tiene like, sumamos uno
-        likesRef.transaction((currentLikes) => {
-            return (currentLikes || 0) + 1;
-        }).then(() => {
-            localStorage.setItem(`like_${idPost}`, true);
-        });
-    }
+    userLikeRef.once('value').then((snapshot) => {
+        if (snapshot.exists()) {
+            // Si ya existe el like de este usuario, lo quitamos
+            userLikeRef.remove();
+            postRef.child('likes').transaction(current => (current || 1) - 1);
+        } else {
+            // Si no existe, lo agregamos
+            userLikeRef.set(true);
+            postRef.child('likes').transaction(current => (current || 0) + 1);
+        }
+    });
 }
 
 database.ref('posts/').on('child_changed', (snapshot) => {
