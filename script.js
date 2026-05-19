@@ -117,8 +117,22 @@ function publicar() {
 }
 
 function enviarLike(idPost) {
+    // 1. Revisar si ya le dimos like a este post antes (en este navegador)
+    const yaDioLike = localStorage.getItem(`like_${idPost}`);
+    
+    if (yaDioLike) {
+        alert("¡Ya le diste amor a este mensaje! 🌸");
+        return; // Detiene la función aquí
+    }
+
+    // 2. Si no ha dado like, procedemos a sumar en Firebase
     const likesRef = database.ref(`posts/${idPost}/likes`);
-    likesRef.transaction((currentLikes) => (currentLikes || 0) + 1);
+    likesRef.transaction((currentLikes) => {
+        return (currentLikes || 0) + 1;
+    }).then(() => {
+        // 3. Guardamos en la memoria del navegador que ya dio like
+        localStorage.setItem(`like_${idPost}`, true);
+    });
 }
 
 database.ref('posts/').on('child_changed', (snapshot) => {
