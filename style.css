@@ -160,10 +160,24 @@ body {
 }
 
 .bubble {
-    padding: 10px 15px;
-    max-width: 85%;
-    word-wrap: break-word; /* Para que mensajes largos no se salgan */
-    margin-bottom: 8px;
-    position: relative;
+    padding: 10px 14px;
+    border-radius: 18px;
+    margin-bottom: 10px;
+    max-width: 80%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column; /* Esto pone la hora debajo del texto */
 }
 
+.btn-report {
+    background: none;
+    color: #ffb3ba; /* Un rosa suave para que no sea agresivo */
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-left: auto; /* Lo empuja a la derecha */
+}
+
+.btn-report:hover {
+    color: #ff4d4d;
+    text-decoration: underline;
+}

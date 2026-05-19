@@ -20,14 +20,17 @@
 
     <div class="container">
         <aside>
-            <div class="card profile-card">
-                <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
-                <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyLover</h3>
-                <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">Buscando momentos zen y mucho café. ✨</p>
-                <br>
-                <button class="btn-main" onclick="abrirModal()">Editar Perfil</button>
-            </div>
-        </aside>
+    <div class="card profile-card">
+        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
+        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyLover</h3>
+        
+        <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">0 seguidores</p>
+        
+        <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">Buscando momentos zen y mucho café. ✨</p>
+        <br>
+        <button class="btn-main" onclick="abrirModal()">Editar Perfil</button>
+    </div>
+</aside>
 
         <main>
             <div class="card">
@@ -87,8 +90,16 @@
     <div class="modal-content">
         <img src="" id="vistaImg" class="avatar-lg">
         <h2 id="vistaNombre" style="margin-top:10px;"></h2>
+        
+        <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores</p>
+        
         <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
-        <button class="btn-main" onclick="cerrarVista()">Cerrar</button>
+        
+        <button id="btnSeguir" class="btn-main" onclick="seguirUsuario(document.getElementById('vistaNombre').textContent)">
+            Seguir 🌸
+        </button>
+        
+        <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
     </div>
 </div>
 
