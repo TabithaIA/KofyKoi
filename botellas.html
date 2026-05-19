@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mar de Botellas - KofyKoi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: linear-gradient(to bottom, #a2d2ff, #ffffff);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .ocean {
+            text-align: center;
+            padding: 40px 20px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .bottle-display {
+            font-size: 5rem;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .bottle-display:hover {
+            transform: rotate(15deg) scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">KofyKoi</div>
+        <p>Mar de Botellas 🌊</p>
+        <button class="btn-img" onclick="location.href='index.html'">Volver</button>
+    </header>
+
+    <div class="ocean">
+        <div class="card">
+            <h2 style="color: var(--morado-deep); font-family: 'Pacifico';">Mar de Botellas</h2>
+            <p>Aquí los mensajes flotan en el anonimato. ¿Quieres lanzar uno o ver qué ha traído la marea?</p>
+            
+            <div class="bottle-display" id="animacionBotella">🍾</div>
+
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <button class="btn-main" onclick="lanzarBotella()">Lanzar Botella 📝</button>
+                <button class="btn-img" onclick="pescarBotella()">Pescar Botella 🎣</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalBotella" class="modal">
+        <div class="modal-content" style="background: #fffdf5; border: 2px solid #d4a373;">
+            <h3 style="color: #bc6c25;">📜 Mensaje encontrado:</h3>
+            <p id="contenidoBotella" style="margin: 25px 0; font-style: italic; line-height: 1.6;"></p>
+            <button class="btn-main" onclick="cerrarModalBotella()">Devolver al mar</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script>
+        // Usa la misma configuración que tienes en index.html
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
+            authDomain: "kofikoi.firebaseapp.com",
+            databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
+            projectId: "kofikoi",
+            storageBucket: "kofikoi.firebasestorage.app",
+            messagingSenderId: "27280210890",
+            appId: "1:27280210890:web:354c9bf51bfcb6b438ad33",
+            measurementId: "G-P7KFPMFHHW"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function lanzarBotella() {
+            const msj = prompt("Escribe tu mensaje anónimo para el mar... 🌊");
+            if (msj && msj.trim() !== "") {
+                database.ref('botellas/').push({
+                    mensaje: msj,
+                    fecha: Date.now()
+                }).then(() => alert("¡Tu botella ya está flotando! 🍾✨"));
+            }
+        }
+
+        function pescarBotella() {
+            database.ref('botellas/').once('value', (snap) => {
+                const todas = [];
+                snap.forEach(child => { todas.push(child.val().mensaje); });
+                
+                if (todas.length > 0) {
+                    const azar = todas[Math.floor(Math.random() * todas.length)];
+                    document.getElementById('contenidoBotella').textContent = `"${azar}"`;
+                    document.getElementById('modalBotella').style.display = 'flex';
+                } else {
+                    alert("No hay botellas cerca por ahora... 🏖️");
+                }
+            });
+        }
+
+        function cerrarModalBotella() {
+            document.getElementById('modalBotella').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
