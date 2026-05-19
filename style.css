@@ -159,3 +159,11 @@ body {
     padding-bottom: 80px;
 }
 
+.bubble {
+    padding: 10px 15px;
+    max-width: 85%;
+    word-wrap: break-word; /* Para que mensajes largos no se salgan */
+    margin-bottom: 8px;
+    position: relative;
+}
+

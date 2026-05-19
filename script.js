@@ -70,10 +70,36 @@ function borrarPost(idMensaje) {
 }
 
 function enviarLike(idPost) {
+    // 1. Obtener la lista de mis likes del almacenamiento
+    let misLikes = JSON.parse(localStorage.getItem('kofy_mis_likes')) || [];
+    const yaDiLike = misLikes.includes(idPost);
+
     const postRef = database.ref('posts/' + idPost + '/likes');
-    postRef.transaction((currentLikes) => {
-        return (currentLikes || 0) + 1;
-    });
+
+    if (yaDiLike) {
+        // QUITAR LIKE: Restamos 1 en Firebase y lo sacamos de mi lista
+        postRef.transaction((currentLikes) => (currentLikes || 1) - 1);
+        misLikes = misLikes.filter(id => id !== idPost);
+    } else {
+        // DAR LIKE: Sumamos 1 en Firebase y lo agregamos a mi lista
+        postRef.transaction((currentLikes) => (currentLikes || 0) + 1);
+        misLikes.push(idPost);
+    }
+
+    // 2. Guardar mi nueva lista en la "mochila"
+    localStorage.setItem('kofy_mis_likes', JSON.stringify(misLikes));
+    
+    // 3. Opcional: Cambiar el color del corazón inmediatamente (visual)
+    actualizarEstadoCorazon(idPost, !yaDiLike);
+}
+
+// Función extra para que el corazón se vea rojo si ya le diste like
+function actualizarEstadoCorazon(idPost, activo) {
+    const btnLike = document.querySelector(`.kofy-post[data-id="${idPost}"] .actions span`);
+    if (btnLike) {
+        btnLike.style.color = activo ? "#ff4d4d" : "var(--morado-deep)";
+        btnLike.style.fontWeight = activo ? "bold" : "normal";
+    }
 }
 
 // --- VER PERFIL DE OTROS ---
@@ -163,9 +189,21 @@ database.ref('chat_general/').on('child_added', (snapshot) => {
     const miNombre = document.getElementById('nombrePerfil').textContent;
 
     if (container) {
+        // Convertimos la fecha de Firebase a algo legible
+        const fechaMsg = new Date(datos.fecha);
+        const horaFormateada = fechaMsg.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const diaFormateada = fechaMsg.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+
         const nuevaBurbuja = document.createElement('div');
         nuevaBurbuja.className = (datos.usuario === miNombre) ? 'bubble mine' : 'bubble';
-        nuevaBurbuja.innerHTML = `<small style="display:block; font-size:10px; opacity:0.7;">${datos.usuario}</small>${datos.mensaje}`;
+        
+        nuevaBurbuja.innerHTML = `
+            <small style="display:block; font-size:10px; opacity:0.7;">${datos.usuario}</small>
+            ${datos.mensaje}
+            <small style="display:block; font-size:9px; opacity:0.5; text-align:right; margin-top:3px;">
+                ${diaFormateada} - ${horaFormateada}
+            </small>
+        `;
         container.appendChild(nuevaBurbuja);
         container.scrollTop = container.scrollHeight;
     }
