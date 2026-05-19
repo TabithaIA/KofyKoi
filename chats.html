@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KofyKoi - Salas Secretas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 2px solid var(--azul-claro);
+            border-radius: 15px;
+            padding: 15px;
+            background: #fffafa;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .bubble.mine {
+            align-self: flex-end;
+            background-color: var(--lavanda);
+            color: var(--oscuro-suave);
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble.other {
+            align-self: flex-start;
+            background-color: var(--rosa);
+            color: var(--oscuro-suave);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #sala-info {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">KofyKoi</div>
+        <div class="header-user">
+            <span id="nav-username">@KofyUser</span>
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
+        </div>
+    </header>
+
+    <div class="container" style="grid-template-columns: 1fr;">
+        <main>
+            <div class="card" id="selector-sala">
+                <h3 style="color: var(--morado-deep); margin-bottom: 10px;">Salas Privadas 🗝️</h3>
+                <p style="font-size: 0.85rem; margin-bottom: 15px;">Ingresa un código para unirte a una conversación secreta.</p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="roomCode" placeholder="Código de la sala..." style="border: 2px solid var(--rosa);">
+                    <button class="btn-main" onclick="unirseASala()">Entrar</button>
+                </div>
+            </div>
+
+            <div id="sala-info" class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 id="tituloSala" style="color: var(--morado-deep)">Sala: ---</h4>
+                    <button class="btn-img" onclick="location.reload()" style="font-size: 0.7rem;">Salir de la sala</button>
+                </div>
+
+                <div id="mensajesPrivados" class="chat-container">
+                    </div>
+
+                <div class="chat-input-area">
+                    <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje secreto..." style="padding: 10px;"></textarea>
+                    <button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <nav class="bottom-nav">
+    <button class="nav-item" onclick="location.href='perfil.html'">
+        <span>👤</span>
+        <small>Perfil</small>
+    </button>
+
+    <button class="nav-item main-btn" onclick="location.href='chats.html'">
+        <span>💬</span>
+        <small>Chats</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='index.html'">
+        <span>🏠</span>
+        <small>Inicio</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='botellas.html'">
+        <span>🍾</span>
+        <small>Mar de Botellas</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='datos.html'">
+        <span>❕</span>
+        <small>Acerca...</small>
+    </button>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase (Extraída de tu index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
+            authDomain: "kofikoi.firebaseapp.com",
+            databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
+            projectId: "kofikoi",
+            storageBucket: "kofikoi.firebasestorage.app",
+            messagingSenderId: "27280210890",
+            appId: "1:27280210890:web:354c9bf51bfcb6b438ad33",
+            measurementId: "G-P7KFPMFHHW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let salaActual = "";
+        const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+        const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
+
+        // Cargar datos de navegación al inicio
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('nav-username').textContent = miNombre;
+            document.getElementById('imgNav').src = miAvatar;
+        });
+
+        function unirseASala() {
+            const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
+            if (!codigo) return alert("¡Escribe un código secreto! 🌸");
+
+            salaActual = codigo;
+            document.getElementById('selector-sala').style.display = "none";
+            document.getElementById('sala-info').style.display = "block";
+            document.getElementById('tituloSala').textContent = "Sala: #" + codigo;
+
+            // Escuchar mensajes de la sala específica
+            database.ref(`chats_privados/${salaActual}`).on('child_added', (snapshot) => {
+                const datos = snapshot.val();
+                dibujarMensaje(datos);
+            });
+        }
+
+        function enviarMensajeSala() {
+            const texto = document.getElementById('textoPrivado').value.trim();
+            if (!texto) return;
+
+            database.ref(`chats_privados/${salaActual}`).push({
+                usuario: miNombre,
+                mensaje: texto,
+                fecha: Date.now()
+            });
+
+            document.getElementById('textoPrivado').value = "";
+        }
+
+        function dibujarMensaje(datos) {
+            const contenedor = document.getElementById('mensajesPrivados');
+            const msgDiv = document.createElement('div');
+            
+            const esMio = datos.usuario === miNombre;
+            msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+            
+            msgDiv.innerHTML = `
+                <div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 3px;">
+                    ${esMio ? 'Tú' : datos.usuario}
+                </div>
+                <div>${datos.mensaje}</div>
+            `;
+            
+            contenedor.appendChild(msgDiv);
+            contenedor.scrollTop = contenedor.scrollHeight; // Auto-scroll al fondo
+        }
+
+        // Enviar con la tecla Enter
+        document.getElementById('textoPrivado').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') enviarMensajeSala();
+        });
+    </script>
+</body>
+</html>
