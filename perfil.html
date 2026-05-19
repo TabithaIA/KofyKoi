@@ -11,7 +11,7 @@
 
     <header>
         <div class="logo">KofyKoi</div>
-        <p>v1.2</p>
+        <p>v1.3</p>
         <div class="header-user">
             <span id="nav-username">@KofyUser</span>
             <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
@@ -34,13 +34,12 @@
 
         <main>
             <div class="card">
-                <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
-                <div class="post-options">
-                    <input type="file" id="postImage" accept="image/*" style="display: none;">
-                    
-                    <button class="btn-main" onclick="publicar()">Publicar</button>
-                </div>
-            </div>
+    <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
+    <div class="post-options">
+    <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
+    <button class="btn-img" onclick="document.getElementById('postImage').click()">Añadir Foto 📸</button>
+    <button class="btn-main" onclick="publicar()">Publicar</button>
+</div>
             <div id="feed-container"></div>
         </main>
 

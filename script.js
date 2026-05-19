@@ -100,20 +100,35 @@ setTimeout(() => { cargaInicialCompletada = true; }, 2000);
 function publicar() {
     const nombre = document.getElementById('nombrePerfil').textContent;
     const texto = document.getElementById('postText').value;
-    const bio = document.getElementById('bioPerfil').textContent;
+    const inputImagen = document.getElementById('postImage');
+    const archivo = inputImagen.files[0];
 
-    if (!texto) return alert("¡Escribe algo lindo! 🌸");
+    // Si hay una foto, primero la convertimos a texto (Base64)
+    if (archivo) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result; // La foto convertida en texto
+            enviarPost(nombre, texto, dataUrl);
+        };
+        reader.readAsDataURL(archivo);
+    } else {
+        enviarPost(nombre, texto, ""); // Publicar sin foto
+    }
+}
 
+function enviarPost(usuario, mensaje, imagenTexto) {
     database.ref('posts/').push({
-        usuario: nombre,
-        mensaje: texto,
+        usuario: usuario,
+        mensaje: mensaje,
+        imagen: imagenTexto, // <--- Aquí se guarda la foto para que todos la vean
         avatar: currentAvatarUrl,
-        biografia: bio,
-        likes: 0,
-        fecha: Date.now()
+        fecha: Date.now(),
+        likes: 0
     });
-
+    
+    // Limpiar campos
     document.getElementById('postText').value = "";
+    document.getElementById('postImage').value = "";
 }
 
 // --- FUNCIÓN DE LIKE CORREGIDA (PONER Y QUITAR) ---
