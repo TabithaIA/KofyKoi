@@ -116,38 +116,27 @@ function publicar() {
     document.getElementById('postText').value = "";
 }
 
+// --- FUNCIÓN DE LIKE CORREGIDA (PONER Y QUITAR) ---
 function enviarLike(idPost) {
-    // 1. Obtener la lista de mis likes del almacenamiento
-    let misLikes = JSON.parse(localStorage.getItem('kofy_mis_likes')) || [];
-    const yaDiLike = misLikes.includes(idPost);
+    const yaDioLike = localStorage.getItem(`like_${idPost}`);
+    const likesRef = database.ref(`posts/${idPost}/likes`);
 
-    const postRef = database.ref('posts/' + idPost + '/likes');
-
-    if (yaDiLike) {
-        // QUITAR LIKE: Restamos 1 en Firebase y lo sacamos de mi lista
-        postRef.transaction((currentLikes) => (currentLikes || 1) - 1);
-        misLikes = misLikes.filter(id => id !== idPost);
+    if (yaDioLike) {
+        // Si ya tiene like, restamos uno
+        likesRef.transaction((currentLikes) => {
+            return (currentLikes || 1) - 1;
+        }).then(() => {
+            localStorage.removeItem(`like_${idPost}`);
+        });
     } else {
-        // DAR LIKE: Sumamos 1 en Firebase y lo agregamos a mi lista
-        postRef.transaction((currentLikes) => (currentLikes || 0) + 1);
-        misLikes.push(idPost);
+        // Si no tiene like, sumamos uno
+        likesRef.transaction((currentLikes) => {
+            return (currentLikes || 0) + 1;
+        }).then(() => {
+            localStorage.setItem(`like_${idPost}`, true);
+        });
     }
-
-    // 2. Guardar mi nueva lista en la "mochila"
-    localStorage.setItem('kofy_mis_likes', JSON.stringify(misLikes));
-    
-    // 3. Opcional: Cambiar el color del corazón inmediatamente (visual)
-    actualizarEstadoCorazon(idPost, !yaDiLike);
 }
-
-// Función extra para que el corazón se vea rojo si ya le diste like
-function actualizarEstadoCorazon(idPost, activo) {
-    const btnLike = document.querySelector(`.kofy-post[data-id="${idPost}"] .actions span`);
-    if (btnLike) {
-        btnLike.style.color = activo ? "#ff4d4d" : "var(--morado-deep)";
-        btnLike.style.fontWeight = activo ? "bold" : "normal";
-    }
-
 
 database.ref('posts/').on('child_changed', (snapshot) => {
     const idS = snapshot.key;
@@ -277,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const perfilNombre = document.getElementById('nombrePerfil');
         if(perfilNombre) perfilNombre.textContent = nombreGuardado;
 
-        // Cargar mis propios seguidores
         database.ref(`seguidores/${nombreGuardado}`).on('value', (snapshot) => {
             const total = snapshot.numChildren();
             const countLabel = document.getElementById('misSeguidoresCount');
