@@ -101,34 +101,37 @@ function publicar() {
     const nombre = document.getElementById('nombrePerfil').textContent;
     const texto = document.getElementById('postText').value;
     const inputImagen = document.getElementById('postImage');
-    const archivo = inputImagen.files[0];
+    const archivo = inputImagen ? inputImagen.files[0] : null;
 
-    // Si hay una foto, primero la convertimos a texto (Base64)
+    if (!texto && !archivo) return alert("¡Escribe algo o sube una foto! 🌸");
+
+    // Si el usuario seleccionó una foto, la convertimos a texto (Base64)
     if (archivo) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const dataUrl = e.target.result; // La foto convertida en texto
+            const dataUrl = e.target.result; // Aquí está la imagen convertida
             enviarPost(nombre, texto, dataUrl);
         };
         reader.readAsDataURL(archivo);
     } else {
-        enviarPost(nombre, texto, ""); // Publicar sin foto
+        enviarPost(nombre, texto, ""); // Publicar sin imagen
     }
 }
 
-function enviarPost(usuario, mensaje, imagenTexto) {
+// Nueva función auxiliar para enviar los datos
+function enviarPost(usuario, mensaje, imagenData) {
     database.ref('posts/').push({
         usuario: usuario,
         mensaje: mensaje,
-        imagen: imagenTexto, // <--- Aquí se guarda la foto para que todos la vean
+        imagen: imagenData, // Aquí se guarda la foto para que otros la vean
         avatar: currentAvatarUrl,
         fecha: Date.now(),
         likes: 0
     });
-    
-    // Limpiar campos
+
+    // Limpiar los campos después de publicar
     document.getElementById('postText').value = "";
-    document.getElementById('postImage').value = "";
+    if(document.getElementById('postImage')) document.getElementById('postImage').value = "";
 }
 
 // --- FUNCIÓN DE LIKE CORREGIDA (PONER Y QUITAR) ---
