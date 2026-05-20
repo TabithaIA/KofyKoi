@@ -18,6 +18,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            background-size: cover;
+            background-position: center;
         }
 
         .bubble {
@@ -28,6 +30,7 @@
             line-height: 1.4;
             position: relative;
             animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         .bubble.mine {
@@ -81,16 +84,21 @@
             </div>
 
             <div id="sala-info" class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px;">
                     <h4 id="tituloSala" style="color: var(--morado-deep)">Sala: ---</h4>
-                    <button class="btn-img" onclick="location.reload()" style="font-size: 0.7rem;">Salir de la sala</button>
+                    <button class="btn-img" onclick="cambiarNombreSala()" style="font-size: 0.6rem; padding: 4px 8px;">Nombre de sala</button>
+                    <button class="btn-img" onclick="document.getElementById('fondoInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--azul-claro);">Fondo de sala</button>
+                    <button class="btn-img" onclick="location.reload()" style="font-size: 0.6rem; padding: 4px 8px;">Salir</button>
+                    
+                    <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="cambiarFondoSala(this)">
+                    <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
                 </div>
 
-                <div id="mensajesPrivados" class="chat-container">
-                    </div>
+                <div id="mensajesPrivados" class="chat-container"></div>
 
                 <div class="chat-input-area">
-                    <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje secreto..." style="padding: 10px;"></textarea>
+                    <button class="btn-img" onclick="document.getElementById('imagenChatInput').click()">📷</button>
+                    <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius: 10px; border: 1px solid #ddd;"></textarea>
                     <button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
                 </div>
             </div>
@@ -98,37 +106,17 @@
     </div>
 
     <nav class="bottom-nav">
-    <button class="nav-item" onclick="location.href='perfil.html'">
-        <span>👤</span>
-        <small>Perfil</small>
-    </button>
-
-    <button class="nav-item main-btn" onclick="location.href='chats.html'">
-        <span>💬</span>
-        <small>Chats</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='index.html'">
-        <span>🏠</span>
-        <small>Inicio</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='botellas.html'">
-        <span>🍾</span>
-        <small>Mar de Botellas</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='datos.html'">
-        <span>❕</span>
-        <small>Acerca...</small>
-    </button>
+        <button class="nav-item" onclick="location.href='perfil.html'"><span>👤</span><small>Perfil</small></button>
+        <button class="nav-item main-btn" onclick="location.href='chats.html'"><span>💬</span><small>Chats</small></button>
+        <button class="nav-item" onclick="location.href='index.html'"><span>🏠</span><small>Inicio</small></button>
+        <button class="nav-item" onclick="location.href='botellas.html'"><span>🍾</span><small>Mar de Botellas</small></button>
+        <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Acerca...</small></button>
     </nav>
 
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
     <script>
-        // Configuración de Firebase (Extraída de tu index.html)
         const firebaseConfig = {
             apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
             authDomain: "kofikoi.firebaseapp.com",
@@ -147,33 +135,25 @@
         const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
         const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
 
-        // Cargar datos de navegación al inicio
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-username').textContent = miNombre;
             document.getElementById('imgNav').src = miAvatar;
         });
 
-        function unirseASala() {
-            const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
-            if (!codigo) return alert("¡Escribe un código secreto! 🌸");
-
-            salaActual = codigo;
-            document.getElementById('selector-sala').style.display = "none";
-            document.getElementById('sala-info').style.display = "block";
-            document.getElementById('tituloSala').textContent = "Sala: #" + codigo;
-
-            // Escuchar mensajes de la sala específica
-            database.ref(`chats_privados/${salaActual}`).on('child_added', (snapshot) => {
-                const datos = snapshot.val();
-                dibujarMensaje(datos);
-            });
+        // --- FUNCIÓN UNIFICADA: CAMBIAR NOMBRE DE SALA ---
+        function cambiarNombreSala() {
+            const nuevoNombre = prompt("¿Cómo quieres que se llame la sala? ✨");
+            if (nuevoNombre && nuevoNombre.trim() !== "") {
+                database.ref(`chats_privados/${salaActual}/configuracion/nombrePersonalizado`).set(nuevoNombre.trim());
+            }
         }
 
+        // --- FUNCIÓN UNIFICADA: ENVIAR MENSAJE ---
         function enviarMensajeSala() {
             const texto = document.getElementById('textoPrivado').value.trim();
             if (!texto) return;
 
-            database.ref(`chats_privados/${salaActual}`).push({
+            database.ref(`chats_privados/${salaActual}/mensajes`).push({
                 usuario: miNombre,
                 mensaje: texto,
                 fecha: Date.now()
@@ -182,28 +162,108 @@
             document.getElementById('textoPrivado').value = "";
         }
 
-        function dibujarMensaje(datos) {
+        // --- LÓGICA DE BORRADO ---
+        function borrarMensajePrivado(id) {
+            if (confirm("¿Quieres eliminar este mensaje? 🗑️")) {
+                database.ref(`chats_privados/${salaActual}/mensajes/${id}`).remove();
+            }
+        }
+
+        // --- LÓGICA DE FONDO Y MULTIMEDIA ---
+        function cambiarFondoSala(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function prepararImagenChat(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if(confirm("¿Enviar esta imagen al chat? 🌸")) {
+                        comprimirYEnviarImagen(e.target.result);
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function comprimirYEnviarImagen(base64) {
+            const img = new Image();
+            img.src = base64;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxAncho = 500; 
+                const escala = maxAncho / img.width;
+                canvas.width = maxAncho;
+                canvas.height = img.height * escala;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const fotoComprimida = canvas.toDataURL('image/jpeg', 0.6);
+                
+                database.ref(`chats_privados/${salaActual}/mensajes`).push({
+                    usuario: miNombre,
+                    mensaje: "",
+                    imagen: fotoComprimida,
+                    fecha: Date.now()
+                });
+            };
+        }
+
+        function dibujarMensaje(id, datos) {
             const contenedor = document.getElementById('mensajesPrivados');
+            // Evitar duplicados si ya existe
+            if (document.getElementById(`msg-${id}`)) return;
+
             const msgDiv = document.createElement('div');
-            
             const esMio = datos.usuario === miNombre;
+            
             msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+            msgDiv.id = `msg-${id}`;
             
             msgDiv.innerHTML = `
-                <div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 3px;">
-                    ${esMio ? 'Tú' : datos.usuario}
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <span style="font-size: 0.65rem; font-weight: bold;">${esMio ? 'Tú' : datos.usuario}</span>
+                    ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem;">🗑️</button>` : ''}
                 </div>
-                <div>${datos.mensaje}</div>
+                ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
+                ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
             `;
             
             contenedor.appendChild(msgDiv);
-            contenedor.scrollTop = contenedor.scrollHeight; // Auto-scroll al fondo
+            contenedor.scrollTop = contenedor.scrollHeight;
         }
 
-        // Enviar con la tecla Enter
-        document.getElementById('textoPrivado').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enviarMensajeSala();
-        });
+        function unirseASala() {
+            const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
+            if (!codigo) return alert("¡Escribe un código secreto! 🌸");
+
+            salaActual = codigo;
+            document.getElementById('selector-sala').style.display = "none";
+            document.getElementById('sala-info').style.display = "block";
+
+            database.ref(`chats_privados/${salaActual}/configuracion`).on('value', (snapshot) => {
+                const config = snapshot.val() || {};
+                document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
+                
+                if (config.fondo) {
+                    const contenedor = document.getElementById('mensajesPrivados');
+                    contenedor.style.backgroundImage = `url(${config.fondo})`;
+                }
+            });
+
+            const refMensajes = database.ref(`chats_privados/${salaActual}/mensajes`);
+            refMensajes.on('child_added', (snapshot) => dibujarMensaje(snapshot.key, snapshot.val()));
+            refMensajes.on('child_removed', (snapshot) => {
+                const el = document.getElementById(`msg-${snapshot.key}`);
+                if (el) el.remove();
+            });
+        }
     </script>
 </body>
 </html>
+
