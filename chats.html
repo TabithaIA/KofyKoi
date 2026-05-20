@@ -150,17 +150,18 @@
 
         // --- FUNCIÓN UNIFICADA: ENVIAR MENSAJE ---
         function enviarMensajeSala() {
-            const texto = document.getElementById('textoPrivado').value.trim();
-            if (!texto) return;
+    const texto = document.getElementById('textoPrivado').value.trim();
+    if (!texto) return;
 
-            database.ref(`chats_privados/${salaActual}/mensajes`).push({
-                usuario: miNombre,
-                mensaje: texto,
-                fecha: Date.now()
-            });
+    database.ref(`chats_privados/${salaActual}/mensajes`).push({
+        usuario: miNombre,
+        avatar: miAvatar, // <--- Agregamos esto
+        mensaje: texto,
+        fecha: Date.now()
+    });
 
-            document.getElementById('textoPrivado').value = "";
-        }
+    document.getElementById('textoPrivado').value = "";
+}
 
         // --- LÓGICA DE BORRADO ---
         function borrarMensajePrivado(id) {
@@ -207,6 +208,7 @@
                 
                 database.ref(`chats_privados/${salaActual}/mensajes`).push({
                     usuario: miNombre,
+                    avatar: miAvatar,
                     mensaje: "",
                     imagen: fotoComprimida,
                     fecha: Date.now()
@@ -215,28 +217,33 @@
         }
 
         function dibujarMensaje(id, datos) {
-            const contenedor = document.getElementById('mensajesPrivados');
-            // Evitar duplicados si ya existe
-            if (document.getElementById(`msg-${id}`)) return;
+    const contenedor = document.getElementById('mensajesPrivados');
+    if (document.getElementById(`msg-${id}`)) return;
 
-            const msgDiv = document.createElement('div');
-            const esMio = datos.usuario === miNombre;
-            
-            msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
-            msgDiv.id = `msg-${id}`;
-            
-            msgDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 5px;">
-                    <span style="font-size: 0.65rem; font-weight: bold;">${esMio ? 'Tú' : datos.usuario}</span>
-                    ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem;">🗑️</button>` : ''}
-                </div>
-                ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
-                ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
-            `;
-            
-            contenedor.appendChild(msgDiv);
-            contenedor.scrollTop = contenedor.scrollHeight;
-        }
+    const msgDiv = document.createElement('div');
+    const esMio = datos.usuario === miNombre;
+    
+    msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+    msgDiv.id = `msg-${id}`;
+    
+    // Usamos el avatar de los datos o uno por defecto si no existe
+    const fotoUrl = datos.avatar || 'https://i.pravatar.cc/150?u=default';
+    
+    msgDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <img src="${fotoUrl}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                <span style="font-size: 0.65rem; font-weight: bold;">${esMio ? 'Tú' : datos.usuario}</span>
+            </div>
+            ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem;">🗑️</button>` : ''}
+        </div>
+        ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
+        ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+    `;
+    
+    contenedor.appendChild(msgDiv);
+    contenedor.scrollTop = contenedor.scrollHeight;
+}
 
         function unirseASala() {
             const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
