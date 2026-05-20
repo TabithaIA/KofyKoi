@@ -1,6 +1,10 @@
-// --- LÓGICA DE PERFIL Y CONFIGURACIÓN ---
+// --- VARIABLES GLOBALES Y ESTADO ---
 let currentAvatarUrl = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
+let cargaInicialCompletada = false;
+let ultimoPostFecha = null;
+let cargandoMas = false;
 
+// --- CONFIGURACIÓN DE NOTIFICACIONES ---
 if ('Notification' in window && 'serviceWorker' in navigator) {
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
@@ -10,6 +14,7 @@ if ('Notification' in window && 'serviceWorker' in navigator) {
     });
 }
 
+// --- LÓGICA DE PERFIL ---
 function previewImagen(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -38,9 +43,10 @@ function guardarPerfil() {
     const nuevoNombre = document.getElementById('editNombre').value;
     const nuevaBio = document.getElementById('editBio').value;
 
-    document.getElementById('nombrePerfil').textContent = nuevoNombre;
-    document.getElementById('bioPerfil').textContent = nuevaBio;
-    document.getElementById('imgPerfil').src = currentAvatarUrl;
+    if(document.getElementById('nombrePerfil')) document.getElementById('nombrePerfil').textContent = nuevoNombre;
+    if(document.getElementById('bioPerfil')) document.getElementById('bioPerfil').textContent = nuevaBio;
+    if(document.getElementById('imgPerfil')) document.getElementById('imgPerfil').src = currentAvatarUrl;
+    
     document.getElementById('imgNav').src = currentAvatarUrl;
     document.getElementById('nav-username').textContent = nuevoNombre;
 
@@ -51,14 +57,11 @@ function guardarPerfil() {
     cerrarModal();
 }
 
-// --- LÓGICA DE POSTS CON SCROLL INFINITO ---
-let cargaInicialCompletada = false;
-let ultimoPostFecha = null;
-let cargandoMas = false;
+// --- LÓGICA DE POSTS (FEED) ---
 
-// 1. Escuchar solo los posts NUEVOS que se crean mientras la app está abierta
+// 1. Escuchar posts NUEVOS en tiempo real
 database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
-    if (!cargaInicialCompletada) return; // Evitar duplicados en la carga inicial
+    if (!cargaInicialCompletada) return; 
     
     const datos = snapshot.val();
     const idS = snapshot.key;
@@ -66,45 +69,57 @@ database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
 
     if (feed) {
         const postDiv = crearElementoPost(idS, datos);
-        feed.prepend(postDiv); // Los nuevos van arriba
+        feed.prepend(postDiv);
         mostrarNotificacion(datos.usuario, datos.mensaje);
     }
 });
 
-// 2. Función para cargar bloques de posts (Paginación)
+// 2. Cargar bloques de posts (Paginación/Scroll Infinito)
 function cargarMasPosts() {
     if (cargandoMas) return;
     cargandoMas = true;
 
     let consulta = database.ref('posts/').orderByChild('fecha');
     
-    // Si ya cargamos algo, pedimos los que siguen hacia atrás en el tiempo
+    // Si ya tenemos un post, pedimos los anteriores a ese
     if (ultimoPostFecha) {
         consulta = consulta.endAt(ultimoPostFecha - 1);
     }
 
     consulta.limitToLast(6).once('value', (snapshot) => {
+        const feed = document.getElementById('feed-container');
         const posts = [];
+
         snapshot.forEach(child => {
-            posts.push({ id: child.key, ...child.val() });
+            // Verificamos si el post ya existe en el DOM para no repetirlo
+            if (!document.querySelector(`[data-id="${child.key}"]`)) {
+                posts.push({ id: child.key, ...child.val() });
+            }
         });
 
         if (posts.length > 0) {
-            posts.reverse(); // Ordenar del más nuevo al más viejo dentro del bloque
-            ultimoPostFecha = posts[posts.length - 1].fecha;
+            if (!ultimoPostFecha) feed.innerHTML = ""; 
             
-            const feed = document.getElementById('feed-container');
+            posts.reverse(); 
+            const fragmento = document.createDocumentFragment();
+            
             posts.forEach(p => {
                 const postDiv = crearElementoPost(p.id, p);
-                feed.appendChild(postDiv); // Los viejos van abajo
+                fragmento.appendChild(postDiv);
             });
+            
+            feed.appendChild(fragmento);
+            // Actualizamos la fecha del último post del array (que es el más viejo)
+            ultimoPostFecha = posts[posts.length - 1].fecha;
         }
+        
+        // Importante: resetear el estado para permitir la siguiente carga
         cargandoMas = false;
         cargaInicialCompletada = true;
     });
 }
 
-// Función auxiliar para no repetir código de creación de HTML
+// 3. Generador de HTML de Post (Mantenida fuera para reusabilidad)
 function crearElementoPost(id, datos) {
     const postDiv = document.createElement('div');
     postDiv.className = 'card kofy-post';
@@ -131,14 +146,18 @@ function crearElementoPost(id, datos) {
 
 // --- DETECTAR SCROLL ---
 const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
+    // Solo cargamos si el elemento es visible Y no estamos ya cargando algo
+    if (entries[0].isIntersecting && !cargandoMas) {
         cargarMasPosts();
     }
-}, { threshold: 0.1 });
+}, { 
+    threshold: 0.5, // Espera a que el sentinel se vea un 50%
+    rootMargin: "100px" // Carga un poquito antes de llegar al final para que sea fluido
+});
 
-// --- LÓGICA DE PUBLICACIÓN ---
+// --- LÓGICA DE PUBLICACIÓN (CON COMPRESIÓN) ---
 function publicar() {
-    const nombre = document.getElementById('nombrePerfil').textContent;
+    const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const texto = document.getElementById('postText').value;
     const inputImagen = document.getElementById('postImage');
     const archivo = inputImagen ? inputImagen.files[0] : null;
@@ -151,22 +170,14 @@ function publicar() {
             const img = new Image();
             img.src = e.target.result;
             img.onload = function () {
-                // --- PROCESO DE COMPRESIÓN ---
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-
-                // Definimos un tamaño máximo (por ejemplo, 800px)
                 const maxAncho = 800;
                 const escala = maxAncho / img.width;
                 canvas.width = maxAncho;
                 canvas.height = img.height * escala;
-
-                // Dibujamos la imagen reducida en el canvas
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                // Convertimos a Base64 pero con calidad baja (0.6 = 60%)
                 const fotoComprimida = canvas.toDataURL('image/jpeg', 0.6);
-                
                 enviarPost(nombre, texto, fotoComprimida);
             };
         };
@@ -189,7 +200,7 @@ function enviarPost(usuario, mensaje, imagenData) {
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
 }
 
-// --- LIKES, BORRADO Y REPORTES (Tus funciones originales) ---
+// --- INTERACCIONES: LIKES, BORRADO, REPORTES ---
 function enviarLike(idPost) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const postRef = database.ref(`posts/${idPost}`);
@@ -293,7 +304,7 @@ function mostrarNotificacion(usuario, mensaje) {
     setTimeout(() => toast.remove(), 4000);
 }
 
-// --- CARGA INICIAL ---
+// --- CARGA INICIAL AL CARGAR LA PÁGINA ---
 document.addEventListener('DOMContentLoaded', () => {
     const n = localStorage.getItem('kofy_nombre');
     const b = localStorage.getItem('kofy_bio');
@@ -301,24 +312,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (n) {
         document.getElementById('nav-username').textContent = n;
-        document.getElementById('nombrePerfil').textContent = n;
+        if(document.getElementById('nombrePerfil')) document.getElementById('nombrePerfil').textContent = n;
         database.ref(`seguidores/${n}`).on('value', (s) => {
             const c = document.getElementById('misSeguidoresCount');
             if (c) c.textContent = `${s.numChildren()} seguidores`;
         });
     }
-    if (b) document.getElementById('bioPerfil').textContent = b;
+    if (b && document.getElementById('bioPerfil')) document.getElementById('bioPerfil').textContent = b;
     if (a) {
         currentAvatarUrl = a;
         document.getElementById('imgNav').src = a;
-        document.getElementById('imgPerfil').src = a;
+        if(document.getElementById('imgPerfil')) document.getElementById('imgPerfil').src = a;
     }
 
-    // Iniciar el observador para el Infinite Scroll
     const sentinel = document.getElementById('sentinel');
     if (sentinel) observer.observe(sentinel);
     
-    // Cargar los primeros posts
     cargarMasPosts();
 });
 

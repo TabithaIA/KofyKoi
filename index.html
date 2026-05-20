@@ -32,13 +32,15 @@
 
         <main>
             <div class="card">
-    <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
-    <div class="post-options">
-    <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
-    <button class="btn-img" onclick="document.getElementById('postImage').click()">Añadir Foto 📸</button>
-    <button class="btn-main" onclick="publicar()">Publicar</button>
-</div>
-            <div id="feed-container">Un momento, puede que carguen nuevos mensajes...</div>
+                <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
+                <div class="post-options">
+                    <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
+                    <button class="btn-img" onclick="document.getElementById('postImage').click()">Añadir Foto 📸</button>
+                    <button class="btn-main" onclick="publicar()">Publicar</button>
+                </div>
+            </div> <div id="feed-container">Un momento, puede que carguen nuevos mensajes...</div>
+            
+            <div id="sentinel" style="height: 20px;"></div>
         </main>
 
         <aside class="sidebar">

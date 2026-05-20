@@ -194,3 +194,17 @@ body {
         opacity: 1;
         transform: translateY(0);
 }
+
+.skeleton {
+    background: #eee;
+    height: 100px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
