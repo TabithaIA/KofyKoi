@@ -29,6 +29,14 @@
         .bottle-display:hover {
             transform: rotate(15deg) scale(1.1);
         }
+
+        #contenidoBotella small {
+    display: block;
+    margin-top: 15px;
+    font-family: 'Quicksand', sans-serif;
+    border-top: 1px dashed #d4a373;
+    padding-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -79,29 +87,40 @@
         const database = firebase.database();
 
         function lanzarBotella() {
-            const msj = prompt("Escribe tu mensaje anónimo para el mar... 🌊");
-            if (msj && msj.trim() !== "") {
-                database.ref('botellas/').push({
-                    mensaje: msj,
-                    fecha: Date.now()
-                }).then(() => alert("¡Tu botella ya está flotando! 🍾✨"));
-            }
-        }
+    // Obtenemos el nombre del usuario actual
+    const miNombre = localStorage.getItem('kofy_nombre') || "Anónimo";
+    const msj = prompt("Escribe tu mensaje para el mar... 🌊");
+    
+    if (msj && msj.trim() !== "") {
+        database.ref('botellas/').push({
+            usuario: miNombre, // Guardamos quién la lanzó
+            mensaje: msj,
+            fecha: Date.now()
+        }).then(() => alert("¡Tu botella ya está flotando! 🍾✨"));
+    }
+}
 
         function pescarBotella() {
-            database.ref('botellas/').once('value', (snap) => {
-                const todas = [];
-                snap.forEach(child => { todas.push(child.val().mensaje); });
-                
-                if (todas.length > 0) {
-                    const azar = todas[Math.floor(Math.random() * todas.length)];
-                    document.getElementById('contenidoBotella').textContent = `"${azar}"`;
-                    document.getElementById('modalBotella').style.display = 'flex';
-                } else {
-                    alert("No hay botellas cerca por ahora... 🏖️");
-                }
-            });
+    database.ref('botellas/').once('value', (snap) => {
+        const todas = [];
+        snap.forEach(child => { 
+            todas.push(child.val()); // Guardamos el objeto completo, no solo el mensaje
+        });
+        
+        if (todas.length > 0) {
+            const botellaAzar = todas[Math.floor(Math.random() * todas.length)];
+            
+            // Mostramos el mensaje y el autor
+            document.getElementById('contenidoBotella').innerHTML = `
+                "${botellaAzar.mensaje}"<br><br>
+                <small style="color: #d4a373;">— Enviado por: <strong>${botellaAzar.usuario || 'Alguien misterioso'}</strong></small>
+            `;
+            document.getElementById('modalBotella').style.display = 'flex';
+        } else {
+            alert("No hay botellas cerca por ahora... 🏖️");
         }
+    });
+}
 
         function cerrarModalBotella() {
             document.getElementById('modalBotella').style.display = 'none';
