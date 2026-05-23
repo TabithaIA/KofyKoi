@@ -121,6 +121,13 @@ function cargarMasPosts() {
 
 // 3. Generador de HTML de Post (Mantenida fuera para reusabilidad)
 function crearElementoPost(id, datos) {
+    // Convertimos los milisegundos a un objeto Date
+    const fecha = new Date(datos.fecha);
+    
+    // Formateamos la fecha (ej: 23/05/2026) y la hora (ej: 14:30)
+    const fechaFormateada = fecha.toLocaleDateString('es-AR');
+    const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
     const postDiv = document.createElement('div');
     postDiv.className = 'card kofy-post';
     postDiv.dataset.id = id;
@@ -136,6 +143,11 @@ function crearElementoPost(id, datos) {
         </div>
         <p>${datos.mensaje}</p>
         ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
+        
+        <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">
+            Publicado el ${fechaFormateada} a las ${horaFormateada}
+        </div>
+
         <div class="actions" style="display: flex; align-items: center; width: 100%; margin-top: 10px;">
             <span onclick="enviarLike('${id}')" style="cursor:pointer">❤️ <span id="likes-${id}">${datos.likes || 0}</span> Me gusta</span>
             <button class="btn-report" onclick="reportarPost('${id}', '${datos.usuario}', '${datos.mensaje}')">Reportar 🚩</button>
