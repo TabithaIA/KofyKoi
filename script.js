@@ -188,11 +188,13 @@ function publicar() {
 }
 
 function enviarPost(usuario, mensaje, imagenData) {
+    const bioActual = localStorage.getItem('kofy_bio') || "";
     database.ref('posts/').push({
         usuario: usuario,
         mensaje: mensaje,
         imagen: imagenData,
         avatar: currentAvatarUrl,
+        biografia: bioActual,
         fecha: Date.now(),
         likes: 0
     });
