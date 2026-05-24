@@ -56,16 +56,17 @@
         </main>
 
         <aside class="sidebar">
-            <div class="card">
-                <h4 style="color: var(--morado-deep)">Trending 🌸</h4>
-                <ul style="list-style: none; margin-top: 10px; font-size: 0.9rem;">
-                    <li style="margin-bottom: 10px;">#PecesKoi 🎏</li>
-                    <li style="margin-bottom: 10px;">#CaféPastel ☕</li>
-                    <li style="margin-bottom: 10px;">#MomentosZen 🧘</li>
-                </ul>
-            </div>
-        </aside>
+    <div class="card profile-card">
+        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
+        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyLover</h3>
+        
+        <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
+        
+        <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">Buscando momentos zen y mucho café. ✨</p>
+        <br>
+        <button class="btn-main" onclick="abrirModal()">Editar Perfil</button>
     </div>
+        </aside>
 
     <div id="modalPerfil" class="modal">
         <div class="modal-content">
@@ -109,7 +110,7 @@
 
     <button class="nav-item" onclick="location.href='datos.html'">
         <span>❕</span>
-        <small>Acerca...</small>
+        <small>Info</small>
     </button>
 </nav>
 
