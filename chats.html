@@ -90,6 +90,40 @@
         #sala-info {
             display: none;
         }
+
+/* --- ESTILOS DE RACHAS --- */
+.logro-item {
+    padding: 10px;
+    border-radius: 12px;
+    background: #f9f9f9;
+    font-size: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.4;
+    filter: grayscale(1);
+    transition: 0.3s;
+}
+
+.logro-item.desbloqueado {
+    opacity: 1;
+    filter: grayscale(0);
+    background: var(--rosa);
+    color: var(--oscuro-suave);
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.logro-icon { 
+    font-size: 1.5rem; 
+    margin-bottom: 5px; 
+}
+
+#modalRacha .modal-content {
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
     </style>
 </head>
 <body>
@@ -106,7 +140,7 @@
         <main>
             <div class="card" id="selector-sala">
                 <h3 style="color: var(--morado-deep); margin-bottom: 10px;">Salas Privadas 🗝️</h3>
-                <p style="font-size: 0.85rem; margin-bottom: 15px;">Ingresa un código para unirte a una conversación secreta.</p>
+                <p style="font-size: 0.85rem; margin-bottom: 15px;">Ingresa un código y compartelo con otras personas para empezar una conversación secreta.</p>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="roomCode" placeholder="Código de la sala..." style="border: 2px solid var(--rosa);">
                     <button class="btn-main" onclick="unirseASala()">Entrar</button>
@@ -118,6 +152,7 @@
                     <h4 id="tituloSala" style="color: var(--morado-deep)">Sala: ---</h4>
                     <button class="btn-img" onclick="cambiarNombreSala()" style="font-size: 0.6rem; padding: 4px 8px;">Nombre</button>
                     <button class="btn-img" onclick="document.getElementById('fondoInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--azul-claro);">Fondo</button>
+                    <button class="btn-img" onclick="abrirModalRacha()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--lavanda);">Racha</button>
                     <button class="btn-img" onclick="location.reload()" style="font-size: 0.6rem; padding: 4px 8px;">Salir</button>
                     
                     <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="cambiarFondoSala(this)">
@@ -171,6 +206,25 @@
     </div>
 </div>
 
+<div id="modalRacha" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--morado-deep);">Estado de la Racha 🔥</h3>
+        <div id="rachaInfo" style="margin: 15px 0;">
+            <p id="rachaDias" style="font-size: 2rem; font-weight: bold;">0 días</p>
+            <p id="rachaEstadoText" style="font-size: 0.85rem; color: gray;">La racha no está activa.</p>
+        </div>
+        
+        <button id="btnSolicitudRacha" class="btn-main" onclick="enviarSolicitudRacha()">Activar Racha 🌸</button>
+        
+        <hr style="margin: 20px 0; border: 1px solid var(--rosa);">
+        
+        <h4 style="color: var(--morado-deep);">Logros de Racha 🏆</h4>
+        <div id="logrosContenedor" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+            </div>
+        
+        <button class="btn-img" onclick="cerrarModalRacha()" style="margin-top: 20px;">Cerrar</button>
+    </div>
+</div>
 </body>
 
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
@@ -248,10 +302,106 @@
             contenedor.scrollTop = contenedor.scrollHeight;
         }
 
-        function enviarMensajeSala() {
+        // --- CONFIGURACIÓN DE RACHAS ---
+const hitosRacha = [1, 3, 5, 7, 14, 30, 45, 60, 90, 120, 240, 365];
+
+function abrirModalRacha() {
+    document.getElementById('modalRacha').style.display = 'flex';
+    actualizarVistaRacha();
+}
+
+function cerrarModalRacha() {
+    document.getElementById('modalRacha').style.display = 'none';
+}
+
+function enviarSolicitudRacha() {
+    // Limpiamos el nombre de caracteres no permitidos por Firebase
+    const userKey = miNombre.replace(/[.#$[\]]/g, "_");
+    database.ref(`chats_privados/${salaActual}/racha/solicitudes/${userKey}`).set(true);
+    alert("¡Solicitud enviada! Al menos 2 personas deben aceptar para comenzar. 🌸");
+}
+
+function actualizarVistaRacha() {
+    database.ref(`chats_privados/${salaActual}/racha`).on('value', (snap) => {
+        const racha = snap.val() || {};
+        const solicitudes = racha.solicitudes || {};
+        const countAceptados = Object.keys(solicitudes).length;
+        const activa = racha.activa || false;
+        const dias = racha.dias || 0;
+
+        const rachaDiasText = document.getElementById('rachaDias');
+        const rachaEstadoText = document.getElementById('rachaEstadoText');
+        const btn = document.getElementById('btnSolicitudRacha');
+
+        if (activa) {
+            rachaDiasText.textContent = `${dias} días 🔥`;
+            rachaEstadoText.textContent = "¡Racha activa! No dejen de hablar. ✨";
+            btn.style.display = "none";
+        } else {
+            rachaDiasText.textContent = "0 días";
+            rachaEstadoText.textContent = `Aceptado por ${countAceptados}/2 personas necesarias.`;
+            btn.style.display = "block";
+            
+            if (countAceptados >= 2) {
+                database.ref(`chats_privados/${salaActual}/racha`).update({
+                    activa: true,
+                    dias: 1,
+                    ultimaFecha: Date.now()
+                });
+            }
+        }
+        dibujarLogros(dias);
+    });
+}
+
+function dibujarLogros(diasActuales) {
+    const contenedor = document.getElementById('logrosContenedor');
+    contenedor.innerHTML = "";
+    
+    hitosRacha.forEach(dia => {
+        const desbloqueado = diasActuales >= dia;
+        let icono = desbloqueado ? '🏆' : '🔒';
+        if (dia === 1 && desbloqueado) icono = '🌱'; // Icono especial primer día
+        
+        const div = document.createElement('div');
+        div.className = `logro-item ${desbloqueado ? 'desbloqueado' : ''}`;
+        div.innerHTML = `
+            <span class="logro-icon">${icono}</span>
+            <strong>${dia === 1 ? 'Primer Día' : dia + ' Días'}</strong>
+        `;
+        contenedor.appendChild(div);
+    });
+}
+
+// NUEVA VERSIÓN DE ENVIAR MENSAJE
+function enviarMensajeSala() {
     const texto = document.getElementById('textoPrivado').value.trim();
     const miBio = localStorage.getItem('kofy_bio') || "";
     if (!texto) return;
+
+    // Lógica para actualizar la racha
+    const rachaRef = database.ref(`chats_privados/${salaActual}/racha`);
+    rachaRef.once('value').then((snap) => {
+        const data = snap.val();
+        if (data && data.activa) {
+            const hoy = new Date().toDateString();
+            const ultimaVez = new Date(data.ultimaFecha).toDateString();
+            
+            if (hoy !== ultimaVez) {
+                const ayer = new Date();
+                ayer.setDate(ayer.getDate() - 1);
+                
+                if (ultimaVez === ayer.toDateString()) {
+                    // Sigue la racha: +1 día
+                    rachaRef.update({ dias: data.dias + 1, ultimaFecha: Date.now() });
+                } else if (new Date(data.ultimaFecha) < ayer) {
+                    // Se rompió: reiniciar a 1
+                    rachaRef.update({ dias: 1, ultimaFecha: Date.now() });
+                }
+            }
+        }
+    });
+
     database.ref(`chats_privados/${salaActual}/mensajes`).push({
         usuario: miNombre,
         avatar: miAvatar,
