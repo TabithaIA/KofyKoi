@@ -3,6 +3,7 @@ let currentAvatarUrl = localStorage.getItem('kofy_avatar') || "https://i.pravata
 let cargaInicialCompletada = false;
 let ultimoPostFecha = null;
 let cargandoMas = false;
+let cropper; // Variable para la instancia de Cropper
 
 // --- CONFIGURACIÓN DE NOTIFICACIONES ---
 if ('Notification' in window && 'serviceWorker' in navigator) {
@@ -14,11 +15,36 @@ if ('Notification' in window && 'serviceWorker' in navigator) {
     });
 }
 
-// --- LÓGICA DE PERFIL ---
+// --- LÓGICA DE PERFIL Y CROPPER ---
 function previewImagen(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = (e) => document.getElementById('previewPerfil').src = e.target.result;
+        reader.onload = (e) => {
+            const imgEl = document.getElementById('imagen-a-recortar');
+            const previewPerfil = document.getElementById('previewPerfil');
+            const contenedorRecorte = document.getElementById('contenedor-recorte');
+            
+            previewPerfil.style.display = 'none';
+            contenedorRecorte.style.display = 'block';
+            
+            imgEl.src = e.target.result;
+            
+            // Inicializar Cropper
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(imgEl, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+            });
+        };
         reader.readAsDataURL(input.files[0]);
     }
 }
@@ -30,16 +56,35 @@ function abrirModal() {
         document.getElementById('editNombre').value = document.getElementById('nombrePerfil').textContent;
         document.getElementById('editBio').value = document.getElementById('bioPerfil').textContent;
         document.getElementById('previewPerfil').src = currentAvatarUrl;
+        document.getElementById('previewPerfil').style.display = 'block';
+        document.getElementById('contenedor-recorte').style.display = 'none';
     }
 }
 
 function cerrarModal() {
     const modal = document.getElementById('modalPerfil');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        modal.style.display = 'none';
+    }
 }
 
 function guardarPerfil() {
-    currentAvatarUrl = document.getElementById('previewPerfil').src;
+    if (cropper) {
+        currentAvatarUrl = cropper.getCroppedCanvas({
+            width: 150,
+            height: 150
+        }).toDataURL('image/jpeg');
+        
+        cropper.destroy();
+        cropper = null;
+        document.getElementById('contenedor-recorte').style.display = 'none';
+        document.getElementById('previewPerfil').style.display = 'block';
+    }
+
     const nuevoNombre = document.getElementById('editNombre').value;
     const nuevaBio = document.getElementById('editBio').value;
 
@@ -58,15 +103,11 @@ function guardarPerfil() {
 }
 
 // --- LÓGICA DE POSTS (FEED) ---
-
-// 1. Escuchar posts NUEVOS en tiempo real
 database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     if (!cargaInicialCompletada) return; 
-    
     const datos = snapshot.val();
     const idS = snapshot.key;
     const feed = document.getElementById('feed-container');
-
     if (feed) {
         const postDiv = crearElementoPost(idS, datos);
         feed.prepend(postDiv);
@@ -74,57 +115,38 @@ database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     }
 });
 
-// 2. Cargar bloques de posts (Paginación/Scroll Infinito)
 function cargarMasPosts() {
     if (cargandoMas) return;
     cargandoMas = true;
-
     let consulta = database.ref('posts/').orderByChild('fecha');
-    
-    // Si ya tenemos un post, pedimos los anteriores a ese
-    if (ultimoPostFecha) {
-        consulta = consulta.endAt(ultimoPostFecha - 1);
-    }
+    if (ultimoPostFecha) consulta = consulta.endAt(ultimoPostFecha - 1);
 
     consulta.limitToLast(6).once('value', (snapshot) => {
         const feed = document.getElementById('feed-container');
         const posts = [];
-
         snapshot.forEach(child => {
-            // Verificamos si el post ya existe en el DOM para no repetirlo
             if (!document.querySelector(`[data-id="${child.key}"]`)) {
                 posts.push({ id: child.key, ...child.val() });
             }
         });
-
         if (posts.length > 0) {
             if (!ultimoPostFecha) feed.innerHTML = ""; 
-            
             posts.reverse(); 
             const fragmento = document.createDocumentFragment();
-            
             posts.forEach(p => {
                 const postDiv = crearElementoPost(p.id, p);
                 fragmento.appendChild(postDiv);
             });
-            
             feed.appendChild(fragmento);
-            // Actualizamos la fecha del último post del array (que es el más viejo)
             ultimoPostFecha = posts[posts.length - 1].fecha;
         }
-        
-        // Importante: resetear el estado para permitir la siguiente carga
         cargandoMas = false;
         cargaInicialCompletada = true;
     });
 }
 
-// 3. Generador de HTML de Post (Mantenida fuera para reusabilidad)
 function crearElementoPost(id, datos) {
-    // Convertimos los milisegundos a un objeto Date
     const fecha = new Date(datos.fecha);
-    
-    // Formateamos la fecha (ej: 23/05/2026) y la hora (ej: 14:30)
     const fechaFormateada = fecha.toLocaleDateString('es-AR');
     const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
@@ -143,11 +165,9 @@ function crearElementoPost(id, datos) {
         </div>
         <p>${datos.mensaje}</p>
         ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
-        
         <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">
             Publicado el ${fechaFormateada} a las ${horaFormateada}
         </div>
-
         <div class="actions" style="display: flex; align-items: center; width: 100%; margin-top: 10px;">
             <span onclick="enviarLike('${id}')" style="cursor:pointer">❤️ <span id="likes-${id}">${datos.likes || 0}</span> Me gusta</span>
             <button class="btn-report" onclick="reportarPost('${id}', '${datos.usuario}', '${datos.mensaje}')">Reportar 🚩</button>
@@ -156,18 +176,12 @@ function crearElementoPost(id, datos) {
     return postDiv;
 }
 
-// --- DETECTAR SCROLL ---
 const observer = new IntersectionObserver((entries) => {
-    // Solo cargamos si el elemento es visible Y no estamos ya cargando algo
     if (entries[0].isIntersecting && !cargandoMas) {
         cargarMasPosts();
     }
-}, { 
-    threshold: 0.5, // Espera a que el sentinel se vea un 50%
-    rootMargin: "100px" // Carga un poquito antes de llegar al final para que sea fluido
-});
+}, { threshold: 0.5, rootMargin: "100px" });
 
-// --- LÓGICA DE PUBLICACIÓN (CON COMPRESIÓN) ---
 function publicar() {
     const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const texto = document.getElementById('postText').value;
@@ -214,7 +228,6 @@ function enviarPost(usuario, mensaje, imagenData) {
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
 }
 
-// --- INTERACCIONES: LIKES, BORRADO, REPORTES ---
 function enviarLike(idPost) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const postRef = database.ref(`posts/${idPost}`);
@@ -260,7 +273,6 @@ function reportarPost(idPost, usuario, mensaje) {
     }
 }
 
-// --- VISTA PERFIL Y SEGUIDORES ---
 function verPerfil(nombre, avatar, bio) {
     const modal = document.getElementById('modalVistaPerfil');
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -310,7 +322,6 @@ function cerrarVista() {
 function mostrarNotificacion(usuario, mensaje) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     if (usuario === miNombre) return;
-
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
     toast.innerHTML = `<strong>${usuario}:</strong> ${mensaje.substring(0, 25)}...`;
@@ -318,7 +329,6 @@ function mostrarNotificacion(usuario, mensaje) {
     setTimeout(() => toast.remove(), 4000);
 }
 
-// --- CARGA INICIAL AL CARGAR LA PÁGINA ---
 document.addEventListener('DOMContentLoaded', () => {
     const n = localStorage.getItem('kofy_nombre');
     const b = localStorage.getItem('kofy_bio');

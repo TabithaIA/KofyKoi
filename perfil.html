@@ -43,11 +43,16 @@
         </aside>
     </div>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
     <div id="modalPerfil" class="modal">
         <div class="modal-content">
             <h3 style="color: var(--morado-deep)">Configurar Perfil 🌸</h3>
             <br>
-            <img src="https://i.pravatar.cc/150?u=kofy" id="previewPerfil" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+            <div id="contenedor-recorte" style="max-width: 400px; height: 400px; border-radius: 50%; object-fit: cover;">
+    <img id="imagen-a-recortar" style="max-width: 100%;">
+</div>
+<img src="https://i.pravatar.cc/150?u=kofy" id="previewPerfil" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
             <br>
             <input type="file" id="editAvatar" accept="image/*" style="display: none;" onchange="previewImagen(this)">
             <button class="btn-img" style="margin: 10px 0;" onclick="document.getElementById('editAvatar').click()">Cambiar Foto de Perfil</button>
@@ -129,6 +134,8 @@
   // Esta es la variable mágica que usaremos en script.js
   const database = firebase.database();
 </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <script src="script.js"></script>
 </body>

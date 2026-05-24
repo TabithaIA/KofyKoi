@@ -193,7 +193,8 @@ body {
     to {
         opacity: 1;
         transform: translateY(0);
-}
+    }
+} /* Cierra el @keyframes */
 
 .skeleton {
     background: #eee;
