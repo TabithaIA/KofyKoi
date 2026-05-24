@@ -30,6 +30,19 @@
         </aside>
 
         <main>
+            <div class="card" style="display: flex; gap: 15px; overflow-x: auto; padding: 15px; align-items: center;">
+    <div id="add-story" onclick="document.getElementById('storyInput').click()" style="cursor: pointer; text-align: center;">
+        <div class="avatar-sm" style="background: var(--rosa); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--morado-deep);">
+            <span>+</span>
+        </div>
+        <small>Tu Story</small>
+        <input type="file" id="storyInput" accept="image/*" style="display: none;" onchange="subirStory(this)">
+    </div>
+    <div id="stories-container" style="display: flex; gap: 15px;">
+        </div>
+</div>
+
+
             <div class="card">
                 <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
                 <div class="post-options">
