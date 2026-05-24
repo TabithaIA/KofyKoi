@@ -143,6 +143,23 @@
         <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
     </nav>
 
+<div id="modalVistaPerfil" class="modal">
+    <div class="modal-content">
+        <img src="" id="vistaImg" class="avatar-lg">
+        <h2 id="vistaNombre" style="margin-top:10px;"></h2>
+        <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores 🌸</p>
+        <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
+        
+        <button id="btnSeguir" class="btn-main" onclick="seguirUsuario(document.getElementById('vistaNombre').textContent)">
+            Seguir 🌸
+        </button>
+        
+        <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
+    </div>
+</div>
+
+</body>
+
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
@@ -202,7 +219,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
                     <div style="display: flex; align-items: center; gap: 5px;">
                         <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
-                        <span style="font-size: 0.65rem; font-weight: bold;">${esMio ? 'Tú' : datos.usuario}</span>
+                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer; color: var(--morado-deep);" 
+      onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">
+    ${esMio ? 'Tú' : datos.usuario}
+</span>
                     </div>
                     ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
                 </div>
@@ -216,16 +236,18 @@
         }
 
         function enviarMensajeSala() {
-            const texto = document.getElementById('textoPrivado').value.trim();
-            if (!texto) return;
-            database.ref(`chats_privados/${salaActual}/mensajes`).push({
-                usuario: miNombre,
-                avatar: miAvatar,
-                mensaje: texto,
-                fecha: Date.now()
-            });
-            document.getElementById('textoPrivado').value = "";
-        }
+    const texto = document.getElementById('textoPrivado').value.trim();
+    const miBio = localStorage.getItem('kofy_bio') || "";
+    if (!texto) return;
+    database.ref(`chats_privados/${salaActual}/mensajes`).push({
+        usuario: miNombre,
+        avatar: miAvatar,
+        biografia: miBio,
+        mensaje: texto,
+        fecha: Date.now()
+    });
+    document.getElementById('textoPrivado').value = "";
+}
 
         function unirseASala() {
             const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
@@ -253,6 +275,49 @@
             });
         }
         
+function verPerfil(nombre, avatar, bio) {
+    const modal = document.getElementById('modalVistaPerfil');
+    if (!modal) return;
+
+    document.getElementById('vistaNombre').textContent = nombre;
+    document.getElementById('vistaImg').src = avatar || 'https://i.pravatar.cc/150?u=default';
+    document.getElementById('vistaBio').textContent = bio || "Sin biografía aún. ✨";
+    
+    const btnSeguir = document.getElementById('btnSeguir');
+    if (nombre === miNombre) {
+        if (btnSeguir) btnSeguir.style.display = "none";
+    } else {
+        if (btnSeguir) {
+            btnSeguir.style.display = "block";
+            database.ref(`seguidores/${nombre}/${miNombre}`).once('value', (s) => actualizarBotonSeguir(s.exists()));
+        }
+    }
+
+    database.ref(`seguidores/${nombre}`).on('value', (s) => {
+        const count = document.getElementById('countSeguidores');
+        if (count) count.textContent = `${s.numChildren()} seguidores 🌸`;
+    });
+    modal.style.display = 'flex';
+}
+
+function seguirUsuario(nombreSeguido) {
+    if (miNombre === nombreSeguido) return;
+    const ref = database.ref(`seguidores/${nombreSeguido}/${miNombre}`);
+    ref.get().then((s) => {
+        s.exists() ? ref.remove() : ref.set(true);
+        actualizarBotonSeguir(!s.exists());
+    });
+}
+
+function actualizarBotonSeguir(siguiendo) {
+    const btn = document.getElementById('btnSeguir');
+    if (btn) btn.textContent = siguiendo ? "Siguiendo ✨" : "Seguir 🌸";
+}
+
+function cerrarVista() {
+    document.getElementById('modalVistaPerfil').style.display = 'none';
+}
+
         // Funciones auxiliares (borrar, fondo, imagen) se mantienen igual...
         function borrarMensajePrivado(id) { if(confirm("¿Borrar?")) database.ref(`chats_privados/${salaActual}/mensajes/${id}`).remove(); }
         function cambiarFondoSala(input) { if (input.files[0]) { const reader = new FileReader(); reader.onload = (e) => database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(e.target.result); reader.readAsDataURL(input.files[0]); } }
