@@ -93,7 +93,7 @@ function subirStory(input) {
                 avatar: currentAvatarUrl,
                 fecha: Date.now()
             });
-            alert("¡Story optimizada y subida! 🌸");
+            alert("¡Story publicada! ✨");
         };
     };
     reader.readAsDataURL(archivo);
@@ -150,7 +150,7 @@ function verStory(imgUrl, usuario, idStory) {
                   style="position: absolute; top: 10px; right: 20px; color: white; font-size: 2rem; cursor: pointer; z-index:10;">&times;</span>
             <img src="${imgUrl}" style="width: 100%; border-radius: 15px; display:block;">
             <div style="position:absolute; bottom:10px; left:20px; color:white; text-align:left;">
-                <p style="font-weight: bold; text-shadow: 1px 1px 2px black;">Story de ${usuario} 🌸</p>
+                <p style="font-weight: bold; text-shadow: 1px 1px 2px black;">${usuario}</p>
             </div>
             ${botonBorrar}
         </div>
@@ -160,7 +160,7 @@ function verStory(imgUrl, usuario, idStory) {
 
 // Función para ejecutar el borrado
 function borrarStory(id, btn) {
-    if (confirm("¿Quieres eliminar tu story antes de tiempo? 🌸")) {
+    if (confirm("¿Quieres eliminar tu story antes de tiempo?")) {
         database.ref(`stories/${id}`).remove();
         btn.parentElement.parentElement.remove(); // Cierra el modal
     }
