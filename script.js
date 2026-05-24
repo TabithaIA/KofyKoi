@@ -201,20 +201,15 @@ function publicar() {
 
 function enviarPost(usuario, mensaje, imagenData) {
     const bioActual = localStorage.getItem('kofy_bio') || "";
-    // CORRECCIÓN: Obtenemos el avatar más reciente del localStorage 
-    // en lugar de usar la variable global currentAvatarUrl
-    const avatarActual = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
-    
     database.ref('posts/').push({
         usuario: usuario,
         mensaje: mensaje,
         imagen: imagenData,
-        avatar: avatarActual, // Usamos el valor fresco
+        avatar: currentAvatarUrl,
         biografia: bioActual,
         fecha: Date.now(),
         likes: 0
     });
-    
     document.getElementById('postText').value = "";
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
 }
