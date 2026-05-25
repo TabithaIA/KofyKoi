@@ -37,7 +37,7 @@
 
         .bubble.mine {
             align-self: flex-end;
-            background-color: var(--mine-color, var(--lavanda)); /* Usa el color personalizado o el default */
+            background-color: var(--lavanda);
             color: var(--oscuro-suave);
             border-bottom-right-radius: 4px;
         }
@@ -49,12 +49,11 @@
             border-bottom-left-radius: 4px;
         }
 
-        /* Estilo para la fecha y hora */
         .msg-time {
             font-size: 0.65rem;
             opacity: 0.7;
             margin-top: 5px;
-            align-self: flex-end; /* La hora se alinea a la derecha dentro de la burbuja */
+            align-self: flex-end;
         }
 
         .notification-toast {
@@ -91,39 +90,38 @@
             display: none;
         }
 
-/* --- ESTILOS DE RACHAS --- */
-.logro-item {
-    padding: 10px;
-    border-radius: 12px;
-    background: #f9f9f9;
-    font-size: 0.65rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    opacity: 0.4;
-    filter: grayscale(1);
-    transition: 0.3s;
-}
+        .logro-item {
+            padding: 10px;
+            border-radius: 12px;
+            background: #f9f9f9;
+            font-size: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.4;
+            filter: grayscale(1);
+            transition: 0.3s;
+        }
 
-.logro-item.desbloqueado {
-    opacity: 1;
-    filter: grayscale(0);
-    background: var(--rosa);
-    color: var(--oscuro-suave);
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
+        .logro-item.desbloqueado {
+            opacity: 1;
+            filter: grayscale(0);
+            background: var(--rosa);
+            color: var(--oscuro-suave);
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
 
-.logro-icon { 
-    font-size: 1.5rem; 
-    margin-bottom: 5px; 
-}
+        .logro-icon { 
+            font-size: 1.5rem; 
+            margin-bottom: 5px; 
+        }
 
-#modalRacha .modal-content {
-    max-width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
+        #modalRacha .modal-content {
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -153,13 +151,13 @@
                     <button class="btn-img" onclick="cambiarNombreSala()" style="font-size: 0.6rem; padding: 4px 8px;">Nombre</button>
                     <button class="btn-img" onclick="document.getElementById('fondoInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--azul-claro);">Fondo</button>
                     
-                    <input type="color" id="colorChatInput" style="display: none;" onchange="cambiarColorBurbuja(this.value)">
-                    <button class="btn-img" onclick="document.getElementById('colorChatInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: #FFD1DC; color: #36454F;">Color</button>
+                    <input type="color" id="miColorPersonalInput" style="display: none;" onchange="guardarMiColor(this.value)">
+                    <button class="btn-img" onclick="document.getElementById('miColorPersonalInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: #FFD1DC; color: #36454F;">Mi Burbuja</button>
                     
                     <button class="btn-img" onclick="abrirModalRacha()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--lavanda);">Racha</button>
                     <button class="btn-img" onclick="location.reload()" style="font-size: 0.6rem; padding: 4px 8px;">Salir</button>
                     
-                    <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="cambiarFondoSala(this)">
+                    <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
                 </div>
 
@@ -173,19 +171,17 @@
             </div>
         </main>
 
-<aside class="sidebar">
-    <div class="card profile-card">
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
-        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyLover</h3>
-        
-        <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
-        
-        <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">Buscando momentos zen y mucho café. ✨</p>
-        <br>
-        <button class="btn-main" onclick="abrirModal()">Editar Perfil</button>
-    </div>
+        <aside class="sidebar">
+            <div class="card profile-card">
+                <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
+                <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyUser</h3>
+                <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
+                <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">✨</p>
+                <br>
+                <button class="btn-main" onclick="location.href='perfil.html'">Editar Perfil</button>
+            </div>
         </aside>
-</div>
+    </div>
 
     <nav class="bottom-nav">
         <button class="nav-item" onclick="location.href='perfil.html'"><span>👤</span><small>Perfil</small></button>
@@ -195,40 +191,31 @@
         <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
     </nav>
 
-<div id="modalVistaPerfil" class="modal">
-    <div class="modal-content">
-        <img src="" id="vistaImg" class="avatar-lg">
-        <h2 id="vistaNombre" style="margin-top:10px;"></h2>
-        <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores 🌸</p>
-        <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
-        
-        <button id="btnSeguir" class="btn-main" onclick="seguirUsuario(document.getElementById('vistaNombre').textContent)">
-            Seguir 🌸
-        </button>
-        
-        <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
-    </div>
-</div>
-
-<div id="modalRacha" class="modal">
-    <div class="modal-content">
-        <h3 style="color: var(--morado-deep);">Estado de la Racha 🔥</h3>
-        <div id="rachaInfo" style="margin: 15px 0;">
-            <p id="rachaDias" style="font-size: 2rem; font-weight: bold;">0 días</p>
-            <p id="rachaEstadoText" style="font-size: 0.85rem; color: gray;">La racha no está activa.</p>
+    <div id="modalVistaPerfil" class="modal">
+        <div class="modal-content">
+            <img src="" id="vistaImg" class="avatar-lg">
+            <h2 id="vistaNombre" style="margin-top:10px;"></h2>
+            <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores 🌸</p>
+            <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
+            <button id="btnSeguir" class="btn-main" onclick="toggleSeguir()">Seguir 🌸</button>
+            <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
         </div>
-        
-        <button id="btnSolicitudRacha" class="btn-main" onclick="enviarSolicitudRacha()">Activar Racha 🌸</button>
-        
-        <hr style="margin: 20px 0; border: 1px solid var(--rosa);">
-        
-        <h4 style="color: var(--morado-deep);">Logros de Racha 🏆</h4>
-        <div id="logrosContenedor" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
-            </div>
-        
-        <button class="btn-img" onclick="cerrarModalRacha()" style="margin-top: 20px;">Cerrar</button>
     </div>
-</div>
+
+    <div id="modalRacha" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--morado-deep);">Estado de la Racha 🔥</h3>
+            <div id="rachaInfo" style="margin: 15px 0;">
+                <p id="rachaDias" style="font-size: 2rem; font-weight: bold;">0 días</p>
+                <p id="rachaEstadoText" style="font-size: 0.85rem; color: gray;">La racha no está activa.</p>
+            </div>
+            <button id="btnSolicitudRacha" class="btn-main" onclick="enviarSolicitudRacha()">Activar Racha 🌸</button>
+            <hr style="margin: 20px 0; border: 1px solid var(--rosa);">
+            <h4 style="color: var(--morado-deep);">Logros de Racha 🏆</h4>
+            <div id="logrosContenedor" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;"></div>
+            <button class="btn-img" onclick="cerrarModalRacha()" style="margin-top: 20px;">Cerrar</button>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
@@ -252,250 +239,189 @@
         let cargaInicialChat = false;
         const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
         const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
+        let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || ""; 
 
-        function mostrarNotificacion(usuario, mensaje) {
-            if (usuario === miNombre) return;
-            const toast = document.createElement('div');
-            toast.className = 'notification-toast';
-            const miniMsg = mensaje ? mensaje.substring(0, 30) : "Envió una imagen 📷";
-            toast.innerHTML = `<strong>${usuario}:</strong> ${miniMsg}...`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
-        }
+        // --- INICIALIZACIÓN SIDEBAR ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('nav-username').textContent = miNombre;
+            document.getElementById('nombrePerfil').textContent = miNombre;
+            document.getElementById('imgNav').src = miAvatar;
+            document.getElementById('imgPerfil').src = miAvatar;
+            document.getElementById('bioPerfil').textContent = localStorage.getItem('kofy_bio') || "✨";
+            database.ref(`seguidores/${miNombre}`).on('value', (s) => {
+                document.getElementById('misSeguidoresCount').textContent = `${s.numChildren()} seguidores`;
+            });
+        });
 
-        function formatearFecha(timestamp) {
-            if (!timestamp) return "";
-            const fecha = new Date(timestamp);
-            const opciones = { hour: '2-digit', minute: '2-digit' };
-            // Si el mensaje no es de hoy, añadimos la fecha corta
-            if (fecha.toDateString() !== new Date().toDateString()) {
-                return fecha.toLocaleDateString([], {day:'2-digit', month:'2-digit'}) + " " + fecha.toLocaleTimeString([], opciones);
-            }
-            return fecha.toLocaleTimeString([], opciones);
+        function guardarMiColor(color) {
+            miColorBurbuja = color;
+            localStorage.setItem('kofy_color_burbuja', color);
         }
 
         function dibujarMensaje(id, datos) {
             const contenedor = document.getElementById('mensajesPrivados');
             if (document.getElementById(`msg-${id}`)) return;
-
             const msgDiv = document.createElement('div');
             const esMio = datos.usuario === miNombre;
             msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
             msgDiv.id = `msg-${id}`;
-            
-            const horaLeible = formatearFecha(datos.fecha);
-            
+            if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
             msgDiv.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
                     <div style="display: flex; align-items: center; gap: 5px;">
-                        <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
-                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer; color: var(--morado-deep);" 
-      onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">
-    ${esMio ? 'Tú' : datos.usuario}
-</span>
+                        <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
                     </div>
                     ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
                 </div>
                 ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
-                <span class="msg-time">${horaLeible}</span>
+                <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
-            
             contenedor.appendChild(msgDiv);
             contenedor.scrollTop = contenedor.scrollHeight;
         }
 
-        // --- CONFIGURACIÓN DE RACHAS ---
-const hitosRacha = [1, 3, 5, 7, 14, 30, 45, 60, 90, 120, 240, 365];
+        // --- LÓGICA DE SEGUIR ---
+        function verPerfil(nombre, avatar, bio) {
+            const modal = document.getElementById('modalVistaPerfil');
+            const btn = document.getElementById('btnSeguir');
+            document.getElementById('vistaNombre').textContent = nombre;
+            document.getElementById('vistaImg').src = avatar;
+            document.getElementById('vistaBio').textContent = bio || "✨";
+            btn.style.display = (nombre === miNombre) ? "none" : "block";
 
-function abrirModalRacha() {
-    document.getElementById('modalRacha').style.display = 'flex';
-    actualizarVistaRacha();
-}
-
-function cerrarModalRacha() {
-    document.getElementById('modalRacha').style.display = 'none';
-}
-
-function enviarSolicitudRacha() {
-    const userKey = miNombre.replace(/[.#$[\]]/g, "_");
-    database.ref(`chats_privados/${salaActual}/racha/solicitudes/${userKey}`).set(true);
-    alert("¡Solicitud enviada! Al menos 2 personas deben aceptar para comenzar. 🌸");
-}
-
-function actualizarVistaRacha() {
-    database.ref(`chats_privados/${salaActual}/racha`).on('value', (snap) => {
-        const racha = snap.val() || {};
-        const solicitudes = racha.solicitudes || {};
-        const countAceptados = Object.keys(solicitudes).length;
-        const activa = racha.activa || false;
-        const dias = racha.dias || 0;
-
-        const rachaDiasText = document.getElementById('rachaDias');
-        const rachaEstadoText = document.getElementById('rachaEstadoText');
-        const btn = document.getElementById('btnSolicitudRacha');
-
-        if (activa) {
-            rachaDiasText.textContent = `${dias} días 🔥`;
-            rachaEstadoText.textContent = "¡Racha activa! No dejen de hablar. ✨";
-            btn.style.display = "none";
-        } else {
-            rachaDiasText.textContent = "0 días";
-            rachaEstadoText.textContent = `Aceptado por ${countAceptados}/2 personas necesarias.`;
-            btn.style.display = "block";
-            
-            if (countAceptados >= 2) {
-                database.ref(`chats_privados/${salaActual}/racha`).update({
-                    activa: true,
-                    dias: 1,
-                    ultimaFecha: Date.now()
-                });
-            }
+            database.ref(`seguidores/${nombre}`).on('value', (s) => {
+                const segs = s.val() || {};
+                document.getElementById('countSeguidores').textContent = `${Object.keys(segs).length} seguidores 🌸`;
+                const miID = miNombre.replace(/[.#$[\]]/g, "_");
+                btn.textContent = segs[miID] ? "Siguiendo ✓" : "Seguir 🌸";
+                btn.className = segs[miID] ? "btn-img" : "btn-main";
+            });
+            modal.style.display = 'flex';
         }
-        dibujarLogros(dias);
-    });
-}
 
-function dibujarLogros(diasActuales) {
-    const contenedor = document.getElementById('logrosContenedor');
-    contenedor.innerHTML = "";
-    
-    hitosRacha.forEach(dia => {
-        const desbloqueado = diasActuales >= dia;
-        let icono = desbloqueado ? '🏆' : '🔒';
-        if (dia === 1 && desbloqueado) icono = '🌱'; // Icono especial primer día
-        
-        const div = document.createElement('div');
-        div.className = `logro-item ${desbloqueado ? 'desbloqueado' : ''}`;
-        div.innerHTML = `
-            <span class="logro-icon">${icono}</span>
-            <strong>${dia === 1 ? 'Primer Día' : dia + ' Días'}</strong>
-        `;
-        contenedor.appendChild(div);
-    });
-}
+        function toggleSeguir() {
+            const nombreDestino = document.getElementById('vistaNombre').textContent;
+            const miID = miNombre.replace(/[.#$[\]]/g, "_");
+            const ref = database.ref(`seguidores/${nombreDestino}/${miID}`);
+            ref.get().then(snap => {
+                if(snap.exists()) ref.remove(); else ref.set(true);
+            });
+        }
 
-function enviarMensajeSala() {
-    const texto = document.getElementById('textoPrivado').value.trim();
-    const miBio = localStorage.getItem('kofy_bio') || "";
-    if (!texto) return;
+        // --- RACHAS ---
+        const hitosRacha = [1, 3, 5, 7, 14, 30, 45, 60, 90, 120, 240, 365];
 
-    const rachaRef = database.ref(`chats_privados/${salaActual}/racha`);
-    rachaRef.once('value').then((snap) => {
-        const data = snap.val();
-        if (data && data.activa) {
-            const hoy = new Date().toDateString();
-            const ultimaVez = new Date(data.ultimaFecha).toDateString();
-            
-            if (hoy !== ultimaVez) {
-                const ayer = new Date();
-                ayer.setDate(ayer.getDate() - 1);
-                
-                if (ultimaVez === ayer.toDateString()) {
-                    rachaRef.update({ dias: data.dias + 1, ultimaFecha: Date.now() });
-                } else if (new Date(data.ultimaFecha) < ayer) {
-                    rachaRef.update({ dias: 1, ultimaFecha: Date.now() });
+        function abrirModalRacha() {
+            document.getElementById('modalRacha').style.display = 'flex';
+            actualizarVistaRacha();
+        }
+
+        function enviarSolicitudRacha() {
+            const miID = miNombre.replace(/[.#$[\]]/g, "_");
+            database.ref(`chats_privados/${salaActual}/racha/solicitudes/${miID}`).set(true);
+        }
+
+        function actualizarVistaRacha() {
+            database.ref(`chats_privados/${salaActual}/racha`).on('value', (snap) => {
+                const racha = snap.val() || {};
+                const solicitudes = racha.solicitudes || {};
+                const countAceptados = Object.keys(solicitudes).length;
+                const activa = racha.activa || false;
+                const dias = racha.dias || 0;
+
+                document.getElementById('rachaDias').textContent = `${dias} días 🔥`;
+                const btn = document.getElementById('btnSolicitudRacha');
+                const estadoText = document.getElementById('rachaEstadoText');
+
+                if (activa) {
+                    estadoText.textContent = "¡Racha activa! ✨";
+                    btn.style.display = "none";
+                } else {
+                    estadoText.textContent = `Aceptado por ${countAceptados}/2 personas.`;
+                    btn.style.display = "block";
+                    if (countAceptados >= 2) {
+                        database.ref(`chats_privados/${salaActual}/racha`).update({ activa: true, dias: 1, ultimaFecha: Date.now() });
+                    }
                 }
+                dibujarLogros(dias);
+            });
+        }
+
+        function dibujarLogros(dias) {
+            const cont = document.getElementById('logrosContenedor');
+            cont.innerHTML = "";
+            hitosRacha.forEach(hito => {
+                const desc = dias >= hito;
+                const div = document.createElement('div');
+                div.className = `logro-item ${desc ? 'desbloqueado' : ''}`;
+                div.innerHTML = `<span class="logro-icon">${desc ? '🏆' : '🔒'}</span><strong>${hito} d</strong>`;
+                cont.appendChild(div);
+            });
+        }
+
+        // --- FONDO AJUSTADO ---
+        function ajustarFondoSala(input) {
+            if (input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 1280; canvas.height = 720;
+                        const ratio = Math.max(canvas.width / img.width, canvas.height / img.height);
+                        const x = (canvas.width - img.width * ratio) / 2;
+                        const y = (canvas.height - img.height * ratio) / 2;
+                        ctx.drawImage(img, x, y, img.width * ratio, img.height * ratio);
+                        database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                };
+                reader.readAsDataURL(input.files[0]);
             }
         }
-    });
-
-    database.ref(`chats_privados/${salaActual}/mensajes`).push({
-        usuario: miNombre,
-        avatar: miAvatar,
-        biografia: miBio,
-        mensaje: texto,
-        fecha: Date.now()
-    });
-    document.getElementById('textoPrivado').value = "";
-}
 
         function unirseASala() {
             const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
-            if (!codigo) return alert("¡Escribe un código! 🌸");
+            if (!codigo) return;
             salaActual = codigo;
             document.getElementById('selector-sala').style.display = "none";
             document.getElementById('sala-info').style.display = "block";
-
-            database.ref(`chats_privados/${salaActual}/configuracion`).on('value', (snap) => {
+            
+            database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
                 const config = snap.val() || {};
                 document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
                 if (config.fondo) document.getElementById('mensajesPrivados').style.backgroundImage = `url(${config.fondo})`;
-                
-                // APLICAR COLOR DE BURBUJA DINÁMICO
-                if (config.colorBurbuja) {
-                    document.documentElement.style.setProperty('--mine-color', config.colorBurbuja);
-                } else {
-                    document.documentElement.style.setProperty('--mine-color', 'var(--lavanda)');
-                }
             });
 
-            const refMensajes = database.ref(`chats_privados/${salaActual}/mensajes`);
-            refMensajes.once('value', () => { cargaInicialChat = true; });
-            refMensajes.on('child_added', (snapshot) => {
-                const datos = snapshot.val();
-                dibujarMensaje(snapshot.key, datos);
-                if (cargaInicialChat) mostrarNotificacion(datos.usuario, datos.mensaje);
-            });
-            refMensajes.on('child_removed', (snapshot) => {
-                const el = document.getElementById(`msg-${snapshot.key}`);
+            database.ref(`chats_privados/${salaActual}/mensajes`).on('child_added', snap => dibujarMensaje(snap.key, snap.val()));
+            database.ref(`chats_privados/${salaActual}/mensajes`).on('child_removed', snap => {
+                const el = document.getElementById(`msg-${snap.key}`);
                 if (el) el.remove();
             });
         }
-        
-function verPerfil(nombre, avatar, bio) {
-    const modal = document.getElementById('modalVistaPerfil');
-    if (!modal) return;
 
-    document.getElementById('vistaNombre').textContent = nombre;
-    document.getElementById('vistaImg').src = avatar || 'https://i.pravatar.cc/150?u=default';
-    document.getElementById('vistaBio').textContent = bio || "Sin biografía aún. ✨";
-    
-    const btnSeguir = document.getElementById('btnSeguir');
-    if (nombre === miNombre) {
-        if (btnSeguir) btnSeguir.style.display = "none";
-    } else {
-        if (btnSeguir) {
-            btnSeguir.style.display = "block";
-            database.ref(`seguidores/${nombre}/${miNombre}`).once('value', (s) => actualizarBotonSeguir(s.exists()));
-        }
-    }
-
-    database.ref(`seguidores/${nombre}`).on('value', (s) => {
-        const count = document.getElementById('countSeguidores');
-        if (count) count.textContent = `${s.numChildren()} seguidores 🌸`;
-    });
-    modal.style.display = 'flex';
-}
-
-function seguirUsuario(nombreSeguido) {
-    if (miNombre === nombreSeguido) return;
-    const ref = database.ref(`seguidores/${nombreSeguido}/${miNombre}`);
-    ref.get().then((s) => {
-        s.exists() ? ref.remove() : ref.set(true);
-        actualizarBotonSeguir(!s.exists());
-    });
-}
-
-function actualizarBotonSeguir(siguiendo) {
-    const btn = document.getElementById('btnSeguir');
-    if (btn) btn.textContent = siguiendo ? "Siguiendo ✨" : "Seguir 🌸";
-}
-
-function cerrarVista() {
-    document.getElementById('modalVistaPerfil').style.display = 'none';
-}
-
-        function cambiarColorBurbuja(color) {
-            if (!salaActual) return;
-            database.ref(`chats_privados/${salaActual}/configuracion/colorBurbuja`).set(color);
+        function enviarMensajeSala() {
+            const texto = document.getElementById('textoPrivado').value.trim();
+            if (!texto) return;
+            database.ref(`chats_privados/${salaActual}/mensajes`).push({
+                usuario: miNombre, avatar: miAvatar, mensaje: texto, fecha: Date.now(), colorBurbuja: miColorBurbuja, biografia: localStorage.getItem('kofy_bio') || ""
+            });
+            document.getElementById('textoPrivado').value = "";
         }
 
+        function cerrarVista() { document.getElementById('modalVistaPerfil').style.display = 'none'; }
+        function cerrarModalRacha() { document.getElementById('modalRacha').style.display = 'none'; }
         function borrarMensajePrivado(id) { if(confirm("¿Borrar?")) database.ref(`chats_privados/${salaActual}/mensajes/${id}`).remove(); }
-        function cambiarFondoSala(input) { if (input.files[0]) { const reader = new FileReader(); reader.onload = (e) => database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(e.target.result); reader.readAsDataURL(input.files[0]); } }
-        function cambiarNombreSala() { const n = prompt("Nombre sala:"); if(n) database.ref(`chats_privados/${salaActual}/configuracion/nombrePersonalizado`).set(n); }
-        function prepararImagenChat(input) { if (input.files[0]) { const reader = new FileReader(); reader.onload = (e) => { if(confirm("¿Enviar imagen?")) comprimirYEnviarImagen(e.target.result); }; reader.readAsDataURL(input.files[0]); } }
-        function comprimirYEnviarImagen(base64) { const img = new Image(); img.src = base64; img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); canvas.width = 500; canvas.height = img.height * (500 / img.width); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); database.ref(`chats_privados/${salaActual}/mensajes`).push({ usuario: miNombre, avatar: miAvatar, mensaje: "", imagen: canvas.toDataURL('image/jpeg', 0.6), fecha: Date.now() }); }; }
+        function cambiarNombreSala() { const n = prompt("Nombre:"); if(n) database.ref(`chats_privados/${salaActual}/configuracion/nombrePersonalizado`).set(n); }
+        function prepararImagenChat(input) { if (input.files[0]) { const reader = new FileReader(); reader.onload = (e) => comprimirYEnviarImagen(e.target.result); reader.readAsDataURL(input.files[0]); } }
+        function comprimirYEnviarImagen(base64) {
+            database.ref(`chats_privados/${salaActual}/mensajes`).push({
+                usuario: miNombre, avatar: miAvatar, mensaje: "", imagen: base64, fecha: Date.now(), colorBurbuja: miColorBurbuja
+            });
+        }
     </script>
 </body>
 </html>
