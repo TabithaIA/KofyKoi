@@ -177,6 +177,7 @@
                 <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyUser</h3>
                 <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
                 <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">✨</p>
+                <p id="miBateria" style="font-size: 0.8rem; color: #4CAF50; font-weight: bold; margin-top: 5px;"></p>
                 <br>
                 <button class="btn-main" onclick="location.href='perfil.html'">Editar Perfil</button>
             </div>
@@ -197,6 +198,15 @@
             <h2 id="vistaNombre" style="margin-top:10px;"></h2>
             <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores 🌸</p>
             <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
+            
+            <p id="vistaEstado" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                <span id="puntoEstado" style="width: 10px; height: 10px; border-radius: 50%; background: gray; display: inline-block;"></span>
+                <span id="textoEstado">Cargando estado...</span>
+            </p>
+            <p id="vistaBateria" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;"></p>
+            <p id="vistaPlataforma" style="font-size: 0.75rem; color: #555; margin-bottom: 5px;"></p>
+            <p id="vistaClima" style="font-size: 0.75rem; color: #555; margin-bottom: 15px;"></p>
+
             <button id="btnSeguir" class="btn-main" onclick="toggleSeguir()">Seguir 🌸</button>
             <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
         </div>
@@ -251,7 +261,60 @@
             database.ref(`seguidores/${miNombre}`).on('value', (s) => {
                 document.getElementById('misSeguidoresCount').textContent = `${s.numChildren()} seguidores`;
             });
+            monitorearBateria();
+            enviarMisDatosExtra();
         });
+
+        // --- LÓGICA DE BATERÍA ---
+        function monitorearBateria() {
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(battery => {
+                    const actualizarYEnviar = () => {
+                        const nivel = Math.round(battery.level * 100);
+                        const estaCargando = battery.charging ? " (⚡ Cargando)" : "";
+                        const textoBateria = `🔋 Batería: ${nivel}%${estaCargando}`;
+                        document.getElementById('miBateria').textContent = textoBateria;
+                        const miID = miNombre.replace(/[.#$[\]]/g, "_");
+                        database.ref(`usuarios_bateria/${miID}`).set({
+                            nivel: nivel,
+                            cargando: battery.charging,
+                            ultimaActualizacion: Date.now()
+                        });
+                    };
+                    actualizarYEnviar();
+                    battery.addEventListener('levelchange', actualizarYEnviar);
+                    battery.addEventListener('chargingchange', actualizarYEnviar);
+                });
+            } else {
+                document.getElementById('miBateria').textContent = "🔋 Batería no disponible";
+            }
+        }
+
+        // --- LÓGICA DATOS EXTRA (CONEXIÓN, PLATAFORMA, HORA) ---
+        function enviarMisDatosExtra() {
+            const miID = miNombre.replace(/[.#$[\]]/g, "_");
+            const ua = navigator.userAgent;
+            let plataforma = "Web";
+            if (ua.includes("Android")) plataforma = "Android 📱";
+            else if (ua.includes("iPhone") || ua.includes("iPad")) plataforma = "iOS 🍎";
+            else if (ua.includes("Windows")) plataforma = "Windows 💻";
+            else if (ua.includes("Mac")) plataforma = "Mac 🖥️";
+
+            const userRef = database.ref(`usuarios_extra/${miID}`);
+            const actualizarDatos = () => {
+                const horaLocal = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                userRef.update({
+                    plataforma: plataforma,
+                    hora: horaLocal,
+                    online: true,
+                    ultimaVez: Date.now()
+                });
+            };
+
+            actualizarDatos();
+            setInterval(actualizarDatos, 60000); // Actualiza la hora cada minuto
+            userRef.onDisconnect().update({ online: false, ultimaVez: Date.now() });
+        }
 
         function guardarMiColor(color) {
             miColorBurbuja = color;
@@ -282,7 +345,7 @@
             contenedor.scrollTop = contenedor.scrollHeight;
         }
 
-        // --- LÓGICA DE SEGUIR ---
+        // --- LÓGICA DE SEGUIR Y VER PERFIL ---
         function verPerfil(nombre, avatar, bio) {
             const modal = document.getElementById('modalVistaPerfil');
             const btn = document.getElementById('btnSeguir');
@@ -290,6 +353,48 @@
             document.getElementById('vistaImg').src = avatar;
             document.getElementById('vistaBio').textContent = bio || "✨";
             btn.style.display = (nombre === miNombre) ? "none" : "block";
+
+            const userID = nombre.replace(/[.#$[\]]/g, "_");
+            
+            // Mostrar Batería de otros
+            const vistaBateria = document.getElementById('vistaBateria');
+            vistaBateria.textContent = "🔋 Buscando batería...";
+            database.ref(`usuarios_bateria/${userID}`).on('value', (snap) => {
+                const bat = snap.val();
+                if (bat) {
+                    const rayo = bat.cargando ? " ⚡" : "";
+                    vistaBateria.textContent = `🔋 Batería: ${bat.nivel}%${rayo}`;
+                    vistaBateria.style.color = bat.nivel < 20 ? "#ff4d4d" : "#4CAF50";
+                } else {
+                    vistaBateria.textContent = "🔋 Batería: Desconocida";
+                    vistaBateria.style.color = "gray";
+                }
+            });
+
+            // Mostrar Datos Extra de otros
+            const vistaEstado = document.getElementById('textoEstado');
+            const puntoEstado = document.getElementById('puntoEstado');
+            const vistaPlat = document.getElementById('vistaPlataforma');
+            const vistaClima = document.getElementById('vistaClima');
+
+            database.ref(`usuarios_extra/${userID}`).on('value', (snap) => {
+                const data = snap.val();
+                if (data) {
+                    if (data.online) {
+                        vistaEstado.textContent = "En línea ahora";
+                        puntoEstado.style.background = "#4CAF50";
+                    } else {
+                        const fecha = new Date(data.ultimaVez).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        vistaEstado.textContent = `Última vez: ${fecha}`;
+                        puntoEstado.style.background = "gray";
+                    }
+                    vistaPlat.textContent = `💻 Dispositivo: ${data.plataforma}`;
+                    vistaClima.textContent = `🕒 Hora local: ${data.hora}`;
+                } else {
+                    vistaEstado.textContent = "Estado desconocido";
+                    puntoEstado.style.background = "lightgray";
+                }
+            });
 
             database.ref(`seguidores/${nombre}`).on('value', (s) => {
                 const segs = s.val() || {};
