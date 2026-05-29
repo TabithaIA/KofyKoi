@@ -528,6 +528,143 @@
             });
         }
     </script>
+
+    <script>
+    let player = null;
+    let apiLista = false;
+    let intervaloSync = null;
+
+    // 1. Carga de API de YouTube
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    function onYouTubeIframeAPIReady() { apiLista = true; }
+
+    // 2. Modificamos tu unirseASala para que sea infalible
+    const originalUnirseASala = unirseASala;
+    unirseASala = function() {
+        originalUnirseASala();
+        
+        // Usamos un pequeño delay para asegurar que el HTML de la sala ya cargó
+        setTimeout(() => {
+            if (salaActual) {
+                const inputArea = document.querySelector('.chat-input-area');
+                
+                if (inputArea && !document.getElementById('btnAbrirCine')) {
+                    // Creamos el contenedor para que el botón aparezca ARRIBA de la barra
+                    const estructuraCine = document.createElement('div');
+                    estructuraCine.style = "display: flex; flex-direction: column; width: 100%; gap: 5px;";
+                    inputArea.parentNode.insertBefore(estructuraCine, inputArea);
+
+                    const btnCine = document.createElement('button');
+                    btnCine.id = 'btnAbrirCine';
+                    btnCine.className = 'btn-main'; 
+                    btnCine.style = "width: 100%; margin: 0; padding: 8px; font-size: 0.8rem; background: var(--morado-deep);";
+                    btnCine.innerHTML = "🎬 Abrir Sala de Cine / Video";
+                    btnCine.onclick = toggleCine;
+                    
+                    estructuraCine.appendChild(btnCine);
+                    estructuraCine.appendChild(inputArea);
+                }
+
+                // Escuchar Firebase para sincronización en tiempo real
+                database.ref(`chats_privados/${salaActual}/cine`).on('value', (snap) => {
+                    const data = snap.val();
+                    if (data && data.url) {
+                        actualizarCine(data);
+                    } else {
+                        const panel = document.getElementById('cine-kofy');
+                        if (panel) panel.style.display = 'none';
+                        if (player) player.stopVideo();
+                    }
+                });
+            }
+        }, 500);
+    };
+
+    function toggleCine() {
+        const panel = document.getElementById('cine-kofy');
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        } else {
+            actualizarCine({url: null}); // Crea el panel si no existe
+        }
+    }
+
+    function actualizarCine(data) {
+        let cinePanel = document.getElementById('cine-kofy');
+        if (!cinePanel) {
+            cinePanel = document.createElement('div');
+            cinePanel.id = 'cine-kofy';
+            cinePanel.className = 'card';
+            cinePanel.style = "margin-bottom:10px; border: 2px solid var(--lavanda); display: block;";
+            cinePanel.innerHTML = `
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h4 style="color:var(--morado-deep); margin:0; font-size:0.8rem;">🎬 Cine Compartido</h4>
+                    <button onclick="borrarVideo()" style="background:#ff4d4d; border:none; border-radius:50%; color:white; width:22px; height:22px; cursor:pointer;">✕</button>
+                </div>
+                <div id="reproductor-yt" style="border-radius:10px; overflow:hidden; background:#000; height:200px;"></div>
+                <div style="display:flex; gap:5px; margin-top:8px;">
+                    <input type="text" id="videoUrl" placeholder="Link de YouTube..." style="flex:1; font-size:0.7rem; padding:5px; border-radius:8px; border:1px solid var(--rosa);">
+                    <button class="btn-main" onclick="subirVideo()" style="padding:5px 10px; font-size:0.7rem;">Cargar</button>
+                </div>
+            `;
+            const salaInfo = document.getElementById('sala-info');
+            salaInfo.insertBefore(cinePanel, document.getElementById('mensajesPrivados'));
+        }
+
+        cinePanel.style.display = 'block';
+
+        if (data.url && apiLista) {
+            const vID = extraerID(data.url);
+            if (!player) {
+                player = new YT.Player('reproductor-yt', {
+                    height: '200', width: '100%', videoId: vID,
+                    events: { 'onStateChange': manejarCambioEstado }
+                });
+            } else {
+                // Sincronizar tiempo y estado
+                if (data.estado === "pausado") player.pauseVideo();
+                else player.playVideo();
+
+                const diff = Math.abs(player.getCurrentTime() - data.segundo);
+                if (diff > 3) player.seekTo(data.segundo, true);
+                
+                if (player.getVideoData().video_id !== vID) player.loadVideoById(vID);
+            }
+        }
+    }
+
+    function manejarCambioEstado(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+            borrarVideo();
+        } else if (event.data === YT.PlayerState.PLAYING) {
+            iniciarSync();
+        } else if (event.data === YT.PlayerState.PAUSED) {
+            database.ref(`chats_privados/${salaActual}/cine/estado`).set("pausado");
+            clearInterval(intervaloSync);
+        }
+    }
+
+    function iniciarSync() {
+        database.ref(`chats_privados/${salaActual}/cine/estado`).set("reproduciendo");
+        clearInterval(intervaloSync);
+        intervaloSync = setInterval(() => {
+            if (player && player.getPlayerState() === 1) {
+                database.ref(`chats_privados/${salaActual}/cine/segundo`).set(player.getCurrentTime());
+            }
+        }, 3000);
+    }
+
+    function borrarVideo() { database.ref(`chats_privados/${salaActual}/cine`).remove(); clearInterval(intervaloSync); }
+    function extraerID(url) { return url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/user\/\S+|\/ytscreeningroom\?v=))([\w\-]{11})/)[1]; }
+    function subirVideo() { 
+        const url = document.getElementById('videoUrl').value;
+        if(url) database.ref(`chats_privados/${salaActual}/cine`).set({url: url, estado: "reproduciendo", segundo: 0});
+    }
+</script>
 </body>
 </html>
 
