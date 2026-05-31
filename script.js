@@ -251,7 +251,7 @@ function crearElementoPost(id, datos) {
             <button onclick="borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
         </div>
         <p>${datos.mensaje}</p>
-        ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
+        ${datos.imagen ? `<img src="${datos.imagen}" loading="lazy" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
         
         <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">
             Publicado el ${fechaFormateada} a las ${horaFormateada}
@@ -293,12 +293,12 @@ function publicar() {
             img.onload = function () {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const maxAncho = 800;
+                const maxAncho = 600;
                 const escala = maxAncho / img.width;
                 canvas.width = maxAncho;
                 canvas.height = img.height * escala;
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const fotoComprimida = canvas.toDataURL('image/jpeg', 0.6);
+                const fotoComprimida = canvas.toDataURL('image/jpeg', 0.5);
                 enviarPost(nombre, texto, fotoComprimida);
             };
         };
