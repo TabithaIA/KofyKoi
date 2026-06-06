@@ -581,3 +581,25 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarMasPosts();
 });
 
+// --- ESCUCHAR SI LLEGAN MENSAJES PRIVADOS NUEVOS PARA MÍ ---
+database.ref('mensajes_privados/').on('child_changed', (snapshot) => {
+    const roomId = snapshot.key;
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+
+    // Verificamos si esta sala de chat me pertenece (si mi nombre está en el ID de la sala)
+    if (roomId.includes(miNombre.replace(/[.#$[\]]/g, "_"))) {
+        
+        // Obtenemos el último mensaje que llegó a esa sala
+        database.ref(`mensajes_privados/${roomId}`).limitToLast(1).once('value', (msgSnapshot) => {
+            msgSnapshot.forEach((child) => {
+                const datos = child.val();
+                
+                // Si el mensaje NO lo envié yo, significa que me lo enviaron a mí
+                if (datos.remitente !== miNombre) {
+                    // Usamos tu función nativa para avisarle en pantalla
+                    mostrarNotificacion(`${datos.remitente} (Privado)`, datos.texto);
+                }
+            });
+        });
+    }
+});
