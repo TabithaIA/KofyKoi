@@ -221,3 +221,46 @@ body {
 .avatar-sm:active {
     transform: scale(0.9);
 }
+
+/* --- SECCIÓN DE COMENTARIOS --- */
+.comments-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--rosa);
+}
+
+.comments-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    padding-right: 5px;
+}
+
+.comment-item {
+    background: var(--fondo);
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    animation: aparecerSuave 0.3s ease forwards;
+}
+
+.comment-item strong {
+    color: var(--morado-deep);
+}
+
+.comment-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.input-comment {
+    flex: 1;
+    border: 1px solid var(--azul-claro);
+    border-radius: 15px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+

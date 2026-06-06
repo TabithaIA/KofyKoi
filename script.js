@@ -230,16 +230,40 @@ function cargarMasPosts() {
 
 // 3. Generador de HTML de Post (Mantenida fuera para reusabilidad)
 function crearElementoPost(id, datos) {
-    // Convertimos los milisegundos a un objeto Date
     const fecha = new Date(datos.fecha);
-    
-    // Formateamos la fecha (ej: 23/05/2026) y la hora (ej: 14:30)
     const fechaFormateada = fecha.toLocaleDateString('es-AR');
     const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
 
     const postDiv = document.createElement('div');
     postDiv.className = 'card kofy-post';
     postDiv.dataset.id = id;
+    
+    // Construimos la lista de comentarios existentes
+    let comentariosHTML = '';
+    if (datos.comentarios) {
+        Object.keys(datos.comentarios).forEach(comentarioId => {
+            const c = datos.comentarios[comentarioId];
+            
+            // El botón de borrar sale si el comentario es tuyo O si tú eres el dueño del post principal
+            const puedeBorrar = (c.usuario === miNombre || datos.usuario === miNombre);
+            const botonBorrarC = puedeBorrar 
+                ? `<button onclick="borrarComentario('${id}', '${comentarioId}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem; margin-left:auto;">🗑️</button>` 
+                : '';
+
+            comentariosHTML += `
+                <div class="comment-item" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <div>
+                        <strong onclick="verPerfil('${c.usuario}', '', '')" style="cursor:pointer; color:var(--morado-deep)">
+                            ${c.usuario}
+                        </strong>: ${c.mensaje}
+                    </div>
+                    ${botonBorrarC}
+                </div>
+            `;
+        });
+    }
+
     postDiv.innerHTML = `
         <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -261,8 +285,36 @@ function crearElementoPost(id, datos) {
             <span onclick="enviarLike('${id}')" style="cursor:pointer">❤️ <span id="likes-${id}">${datos.likes || 0}</span> Me gusta</span>
             <button class="btn-report" onclick="reportarPost('${id}', '${datos.usuario}', '${datos.mensaje}')">Reportar 🚩</button>
         </div>
+
+        <div class="comments-section">
+            <div class="comments-list" id="comments-list-${id}">
+                ${comentariosHTML}
+            </div>
+            <div class="comment-form">
+                <input type="text" class="input-comment" id="input-comment-${id}" placeholder="Escribe un comentario zen...">
+                <button class="btn-main" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 12px;" onclick="publicarComentario('${id}')">Enviar</button>
+            </div>
+        </div>
     `;
     return postDiv;
+}
+
+function publicarComentario(idPost) {
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    const input = document.getElementById(`input-comment-${idPost}`);
+    if (!input) return;
+    
+    const textoComentario = input.value.trim();
+    if (!textoComentario) return;
+
+    // Guardamos el comentario dentro de la estructura del post en Firebase
+    database.ref(`posts/${idPost}/comentarios`).push({
+        usuario: miNombre,
+        mensaje: textoComentario,
+        fecha: Date.now()
+    }).then(() => {
+        input.value = ""; // Limpiamos el input
+    }).catch(err => console.error("Error al comentar:", err));
 }
 
 // --- DETECTAR SCROLL ---
@@ -340,9 +392,50 @@ function enviarLike(idPost) {
     });
 }
 
+// Escucha cambios en los posts (por ejemplo, cuando alguien añade un comentario nuevo)
 database.ref('posts/').on('child_changed', (snapshot) => {
-    const likesSpan = document.getElementById(`likes-${snapshot.key}`);
-    if (likesSpan) likesSpan.innerText = snapshot.val().likes || 0;
+    const idPost = snapshot.key;
+    const datos = snapshot.val();
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    
+    // 1. Actualizar Likes
+    const likesSpan = document.getElementById(`likes-${idPost}`);
+    if (likesSpan) likesSpan.innerText = datos.likes || 0;
+
+    // 2. Actualizar Comentarios en tiempo real con opción de borrado y enlace al perfil
+    const listaComentarios = document.getElementById(`comments-list-${idPost}`);
+    if (listaComentarios) {
+        listaComentarios.innerHTML = ""; // Limpiamos la lista vieja
+        
+        if (datos.comentarios) {
+            Object.keys(datos.comentarios).forEach(comentarioId => {
+                const c = datos.comentarios[comentarioId];
+                
+                const puedeBorrar = (c.usuario === miNombre || datos.usuario === miNombre);
+                const botonBorrarC = puedeBorrar 
+                    ? `<button onclick="borrarComentario('${idPost}', '${comentarioId}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem; margin-left:auto;">🗑️</button>` 
+                    : '';
+
+                const item = document.createElement('div');
+                item.className = 'comment-item';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.justifyContent = 'space-between';
+                item.style.gap = '10px';
+                
+                item.innerHTML = `
+                    <div>
+                        <strong onclick="verPerfil('${c.usuario}', '', '')" style="cursor:pointer; color:var(--morado-deep)">
+                            ${c.usuario}
+                        </strong>: ${c.mensaje}
+                    </div>
+                    ${botonBorrarC}
+                `;
+                listaComentarios.appendChild(item);
+            });
+            listaComentarios.scrollTop = listaComentarios.scrollHeight;
+        }
+    }
 });
 
 function borrarPost(id) {
@@ -355,6 +448,14 @@ database.ref('posts/').on('child_removed', (snapshot) => {
     const el = document.querySelector(`[data-id="${snapshot.key}"]`);
     if (el) el.remove();
 });
+
+function borrarComentario(idPost, idComentario) {
+    if (confirm("¿Seguro que quieres eliminar este comentario? 🌸")) {
+        database.ref(`posts/${idPost}/comentarios/${idComentario}`).remove()
+            .then(() => console.log("Comentario eliminado con éxito"))
+            .catch(err => console.error("Error al eliminar comentario:", err));
+    }
+}
 
 function reportarPost(idPost, usuario, mensaje) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
