@@ -471,6 +471,7 @@ function reportarPost(idPost, usuario, mensaje) {
 }
 
 // --- VISTA PERFIL Y SEGUIDORES ---
+// --- MODIFICACIÓN EN VISTA PERFIL (script.js) ---
 function verPerfil(nombre, avatar, bio) {
     const modal = document.getElementById('modalVistaPerfil');
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -481,12 +482,20 @@ function verPerfil(nombre, avatar, bio) {
     document.getElementById('vistaBio').textContent = bio || "Sin biografía aún. ✨";
     
     const btnSeguir = document.getElementById('btnSeguir');
+    const btnChatear = document.getElementById('btnChatear'); // <--- Capturamos el nuevo botón
+
     if (nombre === miNombre) {
         if (btnSeguir) btnSeguir.style.display = "none";
+        if (btnChatear) btnChatear.style.display = "none"; // No podés chatear con vos mismo
     } else {
         if (btnSeguir) {
             btnSeguir.style.display = "block";
             database.ref(`seguidores/${nombre}/${miNombre}`).once('value', (s) => actualizarBotonSeguir(s.exists()));
+        }
+        if (btnChatear) {
+            btnChatear.style.display = "block";
+            // Al hacer clic, genera la sala y redirige
+            btnChatear.onclick = () => abrirChatPrivado(nombre);
         }
     }
 
@@ -495,6 +504,23 @@ function verPerfil(nombre, avatar, bio) {
         if (count) count.textContent = `${s.numChildren()} seguidores 🌸`;
     });
     modal.style.display = 'flex';
+}
+
+// Nueva función para redireccionar al chat
+function abrirChatPrivado(usuarioDestino) {
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    
+    // Creamos un ID único de chat ordenando los nombres alfabéticamente. 
+    // Así, no importa quién inicie el chat, el ID del canal "Ema y Juan" será siempre el mismo: "Ema_Juan"
+    const idsOrdenados = [miNombre.replace(/[.#$[\]]/g, "_"), usuarioDestino.replace(/[.#$[\]]/g, "_")].sort();
+    const chatRoomId = `${idsOrdenados[0]}_${idsOrdenados[1]}`;
+
+    // Guardamos temporalmente en el localStorage con quién vamos a hablar para que chats.html lo sepa
+    localStorage.setItem('chat_actual_id', chatRoomId);
+    localStorage.setItem('chat_actual_destino', usuarioDestino);
+
+    // Redireccionamos a la nueva página
+    location.href = 'privchat.html';
 }
 
 function seguirUsuario(nombreSeguido) {
