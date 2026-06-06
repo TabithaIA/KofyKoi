@@ -245,6 +245,11 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+            // --- VARIABLES PARA EL SCROLL INFINITO HACIA ARRIBA ---
+    let cargandoMasChat = false;
+    let primerMensajeFecha = null; // Guarda la fecha del mensaje más viejo en pantalla
+    const limiteMensajes = 10;     // Cuántos mensajes se cargan por tanda
+
         let salaActual = "";
         let cargaInicialChat = false;
         const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -488,25 +493,124 @@
             }
         }
 
-        function unirseASala() {
-            const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
-            if (!codigo) return;
-            salaActual = codigo;
-            document.getElementById('selector-sala').style.display = "none";
-            document.getElementById('sala-info').style.display = "block";
-            
-            database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
-                const config = snap.val() || {};
-                document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
-                if (config.fondo) document.getElementById('mensajesPrivados').style.backgroundImage = `url(${config.fondo})`;
+            function unirseASala() {
+        const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
+        if (!codigo) return;
+        salaActual = codigo;
+        document.getElementById('selector-sala').style.display = "none";
+        document.getElementById('sala-info').style.display = "block";
+        
+        // Escuchar configuración de fondo o nombre de sala
+        database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
+            const config = snap.val() || {};
+            document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
+            if (config.fondo) document.getElementById('mensajesPrivados').style.backgroundImage = `url(${config.fondo})`;
+        });
+
+        const contenedor = document.getElementById('mensajesPrivados');
+
+        // 1. CARGA INICIAL: Traer solo los últimos X mensajes de golpe
+        database.ref(`chats_privados/${salaActual}/mensajes`)
+            .orderByChild('fecha')
+            .limitToLast(limiteMensajes)
+            .once('value', (snapshot) => {
+                const mensajes = [];
+                snapshot.forEach(child => {
+                    mensajes.push({ id: child.key, ...child.val() });
+                });
+
+                if (mensajes.length > 0) {
+                    // Guardamos la fecha del mensaje más viejo de esta tanda
+                    primerMensajeFecha = mensajes[0].fecha;
+                    
+                    // Los dibujamos en orden
+                    mensajes.forEach(msg => {
+                        dibujarMensaje(msg.id, msg);
+                    });
+                    // Hacer scroll al fondo automáticamente al entrar
+                    contenedor.scrollTop = contenedor.scrollHeight;
+                }
+
+                // 2. ESCUCHAR MENSAJES NUEVOS: Solo los que lleguen desde este milisegundo en adelante
+                database.ref(`chats_privados/${salaActual}/mensajes`)
+                    .orderByChild('fecha')
+                    .startAt(Date.now())
+                    .on('child_added', snap => {
+                        dibujarMensaje(snap.key, snap.val());
+                        // Auto-scroll al fondo si el usuario está abajo
+                        contenedor.scrollTop = contenedor.scrollHeight;
+                    });
             });
 
-            database.ref(`chats_privados/${salaActual}/mensajes`).on('child_added', snap => dibujarMensaje(snap.key, snap.val()));
-            database.ref(`chats_privados/${salaActual}/mensajes`).on('child_removed', snap => {
-                const el = document.getElementById(`msg-${snap.key}`);
-                if (el) el.remove();
-            });
-        }
+        // 3. DETECTOR DE SCROLL HACIA ARRIBA (Paginación)
+        contenedor.addEventListener('scroll', () => {
+            // Si el scroll llega casi arriba (menos de 20px del techo) y hay mensajes previos
+            if (contenedor.scrollTop <= 20 && !cargandoMasChat && primerMensajeFecha) {
+                cargandoMasChat = true;
+                const alturaPrevia = contenedor.scrollHeight;
+
+                // Pedimos los mensajes anteriores al más viejo que tenemos cargado
+                database.ref(`chats_privados/${salaActual}/mensajes`)
+                    .orderByChild('fecha')
+                    .endAt(primerMensajeFecha - 1)
+                    .limitToLast(limiteMensajes)
+                    .once('value', (snapshot) => {
+                        const mensajesViejos = [];
+                        snapshot.forEach(child => {
+                            mensajesViejos.push({ id: child.key, ...child.val() });
+                        });
+
+                        if (mensajesViejos.length > 0) {
+                            // Actualizamos el nuevo techo (el mensaje más viejo de la nueva tanda)
+                            primerMensajeFecha = mensajesViejos[0].fecha;
+
+                            // Los insertamos al principio del contenedor clonando el orden correcto
+                            mensajesViejos.reverse().forEach(msg => {
+                                if (!document.getElementById(`msg-${msg.id}`)) {
+                                    const msgDiv = crearEstructuraMensaje(msg.id, msg);
+                                    contenedor.insertBefore(msgDiv, contenedor.firstChild);
+                                }
+                            });
+
+                            // Reajustamos el scroll para que no pegue un salto molesto hacia arriba
+                            contenedor.scrollTop = contenedor.scrollHeight - alturaPrevia;
+                        }
+                        cargandoMasChat = false;
+                    });
+            }
+        });
+
+        // Escuchar mensajes borrados
+        database.ref(`chats_privados/${salaActual}/mensajes`).on('child_removed', snap => {
+            const el = document.getElementById(`msg-${snap.key}`);
+            if (el) el.remove();
+        });
+
+        escucharCine();
+    }
+
+    // Función auxiliar para generar el elemento HTML del mensaje viejo sin romper tu "dibujarMensaje"
+    function crearEstructuraMensaje(id, datos) {
+        const msgDiv = document.createElement('div');
+        const esMio = datos.usuario === miNombre;
+        msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+        msgDiv.id = `msg-${id}`;
+        if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
+        
+        msgDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                    <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
+                </div>
+                ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
+            </div>
+            ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
+            ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+            <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        `;
+        return msgDiv;
+    }
 
         function enviarMensajeSala() {
             const texto = document.getElementById('textoPrivado').value.trim();
