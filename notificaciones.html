@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KofyKoi - Notificaciones</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .noti-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .noti-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .noti-header h2 {
+            font-size: 1.5rem;
+            color: var(--oscuro-suave);
+        }
+        .btn-clear-all {
+            background: var(--rosa);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-weight: 600;
+            color: var(--oscuro-suave);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+        .btn-clear-all:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+        .noti-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .noti-card {
+            background: var(--blanco);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: aparecerSuave 0.3s ease forwards;
+            border-left: 5px solid var(--azul-claro);
+        }
+        .noti-card.unread {
+            border-left-color: var(--rosa);
+            background: #fffbfd;
+        }
+        .noti-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            padding-right: 15px;
+        }
+        .noti-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--oscuro-suave);
+        }
+        .noti-text {
+            font-size: 0.85rem;
+            color: gray;
+        }
+        .noti-time {
+            font-size: 0.7rem;
+            color: #bbb;
+        }
+        .btn-delete-noti {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s;
+            color: var(--oscuro-suave);
+            opacity: 0.5;
+        }
+        .btn-delete-noti:hover {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: gray;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">KofyKoi</div>
+    <div class="header-user">
+        <span id="nav-username">@KofyUser</span>
+        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
+    </div>
+</header>
+
+<div class="container" style="display: block; padding-top: 20px;">
+    <div class="noti-container">
+        <div class="noti-header">
+            <h2>Notificaciones 🔔</h2>
+            <button class="btn-clear-all" onclick="vaciarTodasLasNotificaciones()">Limpiar todo ✨</button>
+        </div>
+
+        <div class="noti-list" id="noti-list-container">
+            <div class="empty-state">Cargando tus novedades zen... 🌸</div>
+        </div>
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <button class="nav-item" onclick="location.href='perfil.html'">
+        <span>👤</span>
+        <small>Perfil</small>
+    </button>
+    <button class="nav-item" onclick="location.href='chats.html'">
+        <span>💬</span>
+        <small>Chats</small>
+    </button>
+    <button class="nav-item" onclick="location.href='index.html'">
+        <span>🏠</span>
+        <small>Inicio</small>
+    </button>
+    <button class="nav-item" onclick="location.href='botellas.html'">
+        <span>🍾</span>
+        <small>Botellas</small>
+    </button>
+    <button class="nav-item" onclick="location.href='datos.html'">
+        <span>❕</span>
+        <small>Info</small>
+    </button>
+    <button class="nav-item main-btn" onclick="location.href='notificaciones.html'">
+        <span>🔔</span>
+        <small>Alertas</small>
+    </button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
+        authDomain: "kofikoi.firebaseapp.com",
+        databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
+        projectId: "kofikoi",
+        storageBucket: "kofikoi.firebasestorage.app",
+        messagingSenderId: "27280210890",
+        appId: "1:27280210890:web:354c9bf51bfcb6b438ad33",
+        measurementId: "G-P7KFPMFHHW"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+</script>
+<script src="notificaciones.js"></script>
+</body>
+</html>

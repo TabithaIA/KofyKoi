@@ -1,4 +1,4 @@
-// chats.js - Manejo del Chat Privado en Tiempo Real
+// chats.js - Manejo del Chat Privado y Eliminación en Tiempo Real
 
 const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
 const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
@@ -7,23 +7,20 @@ const chatRoomId = localStorage.getItem('chat_actual_id');
 const usuarioDestino = localStorage.getItem('chat_actual_destino');
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Cargar info del usuario en el Header común
+    // Cargar barra de navegación superior
     document.getElementById('nav-username').textContent = miNombre;
     document.getElementById('imgNav').src = miAvatar;
 
-    // 2. Verificar si tenemos una sala de chat activa seleccionada
+    // Verificar si hay chat seleccionado
     if (chatRoomId && usuarioDestino) {
         document.getElementById('chat-with-title').textContent = `Charlando con ${usuarioDestino} 🌸`;
         
-        // Habilitamos los inputs
         document.getElementById('msgInput').disabled = false;
         document.getElementById('btnEnviarMsg').disabled = false;
 
-        // Escuchar los mensajes de esta sala en Firebase
         cargarMensajes(chatRoomId);
     }
     
-    // Escuchar la tecla "Enter" para enviar rápido
     document.getElementById('msgInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') enviarMensajePrivado();
     });
@@ -32,9 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function cargarMensajes(roomId) {
     const container = document.getElementById('messages-container');
     
-    // Escuchamos la rama específica de esta sala de chat
     database.ref(`mensajes_privados/${roomId}`).on('value', (snapshot) => {
-        container.innerHTML = ""; // Limpiamos la caja para redibujar
+        container.innerHTML = ""; 
         
         if (!snapshot.exists()) {
             container.innerHTML = `<p style="text-align:center; color:gray; font-size:0.8rem; margin-top:20px;">Aquí comenzará tu conversación zen... ✨</p>`;
@@ -43,36 +39,68 @@ function cargarMensajes(roomId) {
 
         snapshot.forEach((child) => {
             const datos = child.val();
+            const msgId = child.key; // ID único del mensaje en Firebase
             const msgDiv = document.createElement('div');
             
-            // Si el mensaje lo envié yo, clase 'me', sino clase 'other'
+            const horaFormateada = new Date(datos.fecha).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
             if (datos.remitente === miNombre) {
                 msgDiv.className = "msg me";
+                // Si el mensaje es mío, le asignamos el evento para poder borrarlo
+                msgDiv.onclick = () => confirmarBorrarMensaje(msgId);
+                msgDiv.title = "Haz clic para borrar mensaje 🗑️";
             } else {
                 msgDiv.className = "msg other";
             }
 
-            msgDiv.textContent = datos.texto;
+            msgDiv.innerHTML = `
+                <span class="msg-text">${datos.texto}</span>
+                <span class="msg-time">${horaFormateada}</span>
+            `;
+            
             container.appendChild(msgDiv);
         });
 
-        // Auto-scroll al último mensaje recibido
         container.scrollTop = container.scrollHeight;
     });
 }
 
+// --- REEMPLAZA ESTA FUNCIÓN EN TU chats.js ORIGINAL PARA ENLAZAR LAS NOTIFICACIONES ---
 function enviarMensajePrivado() {
     const input = document.getElementById('msgInput');
     const texto = input.value.trim();
     
     if (!texto || !chatRoomId) return;
 
-    // Subimos el mensaje a la sala única en Firebase
+    // 1. Guardamos el mensaje en la sala de chat privada
     database.ref(`mensajes_privados/${chatRoomId}`).push({
         remitente: miNombre,
         texto: texto,
         fecha: Date.now()
     }).then(() => {
-        input.value = ""; // Limpiamos el input al enviar
-    }).catch(err => console.error("Error al enviar mensaje privado:", err));
+        input.value = ""; // Limpiamos la caja de texto
+        
+        // 2. ¡Creamos la notificación para el destinatario en Firebase!
+        const usuarioDestinoKey = usuarioDestino.replace(/[.#$[\]]/g, "_");
+        database.ref(`notificaciones/${usuarioDestinoKey}`).push({
+            titulo: `Mensaje privado de ${miNombre} 💬`,
+            mensaje: texto.substring(0, 50), // Guardamos una vista previa del texto
+            fecha: Date.now()
+        });
+
+    }).catch(err => console.error("Error al enviar mensaje:", err));
 }
+
+// Nueva función para eliminar el mensaje de Firebase
+function confirmarBorrarMensaje(msgId) {
+    const seguro = confirm("¿Quieres borrar este mensaje para todos? 🌸");
+    if (seguro && chatRoomId) {
+        database.ref(`mensajes_privados/${chatRoomId}/${msgId}`).remove()
+            .then(() => console.log("Mensaje eliminado correctamente."))
+            .catch(err => console.error("Error al eliminar mensaje:", err));
+    }
+}
+
