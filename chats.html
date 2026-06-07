@@ -494,13 +494,14 @@
             }
         }
 
-                function unirseASala() {
+        function unirseASala() {
     const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
     if (!codigo) return;
     salaActual = codigo;
     document.getElementById('selector-sala').style.display = "none";
     document.getElementById('sala-info').style.display = "block";
     
+    // Escuchar configuración de la sala
     database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
         const config = snap.val() || {};
         document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
@@ -508,36 +509,38 @@
     });
 
     const contenedor = document.getElementById('mensajesPrivados');
-    contenedor.innerHTML = ""; // Limpiar el contenedor por si entran a otra sala
+    contenedor.innerHTML = ""; // Limpiar contenedor
 
-    // --- CARGA INICIAL LIMITADA (Carga los últimos 10 mensajes ordenados) ---
+    // Guardamos el momento exacto en el que el usuario entra a la sala
+    const tiempoEntrada = Date.now();
+
+    // --- 1. CARGA INICIAL: TRAER ESTRICTAMENTE LOS ÚLTIMOS 10 Y CORTAR ---
     database.ref(`chats_privados/${salaActual}/mensajes`)
         .orderByChild('fecha')
         .limitToLast(limiteMensajes)
         .once('value', (snapshot) => {
-            const mensajes = [];
+            const mensajesIniciales = [];
             snapshot.forEach(child => {
-                mensajes.push({ id: child.key, ...child.val() });
+                mensajesIniciales.push({ id: child.key, ...child.val() });
             });
 
-            if (mensajes.length > 0) {
-                primerMensajeFecha = mensajes[0].fecha; // Guardamos el más viejo para el scroll
+            if (mensajesIniciales.length > 0) {
+                // Guardamos la fecha del más viejo de estos 10 para el scroll superior
+                primerMensajeFecha = mensajesIniciales[0].fecha;
                 
                 // Los dibujamos en orden
-                mensajes.forEach(msg => {
+                mensajesIniciales.forEach(msg => {
                     dibujarMensaje(msg.id, msg);
                 });
             }
 
-            // --- ESCUCHA EN TIEMPO REAL (SOLO MENSAJES NUEVOS) ---
-            // Usamos una marca de tiempo actual para ignorar todo el historial pesado
-            const tiempoEntrada = Date.now();
+            // --- 2. TIEMPO REAL: ESCUCHAR *SOLO* LO QUE SE ENVÍE DESDE ESTE SEGUNDO ---
+            // Al usar .startAt(tiempoEntrada), ignoramos el 100% del historial pasado en este escuchador
             database.ref(`chats_privados/${salaActual}/mensajes`)
                 .orderByChild('fecha')
                 .startAt(tiempoEntrada)
                 .on('child_added', snap => {
                     const datos = snap.val();
-                    // Evitamos duplicar por las dudas si coincide el milisegundo
                     if (!document.getElementById(`msg-${snap.key}`)) {
                         dibujarMensaje(snap.key, datos);
                         contenedor.scrollTop = contenedor.scrollHeight; 
@@ -551,12 +554,13 @@
         if (el) el.remove();
     });
 
-    // --- DETECTOR DE SCROLL HACIA ARRIBA (Paginación histórica) ---
+    // --- 3. DETECTOR DE SCROLL HACIA ARRIBA (Paginación histórica bajo demanda) ---
     contenedor.addEventListener('scroll', () => {
         if (contenedor.scrollTop <= 10 && !cargandoMasChat && primerMensajeFecha) {
             cargandoMasChat = true;
             const alturaPrevia = contenedor.scrollHeight;
 
+            // Pedimos solo los 10 anteriores al mensaje más viejo que tenemos en pantalla
             database.ref(`chats_privados/${salaActual}/mensajes`)
                 .orderByChild('fecha')
                 .endAt(primerMensajeFecha - 1)
@@ -568,9 +572,10 @@
                     });
 
                     if (mensajesViejos.length > 0) {
+                        // Actualizamos el puntero al mensaje más viejo de todos ahora
                         primerMensajeFecha = mensajesViejos[0].fecha;
 
-                        // Insertar arriba los mensajes antiguos usando la función auxiliar
+                        // Los metemos arriba en el chat
                         mensajesViejos.reverse().forEach(msg => {
                             if (!document.getElementById(`msg-${msg.id}`)) {
                                 const elementoCreado = crearEstructuraMensaje(msg.id, msg);
@@ -578,6 +583,7 @@
                             }
                         });
 
+                        // Mantener la posición del scroll para que no pegue un salto molesto
                         contenedor.scrollTop = contenedor.scrollHeight - alturaPrevia;
                     }
                     cargandoMasChat = false;
@@ -585,7 +591,7 @@
         }
     });
 
-    // --- GENERACIÓN DE LA SALA DE CINE ---
+    // --- 4. GENERACIÓN DE LA SALA DE CINE ---
     const inputArea = document.querySelector('.chat-input-area');
     if (inputArea && !document.getElementById('btnAbrirCine')) {
         const estructuraCine = document.createElement('div');
