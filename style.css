@@ -264,3 +264,59 @@ body {
     font-family: inherit;
 }
 
+/* --- ESTILOS PARA EL SLIDER DE SALAS PÚBLICAS --- */
+.slider-horizontal {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none; /* Oculta scroll en Firefox */
+    padding-bottom: 5px;
+}
+
+.slider-horizontal::-webkit-scrollbar {
+    display: none; /* Oculta scroll en Chrome/Safari */
+}
+
+.room-card {
+    flex: 0 0 auto; /* Evita que las tarjetas se deformen o encojan */
+    width: 140px;
+    background: var(--fondo);
+    border: 2px solid var(--azul-claro);
+    border-radius: 15px;
+    padding: 10px;
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s;
+}
+
+.room-card:hover {
+    transform: scale(1.02);
+}
+
+.room-card p {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--oscuro-suave);
+    margin: 5px 0;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.btn-delete-room {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px;
+}
+
