@@ -117,10 +117,21 @@
             margin-bottom: 5px; 
         }
 
-        #modalRacha .modal-content {
+        #modalRacha .modal-content, #modalFijados .modal-content {
             max-width: 400px;
             max-height: 80vh;
             overflow-y: auto;
+        }
+
+        /* Estilos para la lista de mensajes fijados dentro del modal */
+        .fijado-item {
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
     </style>
 </head>
@@ -138,7 +149,7 @@
         <main>
             <div class="card" id="selector-sala">
                 <h3 style="color: var(--morado-deep); margin-bottom: 10px;">Salas Privadas 🗝️</h3>
-                <p style="font-size: 0.85rem; margin-bottom: 15px;">Ingresa un código y compartelo con otras personas para empezar una conversación secreta.</p>
+                <p style="font-size: 0.85rem; margin-bottom: 15px;">Ingresa un código y compártelo con otras personas para empezar una conversación secreta.</p>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="roomCode" placeholder="Código de la sala..." style="border: 2px solid var(--rosa);">
                     <button class="btn-main" onclick="unirseASala()">Entrar</button>
@@ -155,6 +166,7 @@
                     <button class="btn-img" onclick="document.getElementById('miColorPersonalInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: #FFD1DC; color: #36454F;">Mi Burbuja</button>
                     
                     <button class="btn-img" onclick="abrirModalRacha()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--lavanda);">Racha</button>
+                    <button class="btn-img" onclick="abrirModalFijados()" style="font-size: 0.6rem; padding: 4px 8px; background: #ffe4b5; color: #36454F;">📌 Fijados</button>
                     <button class="btn-img" onclick="location.reload()" style="font-size: 0.6rem; padding: 4px 8px;">Salir</button>
                     
                     <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
@@ -228,6 +240,16 @@
         </div>
     </div>
 
+    <div id="modalFijados" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--morado-deep); margin-bottom: 15px;">Mensajes Fijados 📌</h3>
+            <div id="fijadosContenedor" style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.85rem; color: gray; text-align: center;">No hay mensajes fijados en esta sala.</p>
+            </div>
+            <button class="btn-img" onclick="cerrarModalFijados()" style="margin-top: 20px; width: 100%;">Cerrar</button>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
@@ -246,10 +268,10 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-            // --- VARIABLES PARA EL SCROLL INFINITO HACIA ARRIBA ---
-    let cargandoMasChat = false;
-    let primerMensajeFecha = null; // Guarda la fecha del mensaje más viejo en pantalla
-    const limiteMensajes = 10;     // Cuántos mensajes se cargan por tanda
+        // --- VARIABLES PARA EL SCROLL INFINITO HACIA ARRIBA ---
+        let cargandoMasChat = false;
+        let primerMensajeFecha = null; 
+        const limiteMensajes = 10;     
 
         let salaActual = "";
         let cargaInicialChat = false;
@@ -318,7 +340,7 @@
             };
 
             actualizarDatos();
-            setInterval(actualizarDatos, 60000); // Actualiza la hora cada minuto
+            setInterval(actualizarDatos, 60000); 
             userRef.onDisconnect().update({ online: false, ultimaVez: Date.now() });
         }
 
@@ -335,13 +357,19 @@
             msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
             msgDiv.id = `msg-${id}`;
             if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
+
+            const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
+
             msgDiv.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
                     <div style="display: flex; align-items: center; gap: 5px;">
                         <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
                         <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
                     </div>
-                    ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
+                        ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
+                    </div>
                 </div>
                 ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
@@ -362,7 +390,6 @@
 
             const userID = nombre.replace(/[.#$[\]]/g, "_");
             
-            // Mostrar Batería de otros
             const vistaBateria = document.getElementById('vistaBateria');
             vistaBateria.textContent = "🔋 Buscando batería...";
             database.ref(`usuarios_bateria/${userID}`).on('value', (snap) => {
@@ -377,7 +404,6 @@
                 }
             });
 
-            // Mostrar Datos Extra de otros
             const vistaEstado = document.getElementById('textoEstado');
             const puntoEstado = document.getElementById('puntoEstado');
             const vistaPlat = document.getElementById('vistaPlataforma');
@@ -472,6 +498,75 @@
             });
         }
 
+        // --- LÓGICA DE MENSAJES FIJADOS (PINS) ---
+        function abrirModalFijados() {
+            document.getElementById('modalFijados').style.display = 'flex';
+            escucharFijados();
+        }
+
+        function cerrarModalFijados() {
+            document.getElementById('modalFijados').style.display = 'none';
+        }
+
+        function fijarMensajePrivado(msgId, datosBase64) {
+            const datos = JSON.parse(decodeURIComponent(escape(atob(datosBase64))));
+            
+            database.ref(`chats_privados/${salaActual}/fijados/${msgId}`).set({
+                usuario: datos.usuario,
+                avatar: datos.avatar,
+                mensaje: datos.mensaje,
+                imagen: datos.imagen || "",
+                fecha: datos.fecha
+            }).then(() => {
+                alert("¡Mensaje fijado con éxito! 📌");
+            });
+        }
+
+        // FUNCIÓN PARA QUITAR DE FIJADOS EN BD
+        function desfijarMensaje(msgId) {
+            if (confirm("¿Quieres quitar este mensaje de fijados?")) {
+                database.ref(`chats_privados/${salaActual}/fijados/${msgId}`).remove()
+                    .then(() => {
+                        alert("Mensaje quitado de fijados. 📌");
+                    });
+            }
+        }
+
+        // ESCUCHA EN TIEMPO REAL ELIMINACIONES Y ADICIONES
+        function escucharFijados() {
+            database.ref(`chats_privados/${salaActual}/fijados`).on('value', (snap) => {
+                const contenedor = document.getElementById('fijadosContenedor');
+                contenedor.innerHTML = "";
+                
+                const fijados = snap.val();
+                if (!fijados) {
+                    contenedor.innerHTML = `<p style="font-size: 0.85rem; color: gray; text-align: center;">No hay mensajes fijados en esta sala.</p>`;
+                    return;
+                }
+
+                Object.keys(fijados).forEach(id => {
+                    const info = fijados[id];
+                    const div = document.createElement('div');
+                    div.className = "fijado-item";
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <img src="${info.avatar}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">
+                                <b style="font-size:0.7rem;">${info.usuario}</b>
+                            </div>
+                            <button onclick="desfijarMensaje('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem;" title="Quitar fijado">❌</button>
+                        </div>
+                        ${info.mensaje ? `<div style="margin-top:2px; word-break:break-word;">${info.mensaje}</div>` : ''}
+                        ${info.imagen ? `<img src="${info.imagen}" style="width:100%; border-radius:8px; margin-top:5px; max-height:120px; object-fit:cover;">` : ''}
+                        <div style="font-size:0.6rem; opacity:0.5; text-align:right; margin-top:3px;">
+                            ${new Date(info.fecha).toLocaleDateString()} ${new Date(info.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                    `;
+                    contenedor.appendChild(div);
+                });
+            });
+        }
+
         // --- FONDO AJUSTADO ---
         function ajustarFondoSala(input) {
             if (input.files[0]) {
@@ -495,155 +590,147 @@
         }
 
         function unirseASala() {
-    const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
-    if (!codigo) return;
-    salaActual = codigo;
-    document.getElementById('selector-sala').style.display = "none";
-    document.getElementById('sala-info').style.display = "block";
-    
-    // Escuchar configuración de la sala
-    database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
-        const config = snap.val() || {};
-        document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
-        if (config.fondo) document.getElementById('mensajesPrivados').style.backgroundImage = `url(${config.fondo})`;
-    });
-
-    const contenedor = document.getElementById('mensajesPrivados');
-    contenedor.innerHTML = ""; // Limpiar contenedor
-
-    // Guardamos el momento exacto en el que el usuario entra a la sala
-    const tiempoEntrada = Date.now();
-
-    // --- 1. CARGA INICIAL: TRAER ESTRICTAMENTE LOS ÚLTIMOS 10 Y CORTAR ---
-    database.ref(`chats_privados/${salaActual}/mensajes`)
-        .orderByChild('fecha')
-        .limitToLast(limiteMensajes)
-        .once('value', (snapshot) => {
-            const mensajesIniciales = [];
-            snapshot.forEach(child => {
-                mensajesIniciales.push({ id: child.key, ...child.val() });
+            const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
+            if (!codigo) return;
+            salaActual = codigo;
+            document.getElementById('selector-sala').style.display = "none";
+            document.getElementById('sala-info').style.display = "block";
+            
+            database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
+                const config = snap.val() || {};
+                document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
+                if (config.fondo) document.getElementById('mensajesPrivados').style.backgroundImage = `url(${config.fondo})`;
             });
 
-            if (mensajesIniciales.length > 0) {
-                // Guardamos la fecha del más viejo de estos 10 para el scroll superior
-                primerMensajeFecha = mensajesIniciales[0].fecha;
-                
-                // Los dibujamos en orden
-                mensajesIniciales.forEach(msg => {
-                    dibujarMensaje(msg.id, msg);
-                });
-            }
+            const contenedor = document.getElementById('mensajesPrivados');
+            contenedor.innerHTML = ""; 
 
-            // --- 2. TIEMPO REAL: ESCUCHAR *SOLO* LO QUE SE ENVÍE DESDE ESTE SEGUNDO ---
-            // Al usar .startAt(tiempoEntrada), ignoramos el 100% del historial pasado en este escuchador
+            const tiempoEntrada = Date.now();
+
+            // --- 1. CARGA INICIAL ---
             database.ref(`chats_privados/${salaActual}/mensajes`)
                 .orderByChild('fecha')
-                .startAt(tiempoEntrada)
-                .on('child_added', snap => {
-                    const datos = snap.val();
-                    if (!document.getElementById(`msg-${snap.key}`)) {
-                        dibujarMensaje(snap.key, datos);
-                        contenedor.scrollTop = contenedor.scrollHeight; 
-                    }
-                });
-        });
-
-    // Escuchar mensajes borrados en tiempo real
-    database.ref(`chats_privados/${salaActual}/mensajes`).on('child_removed', snap => {
-        const el = document.getElementById(`msg-${snap.key}`);
-        if (el) el.remove();
-    });
-
-    // --- 3. DETECTOR DE SCROLL HACIA ARRIBA (Paginación histórica bajo demanda) ---
-    contenedor.addEventListener('scroll', () => {
-        if (contenedor.scrollTop <= 10 && !cargandoMasChat && primerMensajeFecha) {
-            cargandoMasChat = true;
-            const alturaPrevia = contenedor.scrollHeight;
-
-            // Pedimos solo los 10 anteriores al mensaje más viejo que tenemos en pantalla
-            database.ref(`chats_privados/${salaActual}/mensajes`)
-                .orderByChild('fecha')
-                .endAt(primerMensajeFecha - 1)
                 .limitToLast(limiteMensajes)
                 .once('value', (snapshot) => {
-                    const mensajesViejos = [];
+                    const mensajesIniciales = [];
                     snapshot.forEach(child => {
-                        mensajesViejos.push({ id: child.key, ...child.val() });
+                        mensajesIniciales.push({ id: child.key, ...child.val() });
                     });
 
-                    if (mensajesViejos.length > 0) {
-                        // Actualizamos el puntero al mensaje más viejo de todos ahora
-                        primerMensajeFecha = mensajesViejos[0].fecha;
+                    if (mensajesIniciales.length > 0) {
+                        primerMensajeFecha = mensajesIniciales[0].fecha;
+                        mensajesIniciales.forEach(msg => {
+                            dibujarMensaje(msg.id, msg);
+                        });
+                    }
 
-                        // Los metemos arriba en el chat
-                        mensajesViejos.reverse().forEach(msg => {
-                            if (!document.getElementById(`msg-${msg.id}`)) {
-                                const elementoCreado = crearEstructuraMensaje(msg.id, msg);
-                                contenedor.insertBefore(elementoCreado, contenedor.firstChild);
+                    // --- 2. TIEMPO REAL ---
+                    database.ref(`chats_privados/${salaActual}/mensajes`)
+                        .orderByChild('fecha')
+                        .startAt(tiempoEntrada)
+                        .on('child_added', snap => {
+                            const datos = snap.val();
+                            if (!document.getElementById(`msg-${snap.key}`)) {
+                                dibujarMensaje(snap.key, datos);
+                                contenedor.scrollTop = contenedor.scrollHeight; 
                             }
                         });
-
-                        // Mantener la posición del scroll para que no pegue un salto molesto
-                        contenedor.scrollTop = contenedor.scrollHeight - alturaPrevia;
-                    }
-                    cargandoMasChat = false;
                 });
+
+            database.ref(`chats_privados/${salaActual}/mensajes`).on('child_removed', snap => {
+                const el = document.getElementById(`msg-${snap.key}`);
+                if (el) el.remove();
+            });
+
+            // --- 3. DETECTOR DE SCROLL HACIA ARRIBA ---
+            contenedor.addEventListener('scroll', () => {
+                if (contenedor.scrollTop <= 10 && !cargandoMasChat && primerMensajeFecha) {
+                    cargandoMasChat = true;
+                    const alturaPrevia = contenedor.scrollHeight;
+
+                    database.ref(`chats_privados/${salaActual}/mensajes`)
+                        .orderByChild('fecha')
+                        .endAt(primerMensajeFecha - 1)
+                        .limitToLast(limiteMensajes)
+                        .once('value', (snapshot) => {
+                            const mensajesViejos = [];
+                            snapshot.forEach(child => {
+                                mensajesViejos.push({ id: child.key, ...child.val() });
+                            });
+
+                            if (mensajesViejos.length > 0) {
+                                primerMensajeFecha = mensajesViejos[0].fecha;
+
+                                mensajesViejos.reverse().forEach(msg => {
+                                    if (!document.getElementById(`msg-${msg.id}`)) {
+                                        const elementoCreado = crearEstructuraMensaje(msg.id, msg);
+                                        contenedor.insertBefore(elementoCreado, contenedor.firstChild);
+                                    }
+                                });
+
+                                contenedor.scrollTop = contenedor.scrollHeight - alturaPrevia;
+                            }
+                            cargandoMasChat = false;
+                        });
+                }
+            });
+
+            // --- 4. GENERACIÓN DE LA SALA DE CINE ---
+            const inputArea = document.querySelector('.chat-input-area');
+            if (inputArea && !document.getElementById('btnAbrirCine')) {
+                const estructuraCine = document.createElement('div');
+                estructuraCine.style = "display: flex; flex-direction: column; width: 100%; gap: 5px;";
+                inputArea.parentNode.insertBefore(estructuraCine, inputArea);
+
+                const btnCine = document.createElement('button');
+                btnCine.id = 'btnAbrirCine';
+                btnCine.className = 'btn-main'; 
+                btnCine.style = "width: 100%; margin: 0; padding: 8px; font-size: 0.8rem; background: var(--morado-deep);";
+                btnCine.innerHTML = "🎬 Sala de Cine";
+                btnCine.onclick = toggleCine;
+                
+                estructuraCine.appendChild(btnCine);
+                estructuraCine.appendChild(inputArea);
+            }
+
+            database.ref(`chats_privados/${salaActual}/cine`).on('value', (snap) => {
+                const data = snap.val();
+                if (data && data.url) {
+                    actualizarCine(data);
+                } else {
+                    const panel = document.getElementById('cine-kofy');
+                    if (panel) panel.style.display = 'none';
+                    if (player) player.stopVideo();
+                }
+            });
         }
-    });
 
-    // --- 4. GENERACIÓN DE LA SALA DE CINE ---
-    const inputArea = document.querySelector('.chat-input-area');
-    if (inputArea && !document.getElementById('btnAbrirCine')) {
-        const estructuraCine = document.createElement('div');
-        estructuraCine.style = "display: flex; flex-direction: column; width: 100%; gap: 5px;";
-        inputArea.parentNode.insertBefore(estructuraCine, inputArea);
+        function crearEstructuraMensaje(id, datos) {
+            const msgDiv = document.createElement('div');
+            const esMio = datos.usuario === miNombre;
+            msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+            msgDiv.id = `msg-${id}`;
+            if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
+            
+            const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
 
-        const btnCine = document.createElement('button');
-        btnCine.id = 'btnAbrirCine';
-        btnCine.className = 'btn-main'; 
-        btnCine.style = "width: 100%; margin: 0; padding: 8px; font-size: 0.8rem; background: var(--morado-deep);";
-        btnCine.innerHTML = "🎬 Sala de Cine";
-        btnCine.onclick = toggleCine;
-        
-        estructuraCine.appendChild(btnCine);
-        estructuraCine.appendChild(inputArea);
-    }
-
-    // Escuchar Firebase para el cine en tiempo real
-    database.ref(`chats_privados/${salaActual}/cine`).on('value', (snap) => {
-        const data = snap.val();
-        if (data && data.url) {
-            actualizarCine(data);
-        } else {
-            const panel = document.getElementById('cine-kofy');
-            if (panel) panel.style.display = 'none';
-            if (player) player.stopVideo();
-        }
-    });
-}
-
-    // Función auxiliar para generar el elemento HTML del mensaje viejo sin romper tu "dibujarMensaje"
-    function crearEstructuraMensaje(id, datos) {
-        const msgDiv = document.createElement('div');
-        const esMio = datos.usuario === miNombre;
-        msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
-        msgDiv.id = `msg-${id}`;
-        if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
-        
-        msgDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
-                    <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
+            msgDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
+                    </div>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
+                        ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
+                    </div>
                 </div>
-                ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
-            </div>
-            ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
-            ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
-            <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-        `;
-        return msgDiv;
-    }
+                ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
+                ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+                <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            `;
+            return msgDiv;
+        }
 
         function enviarMensajeSala() {
             const texto = document.getElementById('textoPrivado').value.trim();
@@ -671,7 +758,6 @@
     let apiLista = false;
     let intervaloSync = null;
 
-    // 1. Carga de API de YouTube
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -684,7 +770,7 @@
         if (panel) {
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
         } else {
-            actualizarCine({url: null}); // Crea el panel si no existe
+            actualizarCine({url: null}); 
         }
     }
 
@@ -720,7 +806,6 @@
                     events: { 'onStateChange': manejarCambioEstado }
                 });
             } else {
-                // Sincronizar tiempo y estado
                 if (data.estado === "pausado") player.pauseVideo();
                 else player.playVideo();
 
@@ -760,70 +845,58 @@
         if(url) database.ref(`chats_privados/${salaActual}/cine`).set({url: url, estado: "reproduciendo", segundo: 0});
     }
 
-function unirseASalaPorCodigo() {
-    const codigo = document.getElementById('codigo-sala').value.trim();
-    if (!codigo) return;
+    function unirseASalaPorCodigo() {
+        const codigo = document.getElementById('codigo-sala').value.trim();
+        if (!codigo) return;
 
-    // Buscamos si la sala existe en la base de datos pública
-    database.ref('salas_publicas').orderByChild('nombre').equalTo(codigo).once('value', (snapshot) => {
-        if (snapshot.exists()) {
-            salaActual = codigo;
-            usuarioDestinoGlobal = null; 
+        database.ref('salas_publicas').orderByChild('nombre').equalTo(codigo).once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                salaActual = codigo;
+                usuarioDestinoGlobal = null; 
 
-            // Cambiamos el título visual de la sala
-            document.getElementById('chat-target-name').textContent = `Sala: ${codigo}`;
-            
-            // Limpiamos los mensajes viejos y cargamos los nuevos
-            document.getElementById('chat-container').innerHTML = "";
-            cargarMensajes();
-            
-            console.log(`Te has unido a la sala pública: ${codigo}`);
-        } else {
-            alert("La sala no existe. ¡Verifica el código!");
+                document.getElementById('chat-target-name').textContent = `Sala: ${codigo}`;
+                document.getElementById('chat-container').innerHTML = "";
+                cargarMensajes();
+                
+                console.log(`Te has unido a la sala pública: ${codigo}`);
+            } else {
+                alert("La sala no existe. ¡Verifica el código!");
+            }
+        });
+    }
+
+    // --- AUTO-INGRESAR A SALA PÚBLICA ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const codigoGuardado = localStorage.getItem('codigo_sala_autostart');
+
+        if (codigoGuardado) {
+            console.log("Código de sala detectado para autostart:", codigoGuardado);
+
+            const esperarInputReal = setInterval(() => {
+                const inputCodigo = document.getElementById('codigo-sala');
+                
+                if (inputCodigo) {
+                    clearInterval(esperarInputReal); 
+                    inputCodigo.value = codigoGuardado; 
+
+                    inputCodigo.dispatchEvent(new Event('input', { bubbles: true }));
+                    inputCodigo.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    console.log("¡Texto inyectado con éxito!");
+
+                    setTimeout(() => {
+                        console.log("Ejecutando unirseASalaPorCodigo()...");
+                        unirseASalaPorCodigo();
+                    }, 250);
+
+                    localStorage.removeItem('codigo_sala_autostart');
+                }
+            }, 100);
+
+            setTimeout(() => clearInterval(esperarInputReal), 5000);
         }
     });
-}
-
-// --- AUTO-INGRESAR A SALA PÚBLICA USANDO EL CÓDIGO DEL SLIDER ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Leemos el código que guardamos desde el slider del inicio
-    const codigoGuardado = localStorage.getItem('codigo_sala_autostart');
-
-    if (codigoGuardado) {
-        console.log("Código de sala detectado para autostart:", codigoGuardado);
-
-        // 2. Esperamos a que tu input real '#codigo-sala' aparezca en pantalla
-        const esperarInputReal = setInterval(() => {
-            const inputCodigo = document.getElementById('codigo-sala');
-            
-            if (inputCodigo) {
-                clearInterval(esperarInputReal); // ¡Frenamos el bucle!
-                
-                // 3. Escribimos el código de la sala automáticamente
-                inputCodigo.value = codigoGuardado; 
-
-                // 4. Avisamos al navegador que el texto cambió
-                inputCodigo.dispatchEvent(new Event('input', { bubbles: true }));
-                inputCodigo.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                console.log("¡Texto inyectado con éxito!");
-
-                // 5. Esperamos 250ms para que Firebase asimile todo y disparamos la función
-                setTimeout(() => {
-                    console.log("Ejecutando unirseASalaPorCodigo()...");
-                    unirseASalaPorCodigo();
-                }, 250);
-
-                // 6. Limpiamos el almacenamiento para evitar bucles interminables
-                localStorage.removeItem('codigo_sala_autostart');
-            }
-        }, 100);
-
-        // Seguridad: Máximo 5 segundos de espera
-        setTimeout(() => clearInterval(esperarInputReal), 5000);
-    }
-});
-</script>
+    </script>
 </body>
 </html>
 
