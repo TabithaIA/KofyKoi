@@ -759,6 +759,70 @@
         const url = document.getElementById('videoUrl').value;
         if(url) database.ref(`chats_privados/${salaActual}/cine`).set({url: url, estado: "reproduciendo", segundo: 0});
     }
+
+function unirseASalaPorCodigo() {
+    const codigo = document.getElementById('codigo-sala').value.trim();
+    if (!codigo) return;
+
+    // Buscamos si la sala existe en la base de datos pública
+    database.ref('salas_publicas').orderByChild('nombre').equalTo(codigo).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            salaActual = codigo;
+            usuarioDestinoGlobal = null; 
+
+            // Cambiamos el título visual de la sala
+            document.getElementById('chat-target-name').textContent = `Sala: ${codigo}`;
+            
+            // Limpiamos los mensajes viejos y cargamos los nuevos
+            document.getElementById('chat-container').innerHTML = "";
+            cargarMensajes();
+            
+            console.log(`Te has unido a la sala pública: ${codigo}`);
+        } else {
+            alert("La sala no existe. ¡Verifica el código!");
+        }
+    });
+}
+
+// --- AUTO-INGRESAR A SALA PÚBLICA USANDO EL CÓDIGO DEL SLIDER ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Leemos el código que guardamos desde el slider del inicio
+    const codigoGuardado = localStorage.getItem('codigo_sala_autostart');
+
+    if (codigoGuardado) {
+        console.log("Código de sala detectado para autostart:", codigoGuardado);
+
+        // 2. Esperamos a que tu input real '#codigo-sala' aparezca en pantalla
+        const esperarInputReal = setInterval(() => {
+            const inputCodigo = document.getElementById('codigo-sala');
+            
+            if (inputCodigo) {
+                clearInterval(esperarInputReal); // ¡Frenamos el bucle!
+                
+                // 3. Escribimos el código de la sala automáticamente
+                inputCodigo.value = codigoGuardado; 
+
+                // 4. Avisamos al navegador que el texto cambió
+                inputCodigo.dispatchEvent(new Event('input', { bubbles: true }));
+                inputCodigo.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                console.log("¡Texto inyectado con éxito!");
+
+                // 5. Esperamos 250ms para que Firebase asimile todo y disparamos la función
+                setTimeout(() => {
+                    console.log("Ejecutando unirseASalaPorCodigo()...");
+                    unirseASalaPorCodigo();
+                }, 250);
+
+                // 6. Limpiamos el almacenamiento para evitar bucles interminables
+                localStorage.removeItem('codigo_sala_autostart');
+            }
+        }, 100);
+
+        // Seguridad: Máximo 5 segundos de espera
+        setTimeout(() => clearInterval(esperarInputReal), 5000);
+    }
+});
 </script>
 </body>
 </html>

@@ -57,6 +57,77 @@ function guardarPerfil() {
     cerrarModal();
 }
 
+// --- LÓGICA DE SALAS PÚBLICAS (DURAN PARA SIEMPRE) ---
+function crearSalaPublica() {
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    const nombreSala = prompt("¿Qué nombre o temática tendrá tu sala pública? 💬");
+    
+    if (!nombreSala || !nombreSala.trim()) return;
+
+    database.ref('salas_publicas/').push({
+        creador: miNombre,
+        nombre: nombreSala.trim(),
+        avatar: currentAvatarUrl,
+        fecha: Date.now()
+    }).then(() => {
+        alert("¡Tu sala ya es pública para toda la comunidad! ✨");
+    }).catch(err => console.error("Error al crear sala:", err));
+}
+
+// --- REDIRECCIÓN AL CHATS.HTML USANDO CÓDIGO DE SALA ---
+function irASalaPublicaPorCodigo(codigoSala) {
+    if (!codigoSala) return;
+    localStorage.setItem('codigo_sala_autostart', codigoSala.trim());
+    location.href = 'chats.html';
+}
+
+// --- ACTUALIZAR EL RENDERIZADO EN REALTIME ---
+database.ref('salas_publicas/').on('value', (snapshot) => {
+    const container = document.getElementById('rooms-container');
+    if (!container) return;
+
+    container.innerHTML = ""; 
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+
+    if (!snapshot.exists()) {
+        container.innerHTML = `<small style="color: #888; font-style: italic; padding: 10px;">No hay salas activas ahora mismo. ¡Crea la tuya! 🌸</small>`;
+        return;
+    }
+
+    snapshot.forEach((child) => {
+        const datos = child.val();
+        const idSala = child.key;
+
+        const roomCard = document.createElement('div');
+        roomCard.className = 'room-card';
+
+        const botonBorrar = (datos.creador === miNombre) 
+            ? `<button class="btn-delete-room" onclick="event.stopPropagation(); eliminarSalaPublica('${idSala}')">🗑️</button>` 
+            : '';
+
+        // ¡Aquí llamamos a la nueva función asignando el nombre de la sala como código!
+        roomCard.innerHTML = `
+            ${botonBorrar}
+            <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm" style="border: 2px solid var(--morado-deep);">
+            <p>${datos.nombre}</p>
+            <button class="btn-main" style="padding: 4px 10px; font-size: 0.7rem; border-radius: 10px; width: 100%;" 
+                    onclick="irASalaPublicaPorCodigo('${datos.nombre}')">
+                Entrar
+            </button>
+        `;
+
+        container.appendChild(roomCard);
+    });
+});
+
+function eliminarSalaPublica(idSala) {
+    if (confirm("¿Quieres quitar tu sala de la lista pública? 🌸")) {
+        database.ref(`salas_publicas/${idSala}`).remove()
+            .then(() => alert("Sala retirada con éxito."))
+            .catch(err => console.error("Error al retirar sala:", err));
+    }
+}
+
 // --- LÓGICA DE STORIES (24 HORAS) ---
 
 function subirStory(input) {

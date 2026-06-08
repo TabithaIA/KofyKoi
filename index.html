@@ -29,19 +29,26 @@
             </div>
         </aside>
 
-        <main>
-            <div class="card" style="display: flex; gap: 15px; overflow-x: auto; padding: 15px; align-items: center;">
-    <div id="add-story" onclick="document.getElementById('storyInput').click()" style="cursor: pointer; text-align: center;">
-        <div class="avatar-sm" style="background: var(--rosa); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--morado-deep);">
-            <span>+</span>
-        </div>
-        <small>Tu Story</small>
-        <input type="file" id="storyInput" accept="image/*" style="display: none;" onchange="subirStory(this)">
-    </div>
-    <div id="stories-container" style="display: flex; gap: 15px;">
-        </div>
-</div>
+                <main>
+            <div class="card" style="padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h5 style="font-family: 'Quicksand', sans-serif; font-weight: 600; color: var(--morado-deep); margin: 0;">Salas Públicas 🗺️</h5>
+                    <button class="btn-main" onclick="crearSalaPublica()" style="padding: 5px 12px; font-size: 0.75rem; border-radius: 12px;">+ Publicar mi Sala</button>
+                </div>
+                <div id="rooms-container" class="slider-horizontal">
+                    </div>
+            </div>
 
+            <div class="card" style="display: flex; gap: 15px; overflow-x: auto; padding: 15px; align-items: center;">
+                <div id="add-story" onclick="document.getElementById('storyInput').click()" style="cursor: pointer; text-align: center;">
+                    <div class="avatar-sm" style="background: var(--rosa); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--morado-deep);">
+                        <span>+</span>
+                    </div>
+                    <small>Tu Story</small>
+                    <input type="file" id="storyInput" accept="image/*" style="display: none;" onchange="subirStory(this)">
+                </div>
+                <div id="stories-container" style="display: flex; gap: 15px;"></div>
+            </div>
 
             <div class="card">
                 <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
