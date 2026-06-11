@@ -320,3 +320,97 @@ body {
     padding: 2px;
 }
 
+/* ==========================================================================
+   MODO OSCURO AUTOMÁTICO (Sincronizado con el Sistema Operativo)
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fondo: #121214;
+        --blanco: #1e1e24;
+        --oscuro-suave: #f0f0f5;
+        --morado-deep: #634FC0;
+        --azul-claro: #2c3e50;
+        --lavanda: #4a3b52;
+        --rosa: #b85076;
+    }
+
+    body {
+        background-color: var(--fondo);
+        color: var(--oscuro-suave);
+    }
+
+    /* Forzar el cambio absoluto en los chats, salas privadas y alertas */
+    .chat-layout,
+    .chat-box,
+    .messages-container,
+    
+    .noti-container,
+    .noti-card,
+    .card,
+    .modal-content {
+        background: #1e1e24 !important;
+        background-color: #1e1e24 !important;
+        color: #f0f0f5 !important;
+        border-color: #2c3e50 !important;
+    }
+
+    /* Títulos e indicadores */
+    h2, h3, h4,
+    .noti-header h2 {
+        color: #f0f0f5 !important;
+    }
+
+    /* Entradas de texto, comentarios y burbujas de los demás */
+    textarea,
+    input,
+    .input-comment,
+    .comment-item,
+    .room-card,
+    
+    }
+
+    /* Encabezado del chat privado */
+    .chat-header {
+        background: #2e2459 !important;
+        background-color: #2e2459 !important;
+        color: #ffffff !important;
+        border-bottom: 2px solid #b85076 !important;
+    }
+
+    /* Textos secundarios */
+    .noti-title,
+    .noti-text,
+    .room-card p,
+    .comment-item strong {
+        color: #e2dcf0 !important;
+    }
+
+    .noti-time,
+    .bubble small {
+        color: #aaaaaa !important;
+    }
+
+    .nav-item {
+        color: #9b8ed9 !important;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+        color: #b85076 !important;
+    }
+
+    .main-btn {
+        background-color: #2a445e !important;
+        border-color: #121214 !important;
+    }
+
+    .skeleton {
+        background: #2d2d35 !important;
+    }
+}
+
+/* Transición global para suavizar el cambio al alternar el sistema */
+body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-comment, .chat-container, .messages-container, .bubble, .noti-card, .chat-header, .chat-box {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
+}
+
