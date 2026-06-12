@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KofyKoi - Tienda de Historias</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .tienda-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: var(--blanco);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .stat-item {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--oscuro-suave);
+        }
+        .stat-item span {
+            font-size: 1.2rem;
+        }
+        .grid-tienda {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media(min-width: 600px) {
+            .grid-tienda {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        /* Contenedor de los paneles de acciones izquierdos */
+        .vender-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: fit-content;
+        }
+        .btn-abrir-vender {
+            width: 100%;
+            background: var(--morado-deep);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 4px 10px rgba(106, 90, 205, 0.15);
+            transition: 0.2s ease;
+        }
+        .btn-abrir-vender.btn-transferir {
+            background: var(--azul-claro);
+            color: var(--oscuro-suave);
+            box-shadow: 0 4px 10px rgba(176, 224, 230, 0.3);
+        }
+        .btn-abrir-vender:hover {
+            opacity: 0.95;
+            transform: scale(0.99);
+        }
+        .form-vender {
+            display: none; /* Ocultos por defecto */
+            background: var(--blanco);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-vender h3 {
+            margin-bottom: 15px;
+            color: var(--morado-deep);
+        }
+        .form-vender.panel-azul h3 {
+            color: #4a7c8c;
+        }
+        .input-tienda, .textarea-tienda {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 2px solid var(--azul-claro);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        .textarea-tienda {
+            height: 120px;
+            resize: none;
+        }
+        .btn-tienda {
+            width: 100%;
+            background: var(--morado-deep);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .btn-tienda.btn-send-coins {
+            background: #4a7c8c;
+        }
+        .btn-tienda:hover {
+            opacity: 0.9;
+        }
+        .lista-historias h3 {
+            margin-bottom: 15px;
+            color: var(--oscuro-suave);
+        }
+        .historia-card {
+            background: var(--blanco);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            border-left: 5px solid var(--lavanda);
+            position: relative;
+        }
+        .historia-card.propia {
+            border-left-color: var(--rosa);
+        }
+        .historia-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--oscuro-suave);
+            margin-bottom: 5px;
+            padding-right: 25px; /* Espacio para que el título no pise la X */
+        }
+        .historia-author {
+            font-size: 0.8rem;
+            color: gray;
+            margin-bottom: 10px;
+        }
+        .historia-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .precio-tag {
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .btn-action-historia {
+            background: var(--rosa);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            color: var(--oscuro-suave);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-action-historia.comprada {
+            background: var(--azul-claro);
+        }
+        /* Botón elegante para borrar la historia */
+        .btn-borrar-historia {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: #cc0000;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 5px;
+            opacity: 0.5;
+            transition: 0.2s;
+        }
+        .btn-borrar-historia:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        /* Modal para leer historias completas */
+        .modal-lectura {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .modal-content-lectura {
+            background: var(--blanco);
+            padding: 20px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .modal-content-lectura h2 {
+            margin-bottom: 10px;
+            color: var(--morado-deep);
+        }
+        .texto-historia-completo {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--oscuro-suave);
+            white-space: pre-wrap;
+            margin-top: 15px;
+            background: var(--fondo);
+            padding: 15px;
+            border-radius: 12px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">KofyKoi 🏪</div>
+        <div class="header-user">
+            <span id="nav-username">@KofyUser</span>
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tienda-container">
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    Monedas: <span id="balanceMonedas" style="color: #d4af37; font-weight: bold;">0</span> 🪙
+                </div>
+                <div class="stat-item" id="rachaMensaje">
+                    Racha actual: <span id="rachaDias" style="color: #ff4500; font-weight: bold;">1</span> 🔥
+                </div>
+            </div>
+
+            <div class="grid-tienda">
+                <div class="vender-wrapper">
+                    
+                    <button class="btn-abrir-vender" id="btnToggleVender" onclick="toggleFormularioVender()">
+                        Vender una Historia 📖✨
+                    </button>
+
+                    <div class="form-vender" id="panelVender">
+                        <h3>Publicar en la Tienda 🌸</h3>
+                        <p style="font-size: 0.8rem; color: gray; margin-bottom: 15px;">Completa los datos de tu relato para ponerlo a la venta.</p>
+                        
+                        <input type="text" id="tituloHistoria" class="input-tienda" placeholder="Título de la historia..." maxlength="50">
+                        <input type="number" id="precioHistoria" class="input-tienda" placeholder="Precio en monedas (ej. 5)..." min="1">
+                        <textarea id="contenidoHistoria" class="textarea-tienda" placeholder="Escribe o pega el texto completo de tu historia aquí..."></textarea>
+                        
+                        <button class="btn-tienda" onclick="publicarHistoria()">Poner en Venta ✨</button>
+                    </div>
+
+                    <button class="btn-abrir-vender btn-transferir" id="btnToggleTransferir" onclick="toggleFormularioTransferir()">
+                        Enviar Monedas a un Amigo 💸
+                    </button>
+
+                    <div class="form-vender panel-azul" id="panelTransferir">
+                        <h3>Transferir Monedas 🪙</h3>
+                        <p style="font-size: 0.8rem; color: gray; margin-bottom: 15px;">Regala o transfiere tus monedas a cualquier otro usuario de KofyKoi de inmediato.</p>
+                        
+                        <input type="text" id="usuarioDestinoTransferencia" class="input-tienda" placeholder="Nombre del amigo (ej: @Ema o Ema)...">
+                        <input type="number" id="montoTransferencia" class="input-tienda" placeholder="Monto de monedas a enviar..." min="1">
+                        
+                        <button class="btn-tienda btn-send-coins" onclick="realizarTransferencia()">Enviar Regalo 🎁</button>
+                    </div>
+
+                </div>
+
+                <div class="lista-historias">
+                    <h3>Mercado de Historias 🌸</h3>
+                    <div id="tienda-list-container">
+                        </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="modalLectura" class="modal-lectura">
+        <div class="modal-content-lectura">
+            <h2 id="modalTitulo">Título</h2>
+            <div id="modalAutor" style="font-size: 0.85rem; color: gray;">Por: @Autor</div>
+            <div id="modalTexto" class="texto-historia-completo">Cargando texto...</div>
+            <button class="btn-tienda" style="margin-top: 15px; background: var(--rosa); color: var(--oscuro-suave);" onclick="cerrarLectura()">Cerrar Lectura 🌸</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+    <button class="nav-item" onclick="location.href='perfil.html'">
+        <span>👤</span>
+        <small>Perfil</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='chats.html'">
+        <span>💬</span>
+        <small>Chats</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='notificaciones.html'">
+        <span>🔔</span>
+        <small>Alertas</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='index.html'">
+        <span>🏠</span>
+        <small>Inicio</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='botellas.html'">
+        <span>🍾</span>
+        <small>Botellas</small>
+    </button>
+
+    <button class="nav-item main-btn" onclick="location.href='tienda.html'">
+        <span>🏪</span>
+        <small>Tienda</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='datos.html'">
+        <span>❕</span>
+        <small>Info</small>
+    </button>
+</nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
+    <script>
+        // Configuración oficial de tu Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
+            authDomain: "kofikoi.firebaseapp.com",
+            databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
+            projectId: "kofikoi",
+            storageBucket: "kofikoi.appspot.com"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+        const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
+        const usuarioKey = miNombre.replace(/[.#$[\\]]/g, "_");
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('nav-username').textContent = miNombre;
+            document.getElementById('imgNav').src = miAvatar;
+
+            // Procesar ingreso diario y racha
+            comprobarRachaYMonedas();
+            
+            // Escuchar los productos de la tienda
+            cargarMercadoTienda();
+        });
+
+        // MOSTRAR / OCULTAR EL PANEL DE VENDER
+        function toggleFormularioVender() {
+            const panel = document.getElementById('panelVender');
+            const boton = document.getElementById('btnToggleVender');
+            
+            document.getElementById('panelTransferir').style.display = "none";
+            document.getElementById('btnToggleTransferir').textContent = "Enviar Monedas a un Amigo 💸";
+            document.getElementById('btnToggleTransferir').style.background = "var(--azul-claro)";
+            document.getElementById('btnToggleTransferir').style.color = "var(--oscuro-suave)";
+
+            if (panel.style.display === "block") {
+                panel.style.display = "none";
+                boton.textContent = "Vender una Historia 📖✨";
+                boton.style.background = "var(--morado-deep)";
+            } else {
+                panel.style.display = "block";
+                boton.textContent = "Cerrar Panel de Venta ✕";
+                boton.style.background = "var(--oscuro-suave)";
+            }
+        }
+
+        // MOSTRAR / OCULTAR EL PANEL DE TRANSFERENCIAS
+        function toggleFormularioTransferir() {
+            const panel = document.getElementById('panelTransferir');
+            const boton = document.getElementById('btnToggleTransferir');
+
+            document.getElementById('panelVender').style.display = "none";
+            document.getElementById('btnToggleVender').textContent = "Vender una Historia 📖✨";
+            document.getElementById('btnToggleVender').style.background = "var(--morado-deep)";
+
+            if (panel.style.display === "block") {
+                panel.style.display = "none";
+                boton.textContent = "Enviar Monedas a un Amigo 💸";
+                boton.style.background = "var(--azul-claro)";
+                boton.style.color = "var(--oscuro-suave)";
+            } else {
+                panel.style.display = "block";
+                boton.textContent = "Cerrar Transferencia ✕";
+                boton.style.background = "var(--oscuro-suave)";
+                boton.style.color = "white";
+            }
+        }
+
+        // SISTEMA DE RACHA DIARIA Y RECOMPENSAS
+        function comprobarRachaYMonedas() {
+            const hoyStr = new Date().toDateString();
+            const ultimaVisita = localStorage.getItem('kofy_ultima_fecha_tienda');
+            let totalMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 10;
+            let rachaActual = parseInt(localStorage.getItem('kofy_racha_dias')) || 1;
+
+            if (ultimaVisita !== hoyStr) {
+                if (ultimaVisita) {
+                    const ayer = new Date();
+                    ayer.setDate(ayer.getDate() - 1);
+                    
+                    if (ultimaVisita === ayer.toDateString()) {
+                        rachaActual += 1;
+                    } else {
+                        rachaActual = 1;
+                    }
+                }
+                
+                totalMonedas += 2;
+                localStorage.setItem('kofy_monedas', totalMonedas);
+                localStorage.setItem('kofy_racha_dias', rachaActual);
+                localStorage.setItem('kofy_ultima_fecha_tienda', hoyStr);
+                
+                alert(`¡Racha Activa! 🔥 Llevas ${rachaActual} días entrando seguidos. ¡Has recibido 2 monedas de regalo! 🪙`);
+            }
+
+            document.getElementById('balanceMonedas').textContent = totalMonedas;
+            document.getElementById('rachaDias').textContent = rachaActual;
+            
+            database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(totalMonedas);
+            database.ref(`usuarios_economia/${usuarioKey}/racha`).set(rachaActual);
+
+            database.ref(`usuarios_economia/${usuarioKey}/monedas`).on('value', (snap) => {
+                if (snap.exists()) {
+                    const actualM = snap.val();
+                    localStorage.setItem('kofy_monedas', actualM);
+                    document.getElementById('balanceMonedas').textContent = actualM;
+                }
+            });
+        }
+
+        // ENVIAR MONEDAS DIRECTAMENTE A UN AMIGO
+        function realizarTransferencia() {
+            const destinoRaw = document.getElementById('usuarioDestinoTransferencia').value.trim();
+            const monto = parseInt(document.getElementById('montoTransferencia').value);
+            let misMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 0;
+
+            if (!destinoRaw || isNaN(monto) || monto <= 0) {
+                alert("Por favor ingresa un nombre válido y un monto de monedas mayor a 0. 🌸");
+                return;
+            }
+
+            let destinoLimpio = destinoRaw;
+            if (!destinoLimpio.startsWith('@')) {
+                destinoLimpio = '@' + destinoLimpio;
+            }
+            const destinoKey = destinoLimpio.replace(/[.#$[\\]]/g, "_");
+
+            if (destinoLimpio.toLowerCase() === miNombre.toLowerCase()) {
+                alert("❌ No puedes transferirte monedas a ti mismo.");
+                return;
+            }
+
+            if (misMonedas < monto) {
+                alert(`❌ No tienes monedas suficientes. Tu saldo actual es de ${misMonedas} monedas.`);
+                return;
+            }
+
+            if (confirm(`¿Estás seguro de enviar ${monto} monedas a ${destinoLimpio}? ✨`)) {
+                const nuevoSaldoComprador = misMonedas - monto;
+
+                database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(nuevoSaldoComprador)
+                .then(() => {
+                    
+                    database.ref(`usuarios_economia/${destinoKey}/monedas`).transaction((currentCoins) => {
+                        return (currentCoins || 0) + monto;
+                    });
+
+                    database.ref(`notificaciones/${destinoKey}`).push({
+                        titulo: "¡Te enviaron un regalo! 🎁🪙",
+                        mensaje: `${miNombre} te ha transferido de forma directa +${monto} monedas a tu cuenta.`,
+                        fecha: Date.now()
+                    });
+
+                    alert(`🎉 ¡Transferencia completada! Le has enviado ${monto} monedas a ${destinoLimpio}.`);
+                    
+                    document.getElementById('usuarioDestinoTransferencia').value = "";
+                    document.getElementById('montoTransferencia').value = "";
+                    toggleFormularioTransferir();
+                })
+                .catch(err => alert("Ocurrió un error en la base de datos: " + err));
+            }
+        }
+
+        // SUBIR NUEVA HISTORIA A LA TIENDA
+        function publicarHistoria() {
+            const titulo = document.getElementById('tituloHistoria').value.trim();
+            const precio = parseInt(document.getElementById('precioHistoria').value);
+            const contenido = document.getElementById('contenidoHistoria').value.trim();
+
+            if (!titulo || isNaN(precio) || precio <= 0 || !contenido) {
+                alert("Completa todos los campos correctamente con un precio mayor a 0. 🌸");
+                return;
+            }
+
+            const refHistoria = database.ref('tienda_historias').push();
+            refHistoria.set({
+                id: refHistoria.key,
+                titulo: titulo,
+                precio: precio,
+                contenido: contenido,
+                vendedor: miNombre,
+                vendedorKey: usuarioKey,
+                fecha: Date.now()
+            }).then(() => {
+                alert("¡Tu historia se ha puesto a la venta exitosamente! 📖✨");
+                document.getElementById('tituloHistoria').value = "";
+                document.getElementById('precioHistoria').value = "";
+                document.getElementById('contenidoHistoria').value = "";
+                toggleFormularioVender();
+            }).catch(err => console.error("Error al publicar:", err));
+        }
+
+        // NUEVA FUNCIÓN: ELIMINAR UNA HISTORIA PROPIA DE LA TIENDA
+        function borrarHistoria(id, titulo) {
+            if (confirm(`¿Estás seguro de que quieres quitar "${titulo}" de la tienda? Esta acción no se puede deshacer. 🌸`)) {
+                database.ref(`tienda_historias/${id}`).remove()
+                .then(() => {
+                    alert("La historia ha sido eliminada del mercado exitosamente.");
+                })
+                .catch(err => alert("Error al eliminar la historia: " + err));
+            }
+        }
+
+        // MOSTRAR HISTORIAS DISPONIBLES E IDENTIFICAR COMPRADAS
+        function cargarMercadoTienda() {
+            const container = document.getElementById('tienda-list-container');
+            
+            database.ref(`usuarios_compras/${usuarioKey}`).on('value', (comprasSnap) => {
+                const misCompras = comprasSnap.val() || {};
+
+                database.ref('tienda_historias').on('value', (snapshot) => {
+                    container.innerHTML = "";
+
+                    if (!snapshot.exists()) {
+                        container.innerHTML = `<p style="text-align:center; color:gray; padding:20px;">No hay historias en venta en este momento.</p>`;
+                        return;
+                    }
+
+                    let lista = [];
+                    snapshot.forEach((child) => {
+                        lista.push(child.val());
+                    });
+                    lista.reverse();
+
+                    lista.forEach((item) => {
+                        const card = document.createElement('div');
+                        const soyElCreador = item.vendedor === miNombre;
+                        const yaAdquirida = misCompras[item.id] === true;
+
+                        card.className = `historia-card ${soyElCreador ? 'propia' : ''}`;
+                        
+                        // Añadir botón de borrar con forma de cruz si eres el dueño de la publicación
+                        let botonBorrarHtml = "";
+                        if (soyElCreador) {
+                            botonBorrarHtml = `<button class="btn-borrar-historia" onclick="borrarHistoria('${item.id}', '${item.titulo}')" title="Eliminar de la tienda">✕</button>`;
+                        }
+
+                        let accionHtml = "";
+                        if (soyElCreador) {
+                            accionHtml = `<button class="btn-action-historia comprada" onclick="abrirLectura('${item.id}')">Tuya (Leer)</button>`;
+                        } else if (yaAdquirida) {
+                            accionHtml = `<button class="btn-action-historia comprada" onclick="abrirLectura('${item.id}')">Leer 📖</button>`;
+                        } else {
+                            accionHtml = `<button class="btn-action-historia" onclick="adquirirHistoria('${item.id}', ${item.precio}, '${item.vendedorKey}', '${item.titulo}')">Comprar 🪙</button>`;
+                        }
+
+                        card.innerHTML = `
+                            ${botonBorrarHtml}
+                            <div class="historia-title">${item.titulo}</div>
+                            <div class="historia-author">Por: ${soyElCreador ? 'Ti' : item.vendedor}</div>
+                            <div class="historia-footer">
+                                <span class="precio-tag">${item.precio} Monedas</span>
+                                ${accionHtml}
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                });
+            });
+        }
+
+        // PROCESO DE TRANSFERENCIA MONETARIA AL COMPRAR
+        function adquirirHistoria(id, precio, sellerKey, titulo) {
+            let misMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 0;
+
+            if (misMonedas < precio) {
+                alert("❌ No tienes suficientes monedas acumuladas. ¡Sigue tu racha diaria para juntar más!");
+                return;
+            }
+
+            if (confirm(`¿Confirmas la compra de "${titulo}" por ${precio} monedas? 🌸`)) {
+                const saldoRestante = misMonedas - precio;
+                
+                database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(saldoRestante)
+                .then(() => {
+                    database.ref(`usuarios_compras/${usuarioKey}/${id}`).set(true);
+
+                    database.ref(`usuarios_economia/${sellerKey}/monedas`).transaction((monedasActuales) => {
+                        return (monedasActuales || 0) + precio;
+                    });
+
+                    database.ref(`notificaciones/${sellerKey}`).push({
+                        titulo: "¡Nueva Venta! 🪙",
+                        mensaje: `${miNombre} ha comprado tu historia titulada "${titulo}". ¡Ganaste +${precio} monedas!`,
+                        fecha: Date.now()
+                    });
+
+                    alert("🎉 ¡Compra finalizada! Ya puedes abrir el texto pulsando el botón 'Leer'.");
+                })
+                .catch(err => alert("Error en el servidor: " + err));
+            }
+        }
+
+        // ABRIR EL CONTENIDO COMPLETO DE LA HISTORIA
+        function abrirLectura(id) {
+            database.ref(`tienda_historias/${id}`).once('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const info = snapshot.val();
+                    document.getElementById('modalTitulo').textContent = info.titulo;
+                    document.getElementById('modalAutor').textContent = `Por: ${info.vendedor}`;
+                    document.getElementById('modalTexto').textContent = info.contenido;
+                    document.getElementById('modalLectura').style.display = 'flex';
+                }
+            });
+        }
+
+        function cerrarLectura() {
+            document.getElementById('modalLectura').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
