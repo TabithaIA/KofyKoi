@@ -171,6 +171,8 @@
                     <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
                     <input type="file" id="videoChatInput" accept="video/*" style="display: none;" onchange="prepararVideoChat(this)">
+                    <input type="file" id="audioChatInput" accept="audio/*" style="display: none;" onchange="prepararAudioArchivo(this)">
+
                 </div>
 
                 <div id="mensajesPrivados" class="chat-container"></div>
@@ -178,6 +180,9 @@
                 <div class="chat-input-area">
                     <button class="btn-img" onclick="document.getElementById('imagenChatInput').click()">📷</button>
                     <button class="btn-img" onclick="document.getElementById('videoChatInput').click()">🎥</button>
+    <button class="btn-img" onclick="document.getElementById('audioChatInput').click()">🎵</button>
+                </div>
+                <div class="chat-input-area">
                     <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius: 10px; border: 1px solid #ddd;"></textarea>
                     <button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
                 </div>
@@ -371,6 +376,7 @@
                 ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
                 ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
+${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
             contenedor.appendChild(msgDiv);
@@ -718,6 +724,8 @@
                 ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
                 ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
+                ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
+
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
             return msgDiv;
@@ -846,6 +854,49 @@ function restaurarInputChat(textarea, placeholderOriginal, input) {
     textarea.placeholder = placeholderOriginal;
     textarea.disabled = false;
     input.value = "";
+}
+
+// Nuevo Audio
+
+function prepararAudioArchivo(input) {
+    if (input.files[0]) {
+        const archivo = input.files[0];
+        
+        // Control de peso: Máximo 5 MB para no sobrecargar Firebase
+        const maximoBytes = 5 * 1024 * 1024; 
+        if (archivo.size > maximoBytes) {
+            alert(`❌ El archivo de audio es demasiado pesado (${(archivo.size / (1024 * 1024)).toFixed(2)} MB). El límite son 5 MB.`);
+            input.value = ""; 
+            return;
+        }
+
+        const textarea = document.getElementById('textoPrivado');
+        const originalPlaceholder = textarea.placeholder;
+        textarea.placeholder = "Subiendo audio... 🎵";
+        textarea.disabled = true;
+
+        const lector = new FileReader();
+        lector.onload = function(evento) {
+            const audioBase64 = evento.target.result;
+            
+            // Enviamos el archivo de audio a la base de datos
+            database.ref(`chats_privados/${salaActual}/mensajes`).push({
+                usuario: miNombre,
+                avatar: miAvatar,
+                mensaje: "",
+                audio: audioBase64, // Guardamos la cadena limpia del archivo
+                fecha: Date.now(),
+                colorBurbuja: miColorBurbuja
+            });
+
+            // Restaurar la interfaz
+            textarea.placeholder = originalPlaceholder;
+            textarea.disabled = false;
+            input.value = "";
+        };
+
+        lector.readAsDataURL(archivo);
+    }
 }
     </script>
 
