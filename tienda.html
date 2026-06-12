@@ -437,7 +437,7 @@
         <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
     </nav>
 
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
     <script>
@@ -603,22 +603,18 @@
             });
         }
 
-        // LÓGICA UNIFICADA DE RENDERIZADO CON FILTROS DINÁMICOS
         function cargarProductosCompleto() {
             const container = document.getElementById('tienda-list-container');
             container.innerHTML = "<p style='text-align:center; color:gray; padding:20px;'>Cargando...</p>";
 
-            // Escuchar en tiempo real la economía (para saber qué está equipado)
             database.ref(`usuarios_economia/${usuarioKey}`).on('value', (econSnap) => {
                 const datosEcon = econSnap.val() || {};
                 const marcoEquipado = datosEcon.marcoActivo || "";
                 const burbujaEquipada = datosEcon.burbujaActiva || "";
 
-                // Escuchar en tiempo real las compras
                 database.ref(`usuarios_compras/${usuarioKey}`).on('value', (comprasSnap) => {
                     const misComprasKeys = comprasSnap.val() || {};
 
-                    // Traer ambas colecciones de la base de datos
                     const promHistorias = database.ref('tienda_historias').once('value');
                     const promDibujos = database.ref('tienda_dibujos').once('value');
 
@@ -626,7 +622,6 @@
                         container.innerHTML = "";
                         let listaFiltrada = [];
 
-                        // 1. Recolectar Historias
                         if(snapHist.exists()){
                             snapHist.forEach(c => {
                                 let item = c.val();
@@ -640,7 +635,6 @@
                             });
                         }
 
-                        // 2. Recolectar Dibujos / Marcos / Burbujas
                         if(snapDib.exists()){
                             snapDib.forEach(c => {
                                 let item = c.val();
@@ -654,10 +648,8 @@
                             });
                         }
 
-                        // Ordernar por más reciente primero
                         listaFiltrada.sort((a, b) => b.fecha - a.fecha);
 
-                        // 3. Aplicar Filtro de los 5 botones
                         if (filtroCategoria !== 'todos') {
                             listaFiltrada = listaFiltrada.filter(item => item.subtipo === filtroCategoria);
                         }
@@ -667,7 +659,6 @@
                             return;
                         }
 
-                        // 4. Dibujar las tarjetas resultantes
                         listaFiltrada.forEach(item => {
                             const card = document.createElement('div');
                             const soyElCreador = item.vendedor === miNombre;
@@ -690,10 +681,8 @@
                                 }
                             }
 
-                            // Determinar qué botones de acción mostrar abajo
                             let accionHtml = "";
                             if (seccionPrincipal === 'cosmeticos' || soyElCreador || yaAdquirido) {
-                                // Si es cosmético equipable (marcos o burbujas)
                                 if (item.subtipo === 'marco' || item.subtipo === 'burbuja') {
                                     let esActivo = (item.subtipo === 'marco' && marcoEquipado === item.contenido) || 
                                                    (item.subtipo === 'burbuja' && burbujaEquipada === item.contenido);
@@ -704,11 +693,9 @@
                                         accionHtml = `<button class="btn-action-historia" style="background:#4caf50; color:white;" onclick="equiparCosmetico('${item.contenido}', '${item.subtipo}')">Equipar ✨</button>`;
                                     }
                                 } else {
-                                    // Dibujos normales o historias de mi mochila
                                     accionHtml = `<button class="btn-action-historia comprada" onclick="abrirContenido('${item.id}', '${item.titulo}', '${item.vendedor}', '${item.contenido}', '${item.subtipo}')">Abrir 👁️</button>`;
                                 }
                             } else {
-                                // El usuario está en el mercado y no lo tiene comprado aún
                                 accionHtml = `<button class="btn-action-historia" onclick="adquirirProducto('${item.id}', ${item.precio}, '${item.vendedorKey}', '${item.titulo}')">Comprar 🪙</button>`;
                             }
 
@@ -822,33 +809,62 @@
             }
         }
 
+        // ==========================================
+        // LÓGICA DE DETECCIÓN DE CAMBIOS CORREGIDA
+        // ==========================================
         function comprobarRachaYMonedas() {
             const hoyStr = new Date().toDateString();
             const ultimaVisita = localStorage.getItem('kofy_ultima_fecha_tienda');
-            let totalMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 10;
+            
+            // 1. Mostrar de inmediato lo que hay en localStorage para que cargue rápido la interfaz
+            let monedasLocales = parseInt(localStorage.getItem('kofy_monedas')) || 10;
             let rachaActual = parseInt(localStorage.getItem('kofy_racha_dias')) || 1;
-
-            if (ultimaVisita !== hoyStr) {
-                if (ultimaVisita) {
-                    const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
-                    rachaActual = (ultimaVisita === ayer.toDateString()) ? rachaActual + 1 : 1;
-                }
-                totalMonedas += 2;
-                localStorage.setItem('kofy_monedas', totalMonedas);
-                localStorage.setItem('kofy_racha_dias', rachaActual);
-                localStorage.setItem('kofy_ultima_fecha_tienda', hoyStr);
-            }
-
-            document.getElementById('balanceMonedas').textContent = totalMonedas;
+            
+            document.getElementById('balanceMonedas').textContent = monedasLocales;
             document.getElementById('rachaDias').textContent = rachaActual;
-            database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(totalMonedas);
-            database.ref(`usuarios_economia/${usuarioKey}/racha`).set(rachaActual);
 
-            database.ref(`usuarios_economia/${usuarioKey}/monedas`).on('value', (snap) => {
-                if (snap.exists()) {
-                    localStorage.setItem('kofy_monedas', snap.val());
-                    document.getElementById('balanceMonedas').textContent = snap.val();
+            // 2. Escuchar la base de datos EN TIEMPO REAL. 
+            // Esto se activa inmediatamente al cargar y CADA VEZ que alguien te da plata.
+            database.ref(`usuarios_economia/${usuarioKey}`).on('value', (snap) => {
+                let datosWeb = snap.val() || {};
+                
+                // Si el usuario no existe en la DB (primera vez), creamos la estructura base
+                if (!snap.exists()) {
+                    database.ref(`usuarios_economia/${usuarioKey}`).set({
+                        monedas: monedasLocales,
+                        racha: rachaActual
+                    });
+                    return;
                 }
+
+                let monedasWeb = parseInt(datosWeb.monedas) !== undefined ? datosWeb.monedas : monedasLocales;
+                let rachaWeb = parseInt(datosWeb.racha) || rachaActual;
+
+                // 3. Evaluar la racha de inicio diario SOLO una vez al día
+                if (ultimaVisita !== hoyStr) {
+                    if (ultimaVisita) {
+                        const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+                        rachaWeb = (ultimaVisita === ayer.toDateString()) ? rachaWeb + 1 : 1;
+                    } else {
+                        rachaWeb = 1;
+                    }
+                    // Le sumamos el bonus de racha a lo que viene de la WEB, no del localStorage antiguo
+                    monedasWeb += 2; 
+
+                    // Guardamos la fecha de hoy para que no se repita en este mismo día
+                    localStorage.setItem('kofy_ultima_fecha_tienda', hoyStr);
+                    
+                    // Empujamos el cambio de racha diario a Firebase
+                    database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(monedasWeb);
+                    database.ref(`usuarios_economia/${usuarioKey}/racha`).set(rachaWeb);
+                }
+
+                // 4. Sincronizar la interfaz y el localStorage con el valor más fresco de Firebase
+                localStorage.setItem('kofy_monedas', monedasWeb);
+                localStorage.setItem('kofy_racha_dias', rachaWeb);
+                
+                document.getElementById('balanceMonedas').textContent = monedasWeb;
+                document.getElementById('rachaDias').textContent = rachaWeb;
             });
         }
     </script>
