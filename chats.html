@@ -123,7 +123,6 @@
             overflow-y: auto;
         }
 
-        /* Estilos para la lista de mensajes fijados dentro del modal */
         .fijado-item {
             background: #fdfdfd;
             border: 1px solid #eee;
@@ -171,12 +170,14 @@
                     
                     <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
+                    <input type="file" id="videoChatInput" accept="video/*" style="display: none;" onchange="prepararVideoChat(this)">
                 </div>
 
                 <div id="mensajesPrivados" class="chat-container"></div>
 
                 <div class="chat-input-area">
                     <button class="btn-img" onclick="document.getElementById('imagenChatInput').click()">📷</button>
+                    <button class="btn-img" onclick="document.getElementById('videoChatInput').click()">🎥</button>
                     <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius: 10px; border: 1px solid #ddd;"></textarea>
                     <button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
                 </div>
@@ -268,7 +269,6 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // --- VARIABLES PARA EL SCROLL INFINITO HACIA ARRIBA ---
         let cargandoMasChat = false;
         let primerMensajeFecha = null; 
         const limiteMensajes = 10;     
@@ -279,7 +279,6 @@
         const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
         let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || ""; 
 
-        // --- INICIALIZACIÓN SIDEBAR ---
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-username').textContent = miNombre;
             document.getElementById('nombrePerfil').textContent = miNombre;
@@ -293,7 +292,6 @@
             enviarMisDatosExtra();
         });
 
-        // --- LÓGICA DE BATERÍA ---
         function monitorearBateria() {
             if ('getBattery' in navigator) {
                 navigator.getBattery().then(battery => {
@@ -318,7 +316,6 @@
             }
         }
 
-        // --- LÓGICA DATOS EXTRA (CONEXIÓN, PLATAFORMA, HORA) ---
         function enviarMisDatosExtra() {
             const miID = miNombre.replace(/[.#$[\]]/g, "_");
             const ua = navigator.userAgent;
@@ -373,13 +370,13 @@
                 </div>
                 ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+                ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
             contenedor.appendChild(msgDiv);
             contenedor.scrollTop = contenedor.scrollHeight;
         }
 
-        // --- LÓGICA DE SEGUIR Y VER PERFIL ---
         function verPerfil(nombre, avatar, bio) {
             const modal = document.getElementById('modalVistaPerfil');
             const btn = document.getElementById('btnSeguir');
@@ -447,7 +444,6 @@
             });
         }
 
-        // --- RACHAS ---
         const hitosRacha = [1, 3, 5, 7, 14, 30, 45, 60, 90, 120, 240, 365];
 
         function abrirModalRacha() {
@@ -498,7 +494,6 @@
             });
         }
 
-        // --- LÓGICA DE MENSAJES FIJADOS (PINS) ---
         function abrirModalFijados() {
             document.getElementById('modalFijados').style.display = 'flex';
             escucharFijados();
@@ -516,13 +511,13 @@
                 avatar: datos.avatar,
                 mensaje: datos.mensaje,
                 imagen: datos.imagen || "",
+                video: datos.video || "",
                 fecha: datos.fecha
             }).then(() => {
                 alert("¡Mensaje fijado con éxito! 📌");
             });
         }
 
-        // FUNCIÓN PARA QUITAR DE FIJADOS EN BD
         function desfijarMensaje(msgId) {
             if (confirm("¿Quieres quitar este mensaje de fijados?")) {
                 database.ref(`chats_privados/${salaActual}/fijados/${msgId}`).remove()
@@ -532,7 +527,6 @@
             }
         }
 
-        // ESCUCHA EN TIEMPO REAL ELIMINACIONES Y ADICIONES
         function escucharFijados() {
             database.ref(`chats_privados/${salaActual}/fijados`).on('value', (snap) => {
                 const contenedor = document.getElementById('fijadosContenedor');
@@ -558,6 +552,7 @@
                         </div>
                         ${info.mensaje ? `<div style="margin-top:2px; word-break:break-word;">${info.mensaje}</div>` : ''}
                         ${info.imagen ? `<img src="${info.imagen}" style="width:100%; border-radius:8px; margin-top:5px; max-height:120px; object-fit:cover;">` : ''}
+                        ${info.video ? `<video src="${info.video}" controls style="width:100%; border-radius:8px; margin-top:5px; max-height:120px; background:#000;"></video>` : ''}
                         <div style="font-size:0.6rem; opacity:0.5; text-align:right; margin-top:3px;">
                             ${new Date(info.fecha).toLocaleDateString()} ${new Date(info.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
@@ -567,7 +562,6 @@
             });
         }
 
-        // --- FONDO AJUSTADO ---
         function ajustarFondoSala(input) {
             if (input.files[0]) {
                 const reader = new FileReader();
@@ -607,7 +601,6 @@
 
             const tiempoEntrada = Date.now();
 
-            // --- 1. CARGA INICIAL ---
             database.ref(`chats_privados/${salaActual}/mensajes`)
                 .orderByChild('fecha')
                 .limitToLast(limiteMensajes)
@@ -624,7 +617,6 @@
                         });
                     }
 
-                    // --- 2. TIEMPO REAL ---
                     database.ref(`chats_privados/${salaActual}/mensajes`)
                         .orderByChild('fecha')
                         .startAt(tiempoEntrada)
@@ -642,7 +634,6 @@
                 if (el) el.remove();
             });
 
-            // --- 3. DETECTOR DE SCROLL HACIA ARRIBA ---
             contenedor.addEventListener('scroll', () => {
                 if (contenedor.scrollTop <= 10 && !cargandoMasChat && primerMensajeFecha) {
                     cargandoMasChat = true;
@@ -675,7 +666,6 @@
                 }
             });
 
-            // --- 4. GENERACIÓN DE LA SALA DE CINE ---
             const inputArea = document.querySelector('.chat-input-area');
             if (inputArea && !document.getElementById('btnAbrirCine')) {
                 const estructuraCine = document.createElement('div');
@@ -727,6 +717,7 @@
                 </div>
                 ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+                ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
             return msgDiv;
@@ -751,6 +742,111 @@
                 usuario: miNombre, avatar: miAvatar, mensaje: "", imagen: base64, fecha: Date.now(), colorBurbuja: miColorBurbuja
             });
         }
+
+        function prepararVideoChat(input) {
+    if (input.files[0]) {
+        const archivo = input.files[0];
+        
+        // 1. Límite máximo estricto de 5 MB
+        const maximoBytes = 100 * 1024 * 1024; 
+        if (archivo.size > maximoBytes) {
+            alert("❌ El video es demasiado pesado. El límite máximo en las salas de KofyKoi son 100 MB.");
+            input.value = ""; 
+            return;
+        }
+
+        const textarea = document.getElementById('textoPrivado');
+        const originalPlaceholder = textarea.placeholder;
+        textarea.disabled = true;
+
+        // 2. ENFOQUE DIRECTO: Si pesa menos de 2 MB, pasa directo sin perder tiempo
+        if (archivo.size <= 10 * 1024 * 1024) {
+            textarea.placeholder = "Subiendo video rápido... 🎥 ${archivo.size}";
+            const lector = new FileReader();
+            lector.onload = function(evento) {
+                enviarVideoAlChat(evento.target.result);
+                restaurarInputChat(textarea, originalPlaceholder, input);
+            };
+            lector.readAsDataURL(archivo);
+            return;
+        }
+
+        // 3. ENFOQUE OPTIMIZADO: Si pesa entre 2 MB y 5 MB, reducimos su resolución a 480p
+        textarea.placeholder = "Optimizando video pesado... ⚙️⏳ ${archivo.size}";
+        
+        const videoOculto = document.createElement('video');
+        videoOculto.src = URL.createObjectURL(archivo);
+        videoOculto.muted = true;
+        videoOculto.playsInline = true;
+
+        videoOculto.onloadeddata = function() {
+            videoOculto.play();
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Forzamos un ancho máximo de 480px para achicar drásticamente el peso del Base64
+            const maxAncho = 240;
+            const ratio = videoOculto.videoWidth / videoOculto.videoHeight;
+            canvas.width = videoOculto.videoWidth > maxAncho ? maxAncho : videoOculto.videoWidth;
+            canvas.height = canvas.width / ratio;
+
+            // Creamos una estructura para empaquetar los frames optimizados en un formato liviano
+            const stream = canvas.captureStream(10); // 15 FPS es el estándar perfecto para ahorrar espacio
+            
+            // Usamos una grabación rápida en segundo plano del renderizado optimizado
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp8',
+                videoBitsPerSecond: 350000 // Bitrate optimizado para chats de celular/web
+            });
+
+            const trozosVideo = [];
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) trozosVideo.push(e.data); };
+
+            mediaRecorder.onstop = () => {
+                const blobOptimizado = new Blob(trozosVideo, { type: 'video/webm' });
+                const lectorOptimizado = new FileReader();
+                lectorOptimizado.onloadend = function() {
+                    enviarVideoAlChat(lectorOptimizado.result);
+                    restaurarInputChat(textarea, originalPlaceholder, input);
+                };
+                lectorOptimizado.readAsDataURL(blobOptimizado);
+            };
+
+            mediaRecorder.start();
+
+            // Dibujamos el video original en el canvas de baja resolución
+            const intervaloId = setInterval(() => {
+                if (!videoOculto.paused && !videoOculto.ended) {
+                    ctx.drawImage(videoOculto, 0, 0, canvas.width, canvas.height);
+                }
+            }, 1000 / 15);
+
+            videoOculto.onended = function() {
+                clearInterval(intervaloId);
+                mediaRecorder.stop();
+            };
+        };
+    }
+}
+
+// Funciones auxiliares limpias para no repetir código
+function enviarVideoAlChat(base64Data) {
+    database.ref(`chats_privados/${salaActual}/mensajes`).push({
+        usuario: miNombre,
+        avatar: miAvatar,
+        mensaje: "",
+        video: base64Data,
+        fecha: Date.now(),
+        colorBurbuja: miColorBurbuja
+    });
+}
+
+function restaurarInputChat(textarea, placeholderOriginal, input) {
+    textarea.placeholder = placeholderOriginal;
+    textarea.disabled = false;
+    input.value = "";
+}
     </script>
 
     <script>
@@ -865,7 +961,6 @@
         });
     }
 
-    // --- AUTO-INGRESAR A SALA PÚBLICA ---
     document.addEventListener('DOMContentLoaded', () => {
         const codigoGuardado = localStorage.getItem('codigo_sala_autostart');
 
