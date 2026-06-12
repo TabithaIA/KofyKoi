@@ -20,8 +20,11 @@
     <div class="container">
         <aside>
     <div class="card profile-card">
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
-        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyLover</h3>
+    <div class="avatar-container" style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
+        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        <img id="marcoPerfil" src="" style="display: none; position: absolute; top: -5px; left: -5px; width: 110px; height: 110px; pointer-events: none; z-index: 10;">
+    </div>
+    <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 10px;">@KofyLover</h3>
         
         <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
         

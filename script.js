@@ -652,6 +652,37 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarMasPosts();
 });
 
+// --- CARGAR COSMÉTICOS ACTIVOS EN TODAS LAS PÁGINAS EN TIEMPO REAL ---
+const miNombreActual = localStorage.getItem('kofy_nombre') || "@KofyUser";
+const usuarioKeyLimpia = miNombreActual.replace(/[.#$[\\]]/g, "_");
+
+database.ref(`usuarios_economia/${usuarioKeyLimpia}`).on('value', (snapshot) => {
+    const datosEcon = snapshot.val() || {};
+    const marcoActivo = datosEcon.marcoActivo || "";
+    
+    // 1. Controlar marco grande (si existe en la página actual)
+    const elemMarcoGrande = document.getElementById('marcoPerfil');
+    if (elemMarcoGrande) {
+        if (marcoActivo) {
+            elemMarcoGrande.src = marcoActivo;
+            elemMarcoGrande.style.display = 'block';
+        } else {
+            elemMarcoGrande.style.display = 'none';
+        }
+    }
+
+    // 2. Controlar marco pequeño del menú superior (si existe en la página actual)
+    const elemMarcoNav = document.getElementById('marcoNav');
+    if (elemMarcoNav) {
+        if (marcoActivo) {
+            elemMarcoNav.src = marcoActivo;
+            elemMarcoNav.style.display = 'block';
+        } else {
+            elemMarcoNav.style.display = 'none';
+        }
+    }
+});
+
 // --- ESCUCHAR SI LLEGAN MENSAJES PRIVADOS NUEVOS PARA MÍ ---
 database.ref('mensajes_privados/').on('child_changed', (snapshot) => {
     const roomId = snapshot.key;

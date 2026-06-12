@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KofyKoi - Tienda</title>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght=400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         .tienda-container {
@@ -31,7 +31,7 @@
             font-size: 1.2rem;
         }
         
-        /* Pestañas */
+        /* Pestañas de las Secciones Principales */
         .tienda-tabs {
             display: flex;
             gap: 10px;
@@ -48,10 +48,40 @@
             cursor: pointer;
             font-family: inherit;
             transition: 0.2s;
+            font-size: 0.85rem;
         }
         .tab-btn.active {
             background: var(--morado-deep);
             color: white;
+        }
+
+        /* Sub-filtros de categorías (Fijos donde venden y en cosméticos) */
+        .sub-filtros-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .sub-filter-btn {
+            padding: 6px 12px;
+            border: 2px solid var(--lavanda);
+            background: white;
+            color: var(--oscuro-suave);
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .sub-filter-btn.active {
+            background: var(--rosa);
+            border-color: var(--rosa);
+            color: var(--oscuro-suave);
         }
 
         .grid-tienda {
@@ -142,20 +172,6 @@
             background: #e6f0fa;
         }
         
-        .btn-tienda {
-            width: 100%;
-            background: var(--morado-deep);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: 0.2s;
-        }
-        .btn-tienda:hover { opacity: 0.9; }
-        
         /* Tarjetas */
         .historia-card {
             background: var(--blanco);
@@ -181,7 +197,6 @@
             margin-bottom: 10px;
         }
         
-        /* Vista previa borrosa */
         .preview-dibujo-box {
             width: 100%;
             height: 140px;
@@ -214,6 +229,14 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
+        .badge-tipo-inventario {
+            background: var(--lavanda);
+            color: var(--morado-deep);
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
         .btn-action-historia {
             background: var(--rosa);
             border: none;
@@ -226,6 +249,7 @@
             font-size: 0.85rem;
         }
         .btn-action-historia.comprada { background: var(--azul-claro); }
+        .btn-action-historia.desequipar-btn { background: #ff4d4d; color: white; }
         .btn-borrar-historia {
             position: absolute;
             top: 15px;
@@ -242,7 +266,6 @@
         }
         .btn-borrar-historia:hover { opacity: 1; }
 
-        /* Modales */
         .modal-lectura {
             display: none;
             position: fixed;
@@ -264,10 +287,6 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             text-align: center;
         }
-        .modal-content-lectura h2 {
-            margin-bottom: 10px;
-            color: var(--morado-deep);
-        }
         .texto-historia-completo {
             font-size: 1rem;
             line-height: 1.6;
@@ -287,6 +306,18 @@
             border-radius: 12px;
             margin-top: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-tienda {
+            width: 100%;
+            background: var(--morado-deep);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
         }
     </style>
 </head>
@@ -326,6 +357,8 @@
                         <select id="tipoPublicacion" class="input-tienda" onchange="adaptarFormularioVenta()">
                             <option value="historia">Escribir una Historia 📖</option>
                             <option value="dibujo">Subir un Dibujo/Arte 🎨</option>
+                            <option value="marco">Crear un Marco de Perfil 💫</option>
+                            <option value="burbuja">Crear una Burbuja de Chat 💬</option>
                         </select>
                         
                         <input type="text" id="tituloProducto" class="input-tienda" placeholder="Título de la publicación..." maxlength="50">
@@ -337,7 +370,7 @@
                         
                         <div id="contenedorContenidoDibujo" style="display:none;">
                             <label for="fileDibujo" class="file-label-tienda" id="labelFileTexto">
-                                📁 Seleccionar Dibujo de tu Dispositivo
+                                📁 Seleccionar Imagen de tu Dispositivo
                             </label>
                             <input type="file" id="fileDibujo" accept="image/*" style="display:none;" onchange="procesarYComprimirImagen(this)">
                         </div>
@@ -349,7 +382,7 @@
                         Enviar Monedas a un Amigo 💸
                     </button>
 
-                    <div class="form-vender" id="panelTransferir" style="background: #000000;">
+                    <div class="form-vender" id="panelTransferir" style="background: #000000; color: white;">
                         <h3>Transferir Monedas 🪙</h3>
                         <input type="text" id="usuarioDestinoTransferencia" class="input-tienda" placeholder="Nombre del amigo (ej: @Ema)...">
                         <input type="number" id="montoTransferencia" class="input-tienda" placeholder="Monto a enviar..." min="1">
@@ -358,14 +391,24 @@
 
                 </div>
 
-                <div class="tienda-tabs">
-                <button class="tab-btn active" id="tabHistorias" onclick="cambiarMercado('historias')">Historias 📖</button>
-                <button class="tab-btn" id="tabDibujos" onclick="cambiarMercado('dibujos')">Dibujos 🎨</button>
-            </div>
+                <div>
+                    <div class="tienda-tabs">
+                        <button class="tab-btn active" id="tabMercado" onclick="cambiarSeccionPrincipal('mercado')">Mercado Público 🏪</button>
+                        <button class="tab-btn" id="tabCosmeticos" onclick="cambiarSeccionPrincipal('cosmeticos')">Mis Cosméticos ✨</button>
+                    </div>
 
-                <div class="lista-historias">
-                    <h3 id="tituloMercado">Mercado de Historias 📖</h3>
-                    <div id="tienda-list-container"></div>
+                    <div class="sub-filtros-container" id="menuFiltrosCategorias">
+                        <button class="sub-filter-btn active" id="subTabAll" onclick="cambiarFiltroCategoria('todos')">Ver Todo 🌈</button>
+                        <button class="sub-filter-btn" id="subTabHist" onclick="cambiarFiltroCategoria('historia')">Historias 📖</button>
+                        <button class="sub-filter-btn" id="subTabDib" onclick="cambiarFiltroCategoria('dibujo')">Dibujos 🎨</button>
+                        <button class="sub-filter-btn" id="subTabMarc" onclick="cambiarFiltroCategoria('marco')">Marcos 💫</button>
+                        <button class="sub-filter-btn" id="subTabBurb" onclick="cambiarFiltroCategoria('burbuja')">Burbujas 💬</button>
+                    </div>
+
+                    <div class="lista-historias">
+                        <h3 id="tituloMercado">Mercado General 🌈</h3>
+                        <div id="tienda-list-container"></div>
+                    </div>
                 </div>
             </div>
 
@@ -385,40 +428,13 @@
     </div>
 
     <nav class="bottom-nav">
-    <button class="nav-item" onclick="location.href='perfil.html'">
-        <span>👤</span>
-        <small>Perfil</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='chats.html'">
-        <span>💬</span>
-        <small>Chats</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='notificaciones.html'">
-        <span>🔔</span>
-        <small>Alertas</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='index.html'">
-        <span>🏠</span>
-        <small>Inicio</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='botellas.html'">
-        <span>🍾</span>
-        <small>Botellas</small>
-    </button>
-
-    <button class="nav-item main-btn" onclick="location.href='tienda.html'">
-        <span>🏪</span>
-        <small>Tienda</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='datos.html'">
-        <span>❕</span>
-        <small>Info</small>
-    </button>
+        <button class="nav-item" onclick="location.href='perfil.html'"><span>👤</span><small>Perfil</small></button>
+        <button class="nav-item" onclick="location.href='chats.html'"><span>💬</span><small>Chats</small></button>
+        <button class="nav-item" onclick="location.href='notificaciones.html'"><span>🔔</span><small>Alertas</small></button>
+        <button class="nav-item" onclick="location.href='index.html'"><span>🏠</span><small>Inicio</small></button>
+        <button class="nav-item" onclick="location.href='botellas.html'"><span>🍾</span><small>Botellas</small></button>
+        <button class="nav-item main-btn" onclick="location.href='tienda.html'"><span>🏪</span><small>Tienda</small></button>
+        <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
     </nav>
 
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
@@ -440,22 +456,22 @@
         const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
         const usuarioKey = miNombre.replace(/[.#$[\\]]/g, "_");
         
-        let mercadoActual = "historias"; 
-        let dibujoBase64Optimizado = ""; // Aquí guardaremos el resultado optimizado
+        let seccionPrincipal = "mercado"; // 'mercado' o 'cosmeticos'
+        let filtroCategoria = "todos"; // 'todos', 'historia', 'dibujo', 'marco', 'burbuja'
+        let dibujoBase64Optimizado = ""; 
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-username').textContent = miNombre;
             document.getElementById('imgNav').src = miAvatar;
             comprobarRachaYMonedas();
-            cargarMercadoProductos();
+            cargarProductosCompleto();
         });
 
-        // FUNCIÓN CLAVE: PROCESA, REDIMENSIONA Y COMPRIME LA IMAGEN A BASE64 (60% menos calidad)
         function procesarYComprimirImagen(input) {
             const archivo = input.files[0];
             if (!archivo) return;
 
-            document.getElementById('labelFileTexto').textContent = "⌛ Optimizando dibujo...";
+            document.getElementById('labelFileTexto').textContent = "⌛ Optimizando imagen...";
             document.getElementById('btnEnviarProducto').disabled = true;
 
             const lector = new FileReader();
@@ -465,7 +481,6 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    // Establecemos un tamaño máximo ideal para la tienda (ej. max 800px de ancho/alto)
                     let ancho = img.width;
                     let alto = img.height;
                     const maxDimension = 800;
@@ -484,10 +499,9 @@
                     canvas.height = alto;
                     ctx.drawImage(img, 0, 0, ancho, alto);
 
-                    // Convertimos a base64 con calidad al 0.4 (reducción del 60% de calidad para máxima optimización)
                     dibujoBase64Optimizado = canvas.toDataURL('image/jpeg', 0.4);
                     
-                    document.getElementById('labelFileTexto').innerHTML = "✅ ¡Dibujo Cargado y Optimizado! 🎨";
+                    document.getElementById('labelFileTexto').innerHTML = "✅ ¡Cargado y Optimizado! 🎨";
                     document.getElementById('btnEnviarProducto').disabled = false;
                 };
                 img.src = evento.target.result;
@@ -495,18 +509,45 @@
             lector.readAsDataURL(archivo);
         }
 
-        function cambiarMercado(tipo) {
-            mercadoActual = tipo;
-            document.getElementById('tabHistorias').classList.toggle('active', tipo === 'historias');
-            document.getElementById('tabDibujos').classList.toggle('active', tipo === 'dibujos');
-            document.getElementById('tituloMercado').textContent = tipo === 'historias' ? "Mercado de Historias 📖" : "Galería de Dibujos 🎨";
-            cargarMercadoProductos();
+        function cambiarSeccionPrincipal(seccion) {
+            seccionPrincipal = seccion;
+            document.getElementById('tabMercado').classList.toggle('active', seccion === 'mercado');
+            document.getElementById('tabCosmeticos').classList.toggle('active', seccion === 'cosmeticos');
+            
+            actualizarTituloTexto();
+            cargarProductosCompleto();
+        }
+
+        function cambiarFiltroCategoria(categoria) {
+            filtroCategoria = categoria;
+            
+            document.getElementById('subTabAll').classList.toggle('active', categoria === 'todos');
+            document.getElementById('subTabHist').classList.toggle('active', categoria === 'historia');
+            document.getElementById('subTabDib').classList.toggle('active', categoria === 'dibujo');
+            document.getElementById('subTabMarc').classList.toggle('active', categoria === 'marco');
+            document.getElementById('subTabBurb').classList.toggle('active', categoria === 'burbuja');
+
+            actualizarTituloTexto();
+            cargarProductosCompleto();
+        }
+
+        function actualizarTituloTexto() {
+            let prefijo = seccionPrincipal === 'mercado' ? "Mercado de " : "Mis Cosméticos: ";
+            let sufijo = "";
+            
+            if (filtroCategoria === 'todos') sufijo = "Todo 🌈";
+            else if (filtroCategoria === 'historia') sufijo = "Historias 📖";
+            else if (filtroCategoria === 'dibujo') sufijo = "Dibujos 🎨";
+            else if (filtroCategoria === 'marco') sufijo = "Marcos 💫";
+            else if (filtroCategoria === 'burbuja') sufijo = "Burbujas 💬";
+
+            document.getElementById('tituloMercado').textContent = prefijo + sufijo;
         }
 
         function adaptarFormularioVenta() {
             const tipo = document.getElementById('tipoPublicacion').value;
             document.getElementById('contenedorContenidoHistoria').style.display = tipo === 'historia' ? 'block' : 'none';
-            document.getElementById('contenedorContenidoDibujo').style.display = tipo === 'dibujo' ? 'block' : 'none';
+            document.getElementById('contenedorContenidoDibujo').style.display = (tipo === 'dibujo' || tipo === 'marco' || tipo === 'burbuja') ? 'block' : 'none';
         }
 
         function toggleFormularioVender() {
@@ -530,15 +571,15 @@
             if (tipo === 'historia') {
                 contenido = document.getElementById('contenidoHistoria').value.trim();
             } else {
-                contenido = dibujoBase64Optimizado; // Guardamos el string comprimido
+                contenido = dibujoBase64Optimizado;
             }
 
             if (!titulo || isNaN(precio) || precio <= 0 || !contenido) {
-                alert("Por favor completa todos los campos de forma correcta y asegúrate de cargar la imagen. 🌸");
+                alert("Por favor completa todos los campos de forma correcta y añade el archivo. 🌸");
                 return;
             }
 
-            const nodo = tipo === 'historia' ? 'tienda_historias' : 'tienda_dibujos';
+            const nodo = (tipo === 'historia') ? 'tienda_historias' : 'tienda_dibujos';
             const refProducto = database.ref(nodo).push();
             
             refProducto.set({
@@ -546,128 +587,198 @@
                 titulo: titulo,
                 precio: precio,
                 contenido: contenido,
+                categoria: tipo, 
                 vendedor: miNombre,
                 vendedorKey: usuarioKey,
                 fecha: Date.now()
             }).then(() => {
-                alert("¡Tu contenido ha sido puesto a la venta! ✨");
+                alert("¡Puesto a la venta con éxito! ✨");
                 document.getElementById('tituloProducto').value = "";
                 document.getElementById('precioProducto').value = "";
                 document.getElementById('contenidoHistoria').value = "";
                 document.getElementById('fileDibujo').value = "";
-                document.getElementById('labelFileTexto').textContent = "📁 Seleccionar Dibujo de tu Dispositivo";
+                document.getElementById('labelFileTexto').textContent = "📁 Seleccionar Imagen de tu Dispositivo";
                 dibujoBase64Optimizado = "";
                 toggleFormularioVender();
             });
         }
 
-        function cargarMercadoProductos() {
+        // LÓGICA UNIFICADA DE RENDERIZADO CON FILTROS DINÁMICOS
+        function cargarProductosCompleto() {
             const container = document.getElementById('tienda-list-container');
-            const nodo = mercadoActual === 'historias' ? 'tienda_historias' : 'tienda_dibujos';
-            
-            database.ref(`usuarios_compras/${usuarioKey}`).on('value', (comprasSnap) => {
-                const misCompras = comprasSnap.val() || {};
+            container.innerHTML = "<p style='text-align:center; color:gray; padding:20px;'>Cargando...</p>";
 
-                database.ref(nodo).on('value', (snapshot) => {
-                    container.innerHTML = "";
+            // Escuchar en tiempo real la economía (para saber qué está equipado)
+            database.ref(`usuarios_economia/${usuarioKey}`).on('value', (econSnap) => {
+                const datosEcon = econSnap.val() || {};
+                const marcoEquipado = datosEcon.marcoActivo || "";
+                const burbujaEquipada = datosEcon.burbujaActiva || "";
 
-                    if (!snapshot.exists()) {
-                        container.innerHTML = `<p style="text-align:center; color:gray; padding:20px;">No hay artículos aquí en este momento.</p>`;
-                        return;
-                    }
+                // Escuchar en tiempo real las compras
+                database.ref(`usuarios_compras/${usuarioKey}`).on('value', (comprasSnap) => {
+                    const misComprasKeys = comprasSnap.val() || {};
 
-                    let lista = [];
-                    snapshot.forEach(child => { lista.push(child.val()); });
-                    lista.reverse();
+                    // Traer ambas colecciones de la base de datos
+                    const promHistorias = database.ref('tienda_historias').once('value');
+                    const promDibujos = database.ref('tienda_dibujos').once('value');
 
-                    lista.forEach((item) => {
-                        const card = document.createElement('div');
-                        const soyElCreador = item.vendedor === miNombre;
-                        const yaAdquirido = misCompras[item.id] === true;
+                    Promise.all([promHistorias, promDibujos]).then(([snapHist, snapDib]) => {
+                        container.innerHTML = "";
+                        let listaFiltrada = [];
 
-                        card.className = `historia-card ${soyElCreador ? 'propia' : ''}`;
-                        
-                        let botonBorrarHtml = soyElCreador ? `<button class="btn-borrar-historia" onclick="borrarProducto('${item.id}', '${item.titulo}')">✕</button>` : "";
+                        // 1. Recolectar Historias
+                        if(snapHist.exists()){
+                            snapHist.forEach(c => {
+                                let item = c.val();
+                                item.subtipo = 'historia';
+                                
+                                if (seccionPrincipal === 'mercado') {
+                                    listaFiltrada.push(item);
+                                } else if (item.vendedor === miNombre || misComprasKeys[item.id] === true) {
+                                    listaFiltrada.push(item);
+                                }
+                            });
+                        }
 
-                        let previewDibujoHtml = "";
-                        if (mercadoActual === 'dibujos') {
-                            if (soyElCreador || yaAdquirido) {
-                                previewDibujoHtml = `<div class="preview-dibujo-box"><img src="${item.contenido}" style="width:100%; height:100%; object-fit:cover;"></div>`;
-                            } else {
-                                previewDibujoHtml = `
-                                    <div class="preview-dibujo-box" title="Compra para ver la obra completa">
-                                        <img src="${item.contenido}" class="img-preview-blur">
-                                    </div>`;
+                        // 2. Recolectar Dibujos / Marcos / Burbujas
+                        if(snapDib.exists()){
+                            snapDib.forEach(c => {
+                                let item = c.val();
+                                item.subtipo = item.categoria || 'dibujo';
+
+                                if (seccionPrincipal === 'mercado') {
+                                    listaFiltrada.push(item);
+                                } else if (item.vendedor === miNombre || misComprasKeys[item.id] === true) {
+                                    listaFiltrada.push(item);
+                                }
+                            });
+                        }
+
+                        // Ordernar por más reciente primero
+                        listaFiltrada.sort((a, b) => b.fecha - a.fecha);
+
+                        // 3. Aplicar Filtro de los 5 botones
+                        if (filtroCategoria !== 'todos') {
+                            listaFiltrada = listaFiltrada.filter(item => item.subtipo === filtroCategoria);
+                        }
+
+                        if(listaFiltrada.length === 0) {
+                            container.innerHTML = `<p style='text-align:center; color:gray; padding:20px;'>No hay nada para mostrar aquí. 🌸</p>`;
+                            return;
+                        }
+
+                        // 4. Dibujar las tarjetas resultantes
+                        listaFiltrada.forEach(item => {
+                            const card = document.createElement('div');
+                            const soyElCreador = item.vendedor === miNombre;
+                            const yaAdquirido = misComprasKeys[item.id] === true;
+
+                            card.className = `historia-card ${soyElCreador ? 'propia' : ''}`;
+                            let botonBorrarHtml = (seccionPrincipal === 'mercado' && soyElCreador) ? `<button class="btn-borrar-historia" onclick="borrarProducto('${item.id}', '${item.titulo}', '${item.subtipo}')">✕</button>` : "";
+
+                            let vistaPreviaHtml = "";
+                            let etiquetaHtml = item.subtipo !== 'dibujo' && item.subtipo !== 'historia' ? `<span class="badge-tipo-inventario">${item.subtipo.toUpperCase()}</span> ` : '';
+
+                            if (item.subtipo !== 'historia') {
+                                if (seccionPrincipal === 'cosmeticos' || soyElCreador || yaAdquirido) {
+                                    vistaPreviaHtml = `<div class="preview-dibujo-box"><img src="${item.contenido}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+                                } else {
+                                    vistaPreviaHtml = `
+                                        <div class="preview-dibujo-box" title="Compra para ver la obra completa">
+                                            <img src="${item.contenido}" class="img-preview-blur">
+                                        </div>`;
+                                }
                             }
-                        }
 
-                        let accionHtml = "";
-                        if (soyElCreador) {
-                            accionHtml = `<button class="btn-action-historia comprada" onclick="abrirContenido('${item.id}', '${item.titulo}', '${item.vendedor}', '${item.contenido}')">Ver tuyo</button>`;
-                        } else if (yaAdquirido) {
-                            accionHtml = `<button class="btn-action-historia comprada" onclick="abrirContenido('${item.id}', '${item.titulo}', '${item.vendedor}', '${item.contenido}')">${mercadoActual === 'historias' ? 'Leer 📖' : 'Ver Arte 🎨'}</button>`;
-                        } else {
-                            accionHtml = `<button class="btn-action-historia" onclick="adquirirProducto('${item.id}', ${item.precio}, '${item.vendedorKey}', '${item.titulo}')">Comprar 🪙</button>`;
-                        }
+                            // Determinar qué botones de acción mostrar abajo
+                            let accionHtml = "";
+                            if (seccionPrincipal === 'cosmeticos' || soyElCreador || yaAdquirido) {
+                                // Si es cosmético equipable (marcos o burbujas)
+                                if (item.subtipo === 'marco' || item.subtipo === 'burbuja') {
+                                    let esActivo = (item.subtipo === 'marco' && marcoEquipado === item.contenido) || 
+                                                   (item.subtipo === 'burbuja' && burbujaEquipada === item.contenido);
+                                                   
+                                    if (esActivo) {
+                                        accionHtml = `<button class="btn-action-historia desequipar-btn" onclick="desequiparCosmetico('${item.subtipo}')">Desequipar ✕</button>`;
+                                    } else {
+                                        accionHtml = `<button class="btn-action-historia" style="background:#4caf50; color:white;" onclick="equiparCosmetico('${item.contenido}', '${item.subtipo}')">Equipar ✨</button>`;
+                                    }
+                                } else {
+                                    // Dibujos normales o historias de mi mochila
+                                    accionHtml = `<button class="btn-action-historia comprada" onclick="abrirContenido('${item.id}', '${item.titulo}', '${item.vendedor}', '${item.contenido}', '${item.subtipo}')">Abrir 👁️</button>`;
+                                }
+                            } else {
+                                // El usuario está en el mercado y no lo tiene comprado aún
+                                accionHtml = `<button class="btn-action-historia" onclick="adquirirProducto('${item.id}', ${item.precio}, '${item.vendedorKey}', '${item.titulo}')">Comprar 🪙</button>`;
+                            }
 
-                        card.innerHTML = `
-                            ${botonBorrarHtml}
-                            <div class="historia-title">${item.titulo}</div>
-                            <div class="historia-author">Por: ${soyElCreador ? 'Ti' : item.vendedor}</div>
-                            ${previewDibujoHtml}
-                            <div class="historia-footer">
-                                <span class="precio-tag">${item.precio} Monedas</span>
-                                ${accionHtml}
-                            </div>
-                        `;
-                        container.appendChild(card);
+                            card.innerHTML = `
+                                ${botonBorrarHtml}
+                                <div class="historia-title">${etiquetaHtml}${item.titulo}</div>
+                                <div class="historia-author">Por: ${soyElCreador ? 'Ti' : item.vendedor}</div>
+                                ${vistaPreviaHtml}
+                                <div class="historia-footer">
+                                    <span class="precio-tag">${item.precio} Monedas</span>
+                                    ${accionHtml}
+                                </div>
+                            `;
+                            container.appendChild(card);
+                        });
                     });
                 });
             });
         }
 
-        function adquirirProducto(id, precio, sellerKey, titulo) {
-    let misMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 0;
-    if (misMonedas < precio) {
-        alert("❌ No tienes suficientes monedas.");
-        return;
-    }
-
-    if (confirm(`¿Comprar "${titulo}" por ${precio} monedas? 🌸`)) {
-        // --- CORRECCIÓN AQUÍ: Aseguramos que la sellerKey no tenga un guion bajo al inicio si es un usuario normal ---
-        let sellerKeyLimpia = sellerKey;
-        if (sellerKey.startsWith('_')) {
-            sellerKeyLimpia = sellerKey.slice(1);
+        function equiparCosmetico(urlContenido, categoria) {
+            const nodoDestino = categoria === 'marco' ? 'marcoActivo' : 'burbujaActiva';
+            database.ref(`usuarios_economia/${usuarioKey}/${nodoDestino}`).set(urlContenido).then(() => {
+                alert("¡Cosmético equipado perfectamente! ✨");
+            });
         }
 
-        database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(misMonedas - precio).then(() => {
-            database.ref(`usuarios_compras/${usuarioKey}/${id}`).set(true);
-            
-            // Usamos la llave limpia sin el guion bajo para sumarte las monedas a tu cuenta real
-            database.ref(`usuarios_economia/${sellerKeyLimpia}/monedas`).transaction(c => (c || 0) + precio);
-            
-            database.ref(`notificaciones/${sellerKeyLimpia}`).push({
-                titulo: "¡Nueva venta en la tienda! 🪙",
-                mensaje: `${miNombre} adquirió tu publicación "${titulo}". ¡Ganaste +${precio} monedas!`,
-                fecha: Date.now()
+        function desequiparCosmetico(categoria) {
+            const nodoDestino = categoria === 'marco' ? 'marcoActivo' : 'burbujaActiva';
+            database.ref(`usuarios_economia/${usuarioKey}/${nodoDestino}`).remove().then(() => {
+                alert("¡Has desequipado el cosmético! ✕");
             });
-            alert("🎉 ¡Adquisición completada!");
-        });
-    }
-}
+        }
 
-        function borrarProducto(id, titulo) {
+        function adquirirProducto(id, precio, sellerKey, titulo) {
+            let misMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 0;
+            if (misMonedas < precio) {
+                alert("❌ No tienes suficientes monedas.");
+                return;
+            }
+
+            if (confirm(`¿Comprar "${titulo}" por ${precio} monedas? 🌸`)) {
+                let sellerKeyLimpia = sellerKey.startsWith('_') ? sellerKey.slice(1) : sellerKey;
+
+                database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(misMonedas - precio).then(() => {
+                    database.ref(`usuarios_compras/${usuarioKey}/${id}`).set(true);
+                    database.ref(`usuarios_economia/${sellerKeyLimpia}/monedas`).transaction(c => (c || 0) + precio);
+                    
+                    database.ref(`notificaciones/${sellerKeyLimpia}`).push({
+                        titulo: "¡Nueva venta en la tienda! 🪙",
+                        mensaje: `${miNombre} adquirió tu publicación "${titulo}". ¡Ganaste +${precio} monedas!`,
+                        fecha: Date.now()
+                    });
+                    alert("🎉 ¡Adquisición completada!");
+                });
+            }
+        }
+
+        function borrarProducto(id, titulo, subtipo) {
             if (confirm(`¿Quitar "${titulo}" del mercado?`)) {
-                const nodo = mercadoActual === 'historias' ? 'tienda_historias' : 'tienda_dibujos';
+                const nodo = subtipo === 'historia' ? 'tienda_historias' : 'tienda_dibujos';
                 database.ref(`${nodo}/${id}`).remove();
             }
         }
 
-        function abrirContenido(id, titulo, vendedor, contenido) {
+        function abrirContenido(id, titulo, vendedor, contenido, tipo) {
             document.getElementById('modalTitulo').textContent = titulo;
             document.getElementById('modalAutor').textContent = `Por: ${vendedor}`;
             
-            if (mercadoActual === 'historias') {
+            if (tipo === 'historia') {
                 document.getElementById('modalTexto').style.display = 'block';
                 document.getElementById('modalImagen').style.display = 'none';
                 document.getElementById('modalTexto').textContent = contenido;
