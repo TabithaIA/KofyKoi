@@ -550,7 +550,7 @@
                 vendedorKey: usuarioKey,
                 fecha: Date.now()
             }).then(() => {
-                alert("¡Tu contenido ha sido puesto a la venta de forma optimizada! ✨");
+                alert("¡Tu contenido ha sido puesto a la venta! ✨");
                 document.getElementById('tituloProducto').value = "";
                 document.getElementById('precioProducto').value = "";
                 document.getElementById('contenidoHistoria').value = "";
@@ -627,26 +627,34 @@
         }
 
         function adquirirProducto(id, precio, sellerKey, titulo) {
-            let misMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 0;
-            if (misMonedas < precio) {
-                alert("❌ No tienes suficientes monedas.");
-                return;
-            }
+    let misMonedas = parseInt(localStorage.getItem('kofy_monedas')) || 0;
+    if (misMonedas < precio) {
+        alert("❌ No tienes suficientes monedas.");
+        return;
+    }
 
-            if (confirm(`¿Comprar "${titulo}" por ${precio} monedas? 🌸`)) {
-                database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(misMonedas - precio).then(() => {
-                    database.ref(`usuarios_compras/${usuarioKey}/${id}`).set(true);
-                    database.ref(`usuarios_economia/${sellerKey}/monedas`).transaction(c => (c || 0) + precio);
-                    
-                    database.ref(`notificaciones/${sellerKey}`).push({
-                        titulo: "¡Nueva venta en la tienda! 🪙",
-                        mensaje: `${miNombre} adquirió tu publicación "${titulo}". ¡Ganaste +${precio} monedas!`,
-                        fecha: Date.now()
-                    });
-                    alert("🎉 ¡Adquisición completada con éxito!");
-                });
-            }
+    if (confirm(`¿Comprar "${titulo}" por ${precio} monedas? 🌸`)) {
+        // --- CORRECCIÓN AQUÍ: Aseguramos que la sellerKey no tenga un guion bajo al inicio si es un usuario normal ---
+        let sellerKeyLimpia = sellerKey;
+        if (sellerKey.startsWith('_')) {
+            sellerKeyLimpia = sellerKey.slice(1);
         }
+
+        database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(misMonedas - precio).then(() => {
+            database.ref(`usuarios_compras/${usuarioKey}/${id}`).set(true);
+            
+            // Usamos la llave limpia sin el guion bajo para sumarte las monedas a tu cuenta real
+            database.ref(`usuarios_economia/${sellerKeyLimpia}/monedas`).transaction(c => (c || 0) + precio);
+            
+            database.ref(`notificaciones/${sellerKeyLimpia}`).push({
+                titulo: "¡Nueva venta en la tienda! 🪙",
+                mensaje: `${miNombre} adquirió tu publicación "${titulo}". ¡Ganaste +${precio} monedas!`,
+                fecha: Date.now()
+            });
+            alert("🎉 ¡Adquisición completada!");
+        });
+    }
+}
 
         function borrarProducto(id, titulo) {
             if (confirm(`¿Quitar "${titulo}" del mercado?`)) {
