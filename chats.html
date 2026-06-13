@@ -424,7 +424,14 @@
     const esMio = datos.usuario === miNombre;
     msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
     msgDiv.id = `msg-${id}`;
-    if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
+    
+    // Si tiene sticker, le quitamos el fondo y la sombra para que flote limpio
+    if (datos.sticker) {
+        msgDiv.style.boxShadow = 'none';
+        msgDiv.style.padding = '5px';
+    } else if (datos.colorBurbuja) {
+        msgDiv.style.backgroundColor = datos.colorBurbuja;
+    }
 
     const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
 
@@ -439,6 +446,7 @@
                 ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
             </div>
         </div>
+        ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
         ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
         ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
         ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
@@ -449,7 +457,6 @@
     contenedor.appendChild(msgDiv);
     contenedor.scrollTop = contenedor.scrollHeight;
 }
-
 
         function verPerfil(nombre, avatar, bio) {
             const modal = document.getElementById('modalVistaPerfil');
@@ -774,7 +781,14 @@
     const esMio = datos.usuario === miNombre;
     msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
     msgDiv.id = `msg-${id}`;
-    if (datos.colorBurbuja) msgDiv.style.backgroundColor = datos.colorBurbuja;
+    
+    if (datos.sticker) {
+        msgDiv.style.backgroundColor = 'transparent';
+        msgDiv.style.boxShadow = 'none';
+        msgDiv.style.padding = '5px';
+    } else if (datos.colorBurbuja) {
+        msgDiv.style.backgroundColor = datos.colorBurbuja;
+    }
     
     const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
 
@@ -789,6 +803,7 @@
                 ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
             </div>
         </div>
+        ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
         ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
         ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
         ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
@@ -798,7 +813,6 @@
     `;
     return msgDiv;
 }
-
 
         function enviarMensajeSala() {
             const texto = document.getElementById('textoPrivado').value.trim();
@@ -1112,7 +1126,7 @@ function prepararAudioArchivo(input) {
         }
     });
 
-// --- SISTEMA DE STICKERS PROPIOS Y PERSONALIZADOS ---
+// --- SISTEMA DE STICKERS PROPIOS CON RECORTE MANUAL ---
 
 function renderizarMisStickers() {
     const listaContenedor = document.getElementById('listaStickers');
@@ -1137,7 +1151,7 @@ function renderizarMisStickers() {
 
         const btnBorrar = document.createElement('button');
         btnBorrar.innerHTML = "✕";
-        btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center;";
+        btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;";
         btnBorrar.onclick = (e) => {
             e.stopPropagation(); 
             eliminarStickerDeGaleria(index);
@@ -1159,32 +1173,140 @@ function togglePanelStickers() {
     }
 }
 
+// Abre un modal interactivo para que el usuario mueva el área de recorte
 function procesarNuevoSticker(input) {
     if (input.files && input.files[0]) {
         const lector = new FileReader();
         lector.onload = function(evento) {
-            const imgOriginal = new Image();
-            imgOriginal.src = evento.target.result;
-            imgOriginal.onload = function() {
+            // Creamos una interfaz temporal para recortar
+            const overlayCorte = document.createElement('div');
+            overlayCorte.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; color:white; padding:20px;";
+            
+            overlayCorte.innerHTML = `
+                <h4 style="margin-bottom:10px; font-size:0.9rem;">Ajusta el recuadro para tu sticker 🌸</h4>
+                <div style="position:relative; max-width:90%; max-height:60vh; overflow:hidden; background:#222; border-radius:8px;">
+                    <img id="img-previa-corte" src="${evento.target.result}" style="max-width:100%; max-height:60vh; display:block; user-select:none;">
+                    <div id="selector-recorte" style="position:absolute; top:10%; left:10%; width:150px; height:150px; border:2px dashed #fff; box-shadow:0 0 0 4000px rgba(0,0,0,0.5); cursor:move; box-sizing:border-box;">
+                        <div id="resizer-control" style="position:absolute; bottom:0; right:0; width:15px; height:15px; background:#fff; cursor:se-resize;"></div>
+                    </div>
+                </div>
+                <div style="margin-top:15px; display:flex; gap:10px;">
+                    <button id="btn-cancelar-corte" class="btn-img" style="background:#ff4d4d; color:white; padding:8px 15px;">Cancelar</button>
+                    <button id="btn-confirmar-corte" class="btn-main" style="margin:0; padding:8px 15px;">¡Cortar Sticker! ✨</button>
+                </div>
+            `;
+            
+            document.body.appendChild(overlayCorte);
+            
+            const selector = overlayCorte.querySelector('#selector-recorte');
+            const resizer = overlayCorte.querySelector('#resizer-control');
+            const imgPrevia = overlayCorte.querySelector('#img-previa-corte');
+            
+            let mouseX, mouseY, selectorX, selectorY, selectorW, selectorH;
+            let modoMover = false;
+            let modoRedimensionar = false;
+            
+            // Lógica para arrastrar el recuadro o cambiarle el tamaño
+            selector.addEventListener('mousedown', (e) => {
+                if (e.target === resizer) {
+                    modoRedimensionar = true;
+                } else {
+                    modoMover = true;
+                }
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                selectorX = selector.offsetLeft;
+                selectorY = selector.offsetTop;
+                selectorW = selector.offsetWidth;
+                selectorH = selector.offsetHeight;
+                e.preventDefault();
+            });
+            
+            window.addEventListener('mousemove', (e) => {
+                if (modoMover) {
+                    let dx = e.clientX - mouseX;
+                    let dy = e.clientY - mouseY;
+                    let nx = selectorX + dx;
+                    let ny = selectorY + dy;
+                    
+                    // Límites
+                    if (nx >= 0 && nx + selector.offsetWidth <= imgPrevia.offsetWidth) selector.style.left = nx + 'px';
+                    if (ny >= 0 && ny + selector.offsetHeight <= imgPrevia.offsetHeight) selector.style.top = ny + 'px';
+                } else if (modoRedimensionar) {
+                    let dx = e.clientX - mouseX;
+                    let dy = e.clientY - mouseY;
+                    let nw = selectorW + dx;
+                    let nh = selectorH + dy;
+                    
+                    if (nw > 40 && selector.offsetLeft + nw <= imgPrevia.offsetWidth) selector.style.width = nw + 'px';
+                    if (nh > 40 && selector.offsetTop + nh <= imgPrevia.offsetHeight) selector.style.height = nh + 'px';
+                }
+            });
+            
+            window.addEventListener('mouseup', () => {
+                modoMover = false;
+                modoRedimensionar = false;
+            });
+            
+            // Soporte para pantallas táctiles (Celu)
+            selector.addEventListener('touchstart', (e) => {
+                const t = e.touches[0];
+                if (e.target === resizer) modoRedimensionar = true; else modoMover = true;
+                mouseX = t.clientX; mouseY = t.clientY;
+                selectorX = selector.offsetLeft; selectorY = selector.offsetTop;
+                selectorW = selector.offsetWidth; selectorH = selector.offsetHeight;
+            });
+            
+            window.addEventListener('touchmove', (e) => {
+                if(e.touches.length === 0) return;
+                const t = e.touches[0];
+                if (modoMover) {
+                    let nx = selectorX + (t.clientX - mouseX);
+                    let ny = selectorY + (t.clientY - mouseY);
+                    if (nx >= 0 && nx + selector.offsetWidth <= imgPrevia.offsetWidth) selector.style.left = nx + 'px';
+                    if (ny >= 0 && ny + selector.offsetHeight <= imgPrevia.offsetHeight) selector.style.top = ny + 'px';
+                } else if (modoRedimensionar) {
+                    let nw = selectorW + (t.clientX - mouseX);
+                    let nh = selectorH + (t.clientY - mouseY);
+                    if (nw > 40 && selector.offsetLeft + nw <= imgPrevia.offsetWidth) selector.style.width = nw + 'px';
+                    if (nh > 40 && selector.offsetTop + nh <= imgPrevia.offsetHeight) selector.style.height = nh + 'px';
+                }
+            });
+            
+            window.addEventListener('touchend', () => { modoMover = false; modoRedimensionar = false; });
+
+            // Cancelar
+            overlayCorte.querySelector('#btn-cancelar-corte').onclick = () => {
+                overlayCorte.remove();
+                input.value = "";
+            };
+            
+            // Confirmar y procesar recorte exacto en Canvas
+            overlayCorte.querySelector('#btn-confirmar-corte').onclick = () => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const dim = 250; // Dimensión del sticker cuadrado
-                canvas.width = dim; canvas.height = dim;
                 
-                let cx = 0, cy = 0, cw = imgOriginal.width, ch = imgOriginal.height;
-                if (imgOriginal.width > imgOriginal.height) {
-                    cw = imgOriginal.height; cx = (imgOriginal.width - imgOriginal.height) / 2;
-                } else {
-                    ch = imgOriginal.width; cy = (imgOriginal.height - imgOriginal.width) / 2;
-                }
+                // Conseguir escala real de la imagen respecto al visor
+                const factorEscalaX = imgPrevia.naturalWidth / imgPrevia.offsetWidth;
+                const factorEscalaY = imgPrevia.naturalHeight / imgPrevia.offsetHeight;
                 
-                ctx.drawImage(imgOriginal, cx, cy, cw, ch, 0, 0, dim, dim);
+                const sx = selector.offsetLeft * factorEscalaX;
+                const sy = selector.offsetTop * factorEscalaY;
+                const sw = selector.offsetWidth * factorEscalaX;
+                const sh = selector.offsetHeight * factorEscalaY;
+                
+                // Mantenemos las proporciones elegidas por el usuario
+                canvas.width = 250;
+                canvas.height = 250 * (sh / sw); 
+                
+                ctx.drawImage(imgPrevia, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
                 const stickerFinal = canvas.toDataURL('image/png');
                 
                 const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
                 misStickers.push(stickerFinal);
                 localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
                 
+                overlayCorte.remove();
                 input.value = "";
                 renderizarMisStickers();
             };
@@ -1212,7 +1334,6 @@ function enviarSticker(urlSticker) {
     });
     document.getElementById('panelStickers').style.display = 'none';
 }
-
     </script>
 </body>
 </html>
