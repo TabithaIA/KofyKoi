@@ -604,117 +604,124 @@
         }
 
         function cargarProductosCompleto() {
-            const container = document.getElementById('tienda-list-container');
-            container.innerHTML = "<p style='text-align:center; color:gray; padding:20px;'>Cargando...</p>";
+    const container = document.getElementById('tienda-list-container');
+    container.innerHTML = "<p style='text-align:center; color:gray; padding:20px;'>Cargando...</p>";
 
-            database.ref(`usuarios_economia/${usuarioKey}`).on('value', (econSnap) => {
-                const datosEcon = econSnap.val() || {};
-                const marcoEquipado = datosEcon.marcoActivo || "";
-                const burbujaEquipada = datosEcon.burbujaActiva || "";
+    // Escuchamos la economía del usuario (tiempo real)
+    database.ref(`usuarios_economia/${usuarioKey}`).on('value', (econSnap) => {
+        const datosEcon = econSnap.val() || {};
+        const marcoEquipado = datosEcon.marcoActivo || "";
+        const burbujaEquipada = datosEcon.burbujaActiva || "";
 
-                database.ref(`usuarios_compras/${usuarioKey}`).on('value', (comprasSnap) => {
-                    const misComprasKeys = comprasSnap.val() || {};
+        // Escuchamos las compras del usuario (tiempo real)
+        database.ref(`usuarios_compras/${usuarioKey}`).on('value', (comprasSnap) => {
+            const misComprasKeys = comprasSnap.val() || {};
 
-                    const promHistorias = database.ref('tienda_historias').once('value');
-                    const promDibujos = database.ref('tienda_dibujos').once('value');
+            // Aquí está la magia: en vez de .once(), usamos .on() en las dos colecciones
+            // para que cualquier alta, baja o modificación vuelva a renderizar la lista al instante.
+            database.ref('tienda_historias').on('value', (snapHist) => {
+                database.ref('tienda_dibujos').on('value', (snapDib) => {
+                    
+                    container.innerHTML = "";
+                    let listaFiltrada = [];
 
-                    Promise.all([promHistorias, promDibujos]).then(([snapHist, snapDib]) => {
-                        container.innerHTML = "";
-                        let listaFiltrada = [];
-
-                        if(snapHist.exists()){
-                            snapHist.forEach(c => {
-                                let item = c.val();
-                                item.subtipo = 'historia';
-                                
-                                if (seccionPrincipal === 'mercado') {
-                                    listaFiltrada.push(item);
-                                } else if (item.vendedor === miNombre || misComprasKeys[item.id] === true) {
-                                    listaFiltrada.push(item);
-                                }
-                            });
-                        }
-
-                        if(snapDib.exists()){
-                            snapDib.forEach(c => {
-                                let item = c.val();
-                                item.subtipo = item.categoria || 'dibujo';
-
-                                if (seccionPrincipal === 'mercado') {
-                                    listaFiltrada.push(item);
-                                } else if (item.vendedor === miNombre || misComprasKeys[item.id] === true) {
-                                    listaFiltrada.push(item);
-                                }
-                            });
-                        }
-
-                        listaFiltrada.sort((a, b) => b.fecha - a.fecha);
-
-                        if (filtroCategoria !== 'todos') {
-                            listaFiltrada = listaFiltrada.filter(item => item.subtipo === filtroCategoria);
-                        }
-
-                        if(listaFiltrada.length === 0) {
-                            container.innerHTML = `<p style='text-align:center; color:gray; padding:20px;'>No hay nada para mostrar aquí. 🌸</p>`;
-                            return;
-                        }
-
-                        listaFiltrada.forEach(item => {
-                            const card = document.createElement('div');
-                            const soyElCreador = item.vendedor === miNombre;
-                            const yaAdquirido = misComprasKeys[item.id] === true;
-
-                            card.className = `historia-card ${soyElCreador ? 'propia' : ''}`;
-                            let botonBorrarHtml = (seccionPrincipal === 'mercado' && soyElCreador) ? `<button class="btn-borrar-historia" onclick="borrarProducto('${item.id}', '${item.titulo}', '${item.subtipo}')">✕</button>` : "";
-
-                            let vistaPreviaHtml = "";
-                            let etiquetaHtml = item.subtipo !== 'dibujo' && item.subtipo !== 'historia' ? `<span class="badge-tipo-inventario">${item.subtipo.toUpperCase()}</span> ` : '';
-
-                            if (item.subtipo !== 'historia') {
-                                if (seccionPrincipal === 'cosmeticos' || soyElCreador || yaAdquirido) {
-                                    vistaPreviaHtml = `<div class="preview-dibujo-box"><img src="${item.contenido}" style="width:100%; height:100%; object-fit:cover;"></div>`;
-                                } else {
-                                    vistaPreviaHtml = `
-                                        <div class="preview-dibujo-box" title="Compra para ver la obra completa">
-                                            <img src="${item.contenido}" class="img-preview-blur">
-                                        </div>`;
-                                }
+                    if (snapHist.exists()) {
+                        snapHist.forEach(c => {
+                            let item = c.val();
+                            item.subtipo = 'historia';
+                            
+                            if (seccionPrincipal === 'mercado') {
+                                listaFiltrada.push(item);
+                            } else if (item.vendedor === miNombre || misComprasKeys[item.id] === true) {
+                                listaFiltrada.push(item);
                             }
+                        });
+                    }
 
-                            let accionHtml = "";
+                    if (snapDib.exists()) {
+                        snapDib.forEach(c => {
+                            let item = c.val();
+                            item.subtipo = item.categoria || 'dibujo';
+
+                            if (seccionPrincipal === 'mercado') {
+                                listaFiltrada.push(item);
+                            } else if (item.vendedor === miNombre || misComprasKeys[item.id] === true) {
+                                listaFiltrada.push(item);
+                            }
+                        });
+                    }
+
+                    // Ordenamos por fecha (más reciente primero)
+                    listaFiltrada.sort((a, b) => b.fecha - a.fecha);
+
+                    // Aplicamos el filtro de categoría seleccionado
+                    if (filtroCategoria !== 'todos') {
+                        listaFiltrada = listaFiltrada.filter(item => item.subtipo === filtroCategoria);
+                    }
+
+                    if (listaFiltrada.length === 0) {
+                        container.innerHTML = `<p style='text-align:center; color:gray; padding:20px;'>No hay nada para mostrar aquí. 🌸</p>`;
+                        return;
+                    }
+
+                    // Renderizamos las tarjetas
+                    listaFiltrada.forEach(item => {
+                        const card = document.createElement('div');
+                        const soyElCreador = item.vendedor === miNombre;
+                        const yaAdquirido = misComprasKeys[item.id] === true;
+
+                        card.className = `historia-card ${soyElCreador ? 'propia' : ''}`;
+                        let botonBorrarHtml = (seccionPrincipal === 'mercado' && soyElCreador) ? `<button class="btn-borrar-historia" onclick="borrarProducto('${item.id}', '${item.titulo}', '${item.subtipo}')">✕</button>` : "";
+
+                        let vistaPreviaHtml = "";
+                        let etiquetaHtml = item.subtipo !== 'dibujo' && item.subtipo !== 'historia' ? `<span class="badge-tipo-inventario">${item.subtipo.toUpperCase()}</span> ` : '';
+
+                        if (item.subtipo !== 'historia') {
                             if (seccionPrincipal === 'cosmeticos' || soyElCreador || yaAdquirido) {
-                                if (item.subtipo === 'marco' || item.subtipo === 'burbuja') {
-                                    let esActivo = (item.subtipo === 'marco' && marcoEquipado === item.contenido) || 
-                                                   (item.subtipo === 'burbuja' && burbujaEquipada === item.contenido);
-                                                   
-                                    if (esActivo) {
-                                        accionHtml = `<button class="btn-action-historia desequipar-btn" onclick="desequiparCosmetico('${item.subtipo}')">Desequipar ✕</button>`;
-                                    } else {
-                                        accionHtml = `<button class="btn-action-historia" style="background:#4caf50; color:white;" onclick="equiparCosmetico('${item.contenido}', '${item.subtipo}')">Equipar ✨</button>`;
-                                    }
+                                vistaPreviaHtml = `<div class="preview-dibujo-box"><img src="${item.contenido}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+                            } else {
+                                vistaPreviaHtml = `
+                                    <div class="preview-dibujo-box" title="Compra para ver la obra completa">
+                                        <img src="${item.contenido}" class="img-preview-blur">
+                                    </div>`;
+                            }
+                        }
+
+                        let accionHtml = "";
+                        if (seccionPrincipal === 'cosmeticos' || soyElCreador || yaAdquirido) {
+                            if (item.subtipo === 'marco' || item.subtipo === 'burbuja') {
+                                let esActivo = (item.subtipo === 'marco' && marcoEquipado === item.contenido) || 
+                                               (item.subtipo === 'burbuja' && burbujaEquipada === item.contenido);
+                                               
+                                if (esActivo) {
+                                    accionHtml = `<button class="btn-action-historia desequipar-btn" onclick="desequiparCosmetico('${item.subtipo}')">Desequipar ✕</button>`;
                                 } else {
-                                    accionHtml = `<button class="btn-action-historia comprada" onclick="abrirContenido('${item.id}', '${item.titulo}', '${item.vendedor}', '${item.contenido}', '${item.subtipo}')">Abrir 👁️</button>`;
+                                    accionHtml = `<button class="btn-action-historia" style="background:#4caf50; color:white;" onclick="equiparCosmetico('${item.contenido}', '${item.subtipo}')">Equipar ✨</button>`;
                                 }
                             } else {
-                                accionHtml = `<button class="btn-action-historia" onclick="adquirirProducto('${item.id}', ${item.precio}, '${item.vendedorKey}', '${item.titulo}')">Comprar 🪙</button>`;
+                                accionHtml = `<button class="btn-action-historia comprada" onclick="abrirContenido('${item.id}', '${item.titulo}', '${item.vendedor}', '${item.contenido}', '${item.subtipo}')">Abrir 👁️</button>`;
                             }
+                        } else {
+                            accionHtml = `<button class="btn-action-historia" onclick="adquirirProducto('${item.id}', ${item.precio}, '${item.vendedorKey}', '${item.titulo}')">Comprar 🪙</button>`;
+                        }
 
-                            card.innerHTML = `
-                                ${botonBorrarHtml}
-                                <div class="historia-title">${etiquetaHtml}${item.titulo}</div>
-                                <div class="historia-author">Por: ${soyElCreador ? 'Ti' : item.vendedor}</div>
-                                ${vistaPreviaHtml}
-                                <div class="historia-footer">
-                                    <span class="precio-tag">${item.precio} Monedas</span>
-                                    ${accionHtml}
-                                </div>
-                            `;
-                            container.appendChild(card);
-                        });
+                        card.innerHTML = `
+                            ${botonBorrarHtml}
+                            <div class="historia-title">${etiquetaHtml}${item.titulo}</div>
+                            <div class="historia-author">Por: ${soyElCreador ? 'Ti' : item.vendedor}</div>
+                            ${vistaPreviaHtml}
+                            <div class="historia-footer">
+                                <span class="precio-tag">${item.precio} Monedas</span>
+                                ${accionHtml}
+                            </div>
+                        `;
+                        container.appendChild(card);
                     });
                 });
             });
-        }
+        });
+    });
+}
 
         function equiparCosmetico(urlContenido, categoria) {
             const nodoDestino = categoria === 'marco' ? 'marcoActivo' : 'burbujaActiva';
@@ -813,60 +820,75 @@
         // LÓGICA DE DETECCIÓN DE CAMBIOS CORREGIDA
         // ==========================================
         function comprobarRachaYMonedas() {
-            const hoyStr = new Date().toDateString();
-            const ultimaVisita = localStorage.getItem('kofy_ultima_fecha_tienda');
-            
-            // 1. Mostrar de inmediato lo que hay en localStorage para que cargue rápido la interfaz
-            let monedasLocales = parseInt(localStorage.getItem('kofy_monedas')) || 10;
-            let rachaActual = parseInt(localStorage.getItem('kofy_racha_dias')) || 1;
-            
-            document.getElementById('balanceMonedas').textContent = monedasLocales;
-            document.getElementById('rachaDias').textContent = rachaActual;
+    const hoyStr = new Date().toDateString();
+    
+    // 1. Mostrar de inmediato lo que hay en localStorage para evitar lag visual
+    let monedasLocales = parseInt(localStorage.getItem('kofy_monedas')) || 10;
+    let rachaActual = parseInt(localStorage.getItem('kofy_racha_dias')) || 1;
+    
+    document.getElementById('balanceMonedas').textContent = monedasLocales;
+    document.getElementById('rachaDias').textContent = rachaActual;
 
-            // 2. Escuchar la base de datos EN TIEMPO REAL. 
-            // Esto se activa inmediatamente al cargar y CADA VEZ que alguien te da plata.
-            database.ref(`usuarios_economia/${usuarioKey}`).on('value', (snap) => {
-                let datosWeb = snap.val() || {};
-                
-                // Si el usuario no existe en la DB (primera vez), creamos la estructura base
-                if (!snap.exists()) {
-                    database.ref(`usuarios_economia/${usuarioKey}`).set({
-                        monedas: monedasLocales,
-                        racha: rachaActual
-                    });
-                    return;
-                }
-
-                let monedasWeb = parseInt(datosWeb.monedas) !== undefined ? datosWeb.monedas : monedasLocales;
-                let rachaWeb = parseInt(datosWeb.racha) || rachaActual;
-
-                // 3. Evaluar la racha de inicio diario SOLO una vez al día
-                if (ultimaVisita !== hoyStr) {
-                    if (ultimaVisita) {
-                        const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
-                        rachaWeb = (ultimaVisita === ayer.toDateString()) ? rachaWeb + 1 : 1;
-                    } else {
-                        rachaWeb = 1;
-                    }
-                    // Le sumamos el bonus de racha a lo que viene de la WEB, no del localStorage antiguo
-                    monedasWeb += 2; 
-
-                    // Guardamos la fecha de hoy para que no se repita en este mismo día
-                    localStorage.setItem('kofy_ultima_fecha_tienda', hoyStr);
-                    
-                    // Empujamos el cambio de racha diario a Firebase
-                    database.ref(`usuarios_economia/${usuarioKey}/monedas`).set(monedasWeb);
-                    database.ref(`usuarios_economia/${usuarioKey}/racha`).set(rachaWeb);
-                }
-
-                // 4. Sincronizar la interfaz y el localStorage con el valor más fresco de Firebase
-                localStorage.setItem('kofy_monedas', monedasWeb);
-                localStorage.setItem('kofy_racha_dias', rachaWeb);
-                
-                document.getElementById('balanceMonedas').textContent = monedasWeb;
-                document.getElementById('rachaDias').textContent = rachaWeb;
+    // 2. Leer la base de datos UNA SOLA VEZ para chequear la racha diaria
+    database.ref(`usuarios_economia/${usuarioKey}`).once('value').then((snap) => {
+        let datosWeb = snap.val() || {};
+        
+        if (!snap.exists()) {
+            // Si es un usuario nuevo, inicializamos la DB
+            database.ref(`usuarios_economia/${usuarioKey}`).set({
+                monedas: monedasLocales,
+                racha: rachaActual
             });
+            localStorage.setItem('kofy_ultima_fecha_tienda', hoyStr);
+            activarOyenteTiempoReal(); // Activamos el contador
+            return;
         }
+
+        let monedasWeb = datosWeb.monedas !== undefined ? datosWeb.monedas : monedasLocales;
+        let rachaWeb = datosWeb.racha || rachaActual;
+        const ultimaVisita = localStorage.getItem('kofy_ultima_fecha_tienda');
+
+        // Evaluar la racha SOLO si es un día nuevo
+        if (ultimaVisita !== hoyStr) {
+            if (ultimaVisita) {
+                const ayer = new Date(); 
+                ayer.setDate(ayer.getDate() - 1);
+                rachaWeb = (ultimaVisita === ayer.toDateString()) ? rachaWeb + 1 : 1;
+            } else {
+                rachaWeb = 1;
+            }
+            monedasWeb += 2; // Bonus por venir a la tienda
+
+            // Guardamos localmente que YA cobró hoy ANTES de subirlo
+            localStorage.setItem('kofy_ultima_fecha_tienda', hoyStr);
+            
+            // Actualizamos la base de datos de manera limpia
+            database.ref(`usuarios_economia/${usuarioKey}`).update({
+                monedas: monedasWeb,
+                racha: rachaWeb
+            }).then(() => {
+                activarOyenteTiempoReal();
+            });
+        } else {
+            // Si ya entró hoy, solo activamos el oyente
+            activarOyenteTiempoReal();
+        }
+    });
+}
+
+// 3. Esta función solo escucha cambios (compras, regalos, etc.) sin escribir nada, evitando bucles
+function activarOyenteTiempoReal() {
+    database.ref(`usuarios_economia/${usuarioKey}`).on('value', (snap) => {
+        let datos = snap.val();
+        if (datos) {
+            localStorage.setItem('kofy_monedas', datos.monedas);
+            localStorage.setItem('kofy_racha_dias', datos.racha);
+            
+            document.getElementById('balanceMonedas').textContent = datos.monedas;
+            document.getElementById('rachaDias').textContent = datos.racha;
+        }
+    });
+}
     </script>
 </body>
 </html>
