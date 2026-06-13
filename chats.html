@@ -134,27 +134,26 @@
         }
 
         .sticker-opcion {
-    width: 100%;
-    height: 55px;
-    object-fit: cover;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    background: #f0f0f0;
-}
+            width: 100%;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background: #f0f0f0;
+        }
 
-.sticker-opcion:hover {
-    transform: scale(1.1);
-}
+        .sticker-opcion:hover {
+            transform: scale(1.1);
+        }
 
-.chat-sticker {
-    width: 130px;
-    height: 130px;
-    object-fit: contain;
-    margin-top: 5px;
-    align-self: center;
-}
-
+        .chat-sticker {
+            width: 130px;
+            height: 130px;
+            object-fit: contain;
+            margin-top: 5px;
+            align-self: center;
+        }
     </style>
 </head>
 <body>
@@ -163,7 +162,10 @@
         <div class="logo">KofyKoi</div>
         <div class="header-user">
             <span id="nav-username">@KofyUser</span>
-            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
+            <div style="position: relative; width: 30px; height: 30px; display: inline-block;">
+                <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                <img id="navMarco" src="" style="display:none; position: absolute; top: -25%; left: -25%; width: 150%; height: 150%; pointer-events: none; z-index: 5;">
+            </div>
         </div>
     </header>
 
@@ -195,42 +197,44 @@
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
                     <input type="file" id="videoChatInput" accept="video/*" style="display: none;" onchange="prepararVideoChat(this)">
                     <input type="file" id="audioChatInput" accept="audio/*" style="display: none;" onchange="prepararAudioArchivo(this)">
-
                 </div>
 
                 <div id="mensajesPrivados" class="chat-container"></div>
 
                 <div class="chat-input-area">
-    <button class="btn-img" onclick="document.getElementById('imagenChatInput').click()">📷</button>
-    <button class="btn-img" onclick="document.getElementById('videoChatInput').click()">🎥</button>
-    <button class="btn-img" onclick="document.getElementById('audioChatInput').click()">🎵</button>
-    <button class="btn-img" onclick="togglePanelStickers()" style="background: var(--rosa);">💟</button>
-</div>
+                    <button class="btn-img" onclick="document.getElementById('imagenChatInput').click()">📷</button>
+                    <button class="btn-img" onclick="document.getElementById('videoChatInput').click()">🎥</button>
+                    <button class="btn-img" onclick="document.getElementById('audioChatInput').click()">🎵</button>
+                    <button class="btn-img" onclick="togglePanelStickers()" style="background: var(--rosa);">💟</button>
+                </div>
 
-<div id="panelStickers" class="card" style="display: none; margin-bottom: 10px; padding: 15px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h5 style="color: var(--morado-deep); margin: 0; font-size: 0.85rem;">Mis Stickers Personalizados 🌸</h5>
-        <button class="btn-main" onclick="document.getElementById('crearStickerInput').click()" style="padding: 4px 10px; font-size: 0.7rem; margin: 0;">+ Crear</button>
-    </div>
-    
-    <input type="file" id="crearStickerInput" accept="image/*" style="display: none;" onchange="procesarNuevoSticker(this)">
+                <div id="panelStickers" class="card" style="display: none; margin-bottom: 10px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h5 style="color: var(--morado-deep); margin: 0; font-size: 0.85rem;">Mis Stickers Personalizados 🌸</h5>
+                        <button class="btn-main" onclick="document.getElementById('crearStickerInput').click()" style="padding: 4px 10px; font-size: 0.7rem; margin: 0;">+ Crear</button>
+                    </div>
+                    
+                    <input type="file" id="crearStickerInput" accept="image/*" style="display: none;" onchange="procesarNuevoSticker(this)">
 
-    <div id="listaStickers" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 180px; overflow-y: auto; padding: 5px;">
-        <p id="sinStickersTexto" style="font-size: 0.75rem; color: gray; grid-column: span 4; text-align: center; margin: 10px 0;">No tienes stickers guardados. ¡Crea el primero!</p>
-    </div>
-</div>
+                    <div id="listaStickers" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 180px; overflow-y: auto; padding: 5px;">
+                        <p id="sinStickersTexto" style="font-size: 0.75rem; color: gray; grid-column: span 4; text-align: center; margin: 10px 0;">No tienes stickers guardados. ¡Crea el primero!</p>
+                    </div>
+                </div>
 
-<div class="chat-input-area">
-<textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius:
-10px; border: 1px solid #ddd;"></textarea><button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
- </div>
-
+                <div class="chat-input-area" style="margin-top: 10px;">
+                    <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius: 10px; border: 1px solid #ddd;"></textarea>
+                    <button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
+                 </div>
+            </div>
         </main>
 
         <aside class="sidebar">
             <div class="card profile-card">
-                <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
-                <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyUser</h3>
+                <div style="position: relative; width: 80px; height: 80px; margin: 0 auto;">
+                    <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; margin: 0;">
+                    <img id="perfilMarco" src="" style="display:none; position: absolute; top: -20%; left: -20%; width: 140%; height: 140%; pointer-events: none; z-index: 5;">
+                </div>
+                <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 15px;">@KofyUser</h3>
                 <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
                 <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">✨</p>
                 <p id="miBateria" style="font-size: 0.8rem; color: #4CAF50; font-weight: bold; margin-top: 5px;"></p>
@@ -241,46 +245,22 @@
     </div>
 
     <nav class="bottom-nav">
-    <button class="nav-item" onclick="location.href='perfil.html'">
-        <span>👤</span>
-        <small>Perfil</small>
-    </button>
-
-    <button class="nav-item main-btn" onclick="location.href='chats.html'">
-        <span>💬</span>
-        <small>Chats</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='notificaciones.html'">
-        <span>🔔</span>
-        <small>Alertas</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='index.html'">
-        <span>🏠</span>
-        <small>Inicio</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='botellas.html'">
-        <span>🍾</span>
-        <small>Botellas</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='tienda.html'">
-        <span>🏪</span>
-        <small>Tienda</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='datos.html'">
-        <span>❕</span>
-        <small>Info</small>
-    </button>
+        <button class="nav-item" onclick="location.href='perfil.html'"><span>👤</span><small>Perfil</small></button>
+        <button class="nav-item main-btn" onclick="location.href='chats.html'"><span>💬</span><small>Chats</small></button>
+        <button class="nav-item" onclick="location.href='notificaciones.html'"><span>🔔</span><small>Alertas</small></button>
+        <button class="nav-item" onclick="location.href='index.html'"><span>🏠</span><small>Inicio</small></button>
+        <button class="nav-item" onclick="location.href='botellas.html'"><span>🍾</span><small>Botellas</small></button>
+        <button class="nav-item" onclick="location.href='tienda.html'"><span>🏪</span><small>Tienda</small></button>
+        <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
     </nav>
 
     <div id="modalVistaPerfil" class="modal">
         <div class="modal-content">
-            <img src="" id="vistaImg" class="avatar-lg">
-            <h2 id="vistaNombre" style="margin-top:10px;"></h2>
+            <div style="position: relative; width: 80px; height: 80px; margin: 0 auto;">
+                <img src="" id="vistaImg" class="avatar-lg" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; margin: 0;">
+                <img id="vistaMarco" src="" style="display:none; position: absolute; top: -20%; left: -20%; width: 140%; height: 140%; pointer-events: none; z-index: 5;">
+            </div>
+            <h2 id="vistaNombre" style="margin-top:15px;"></h2>
             <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores 🌸</p>
             <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
             
@@ -356,12 +336,55 @@
             document.getElementById('imgNav').src = miAvatar;
             document.getElementById('imgPerfil').src = miAvatar;
             document.getElementById('bioPerfil').textContent = localStorage.getItem('kofy_bio') || "✨";
+            
             database.ref(`seguidores/${miNombre}`).on('value', (s) => {
                 document.getElementById('misSeguidoresCount').textContent = `${s.numChildren()} seguidores`;
             });
+            
+            // --- NUEVO: ESCUCHAR COSMÉTICOS PROPIOS EN TIEMPO REAL ---
+            const miID = miNombre.replace(/[.#$[\]]/g, "_");
+            database.ref(`usuarios_economia/${miID}`).on('value', snap => {
+                const data = snap.val() || {};
+                const navMarco = document.getElementById('navMarco');
+                const perfilMarco = document.getElementById('perfilMarco');
+                
+                if (data.marcoActivo) {
+                    navMarco.src = data.marcoActivo; navMarco.style.display = 'block';
+                    perfilMarco.src = data.marcoActivo; perfilMarco.style.display = 'block';
+                } else {
+                    navMarco.style.display = 'none';
+                    perfilMarco.style.display = 'none';
+                }
+            });
+
             monitorearBateria();
             enviarMisDatosExtra();
         });
+
+        // --- NUEVA FUNCIÓN: APLICAR COSMÉTICOS AL DOM ---
+        function aplicarCosmeticosEnElemento(bubbleEl, msgId, username, esSticker) {
+            const userID = username.replace(/[.#$[\]]/g, "_");
+            database.ref(`usuarios_economia/${userID}`).once('value', snap => {
+                const eco = snap.val();
+                if (eco) {
+                    // Cargar Marco
+                    if (eco.marcoActivo) {
+                        const marcoImg = bubbleEl.querySelector(`#marco-img-${msgId}`);
+                        if (marcoImg) {
+                            marcoImg.src = eco.marcoActivo;
+                            marcoImg.style.display = 'block';
+                        }
+                    }
+                    // Cargar Burbuja
+                    if (eco.burbujaActiva && !esSticker) {
+                        bubbleEl.style.background = `url(${eco.burbujaActiva}) center/cover no-repeat`;
+                        bubbleEl.style.color = "#ffffff";
+                        bubbleEl.style.textShadow = "0px 1px 3px rgba(0,0,0,0.9)";
+                        bubbleEl.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+                    }
+                }
+            });
+        }
 
         function monitorearBateria() {
             if ('getBattery' in navigator) {
@@ -418,45 +441,49 @@
         }
 
         function dibujarMensaje(id, datos) {
-    const contenedor = document.getElementById('mensajesPrivados');
-    if (document.getElementById(`msg-${id}`)) return;
-    const msgDiv = document.createElement('div');
-    const esMio = datos.usuario === miNombre;
-    msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
-    msgDiv.id = `msg-${id}`;
-    
-    // Si tiene sticker, le quitamos el fondo y la sombra para que flote limpio
-    if (datos.sticker) {
-        msgDiv.style.boxShadow = 'none';
-        msgDiv.style.padding = '5px';
-    } else if (datos.colorBurbuja) {
-        msgDiv.style.backgroundColor = datos.colorBurbuja;
-    }
+            const contenedor = document.getElementById('mensajesPrivados');
+            if (document.getElementById(`msg-${id}`)) return;
+            const msgDiv = document.createElement('div');
+            const esMio = datos.usuario === miNombre;
+            msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+            msgDiv.id = `msg-${id}`;
+            
+            if (datos.sticker) {
+                msgDiv.style.boxShadow = 'none';
+                msgDiv.style.padding = '5px';
+            } else if (datos.colorBurbuja) {
+                msgDiv.style.backgroundColor = datos.colorBurbuja;
+            }
 
-    const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
+            const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
 
-    msgDiv.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
-                <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
-            </div>
-            <div style="display: flex; gap: 5px; align-items: center;">
-                <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
-                ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
-            </div>
-        </div>
-        ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
-        ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
-        ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
-        ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
-        ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
-        ${datos.sticker ? `<img src="${datos.sticker}" class="chat-sticker">` : ''}
-        <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-    `;
-    contenedor.appendChild(msgDiv);
-    contenedor.scrollTop = contenedor.scrollHeight;
-}
+            msgDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="position: relative; width: 25px; height: 25px; flex-shrink: 0; display: inline-block;">
+                            <img src="${datos.avatar}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            <img id="marco-img-${id}" src="" style="display:none; position: absolute; top: -25%; left: -25%; width: 150%; height: 150%; pointer-events: none; z-index: 10;">
+                        </div>
+                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
+                    </div>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
+                        ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
+                    </div>
+                </div>
+                ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
+                ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
+                ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+                ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
+                ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
+                ${datos.sticker ? `<img src="${datos.sticker}" class="chat-sticker">` : ''}
+                <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            `;
+            
+            contenedor.appendChild(msgDiv);
+            aplicarCosmeticosEnElemento(msgDiv, id, datos.usuario, !!datos.sticker);
+            contenedor.scrollTop = contenedor.scrollHeight;
+        }
 
         function verPerfil(nombre, avatar, bio) {
             const modal = document.getElementById('modalVistaPerfil');
@@ -468,6 +495,18 @@
 
             const userID = nombre.replace(/[.#$[\]]/g, "_");
             
+            // --- NUEVO: OBTENER MARCO DEL USUARIO VISTO ---
+            database.ref(`usuarios_economia/${userID}`).once('value', snap => {
+                const eco = snap.val() || {};
+                const marcoModal = document.getElementById('vistaMarco');
+                if (eco.marcoActivo) {
+                    marcoModal.src = eco.marcoActivo;
+                    marcoModal.style.display = 'block';
+                } else {
+                    marcoModal.style.display = 'none';
+                }
+            });
+
             const vistaBateria = document.getElementById('vistaBateria');
             vistaBateria.textContent = "🔋 Buscando batería...";
             database.ref(`usuarios_bateria/${userID}`).on('value', (snap) => {
@@ -777,42 +816,46 @@
         }
 
         function crearEstructuraMensaje(id, datos) {
-    const msgDiv = document.createElement('div');
-    const esMio = datos.usuario === miNombre;
-    msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
-    msgDiv.id = `msg-${id}`;
-    
-    if (datos.sticker) {
-        msgDiv.style.backgroundColor = 'transparent';
-        msgDiv.style.boxShadow = 'none';
-        msgDiv.style.padding = '5px';
-    } else if (datos.colorBurbuja) {
-        msgDiv.style.backgroundColor = datos.colorBurbuja;
-    }
-    
-    const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
+            const msgDiv = document.createElement('div');
+            const esMio = datos.usuario === miNombre;
+            msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
+            msgDiv.id = `msg-${id}`;
+            
+            if (datos.sticker) {
+                msgDiv.style.backgroundColor = 'transparent';
+                msgDiv.style.boxShadow = 'none';
+                msgDiv.style.padding = '5px';
+            } else if (datos.colorBurbuja) {
+                msgDiv.style.backgroundColor = datos.colorBurbuja;
+            }
+            
+            const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
 
-    msgDiv.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <img src="${datos.avatar}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
-                <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
-            </div>
-            <div style="display: flex; gap: 5px; align-items: center;">
-                <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
-                ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
-            </div>
-        </div>
-        ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
-        ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
-        ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
-        ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
-        ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
-        ${datos.sticker ? `<img src="${datos.sticker}" class="chat-sticker">` : ''}
-        <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-    `;
-    return msgDiv;
-}
+            msgDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="position: relative; width: 25px; height: 25px; flex-shrink: 0; display: inline-block;">
+                            <img src="${datos.avatar}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            <img id="marco-img-${id}" src="" style="display:none; position: absolute; top: -25%; left: -25%; width: 150%; height: 150%; pointer-events: none; z-index: 10;">
+                        </div>
+                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
+                    </div>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
+                        ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
+                    </div>
+                </div>
+                ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
+                ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
+                ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
+                ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
+                ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
+                ${datos.sticker ? `<img src="${datos.sticker}" class="chat-sticker">` : ''}
+                <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            `;
+            aplicarCosmeticosEnElemento(msgDiv, id, datos.usuario, !!datos.sticker);
+            return msgDiv;
+        }
 
         function enviarMensajeSala() {
             const texto = document.getElementById('textoPrivado').value.trim();
@@ -835,152 +878,132 @@
         }
 
         function prepararVideoChat(input) {
-    if (input.files[0]) {
-        const archivo = input.files[0];
-        
-        // 1. Límite máximo estricto de 5 MB
-        const maximoBytes = 100 * 1024 * 1024; 
-        if (archivo.size > maximoBytes) {
-            alert("❌ El video es demasiado pesado. El límite máximo en las salas de KofyKoi son 100 MB.");
-            input.value = ""; 
-            return;
-        }
-
-        const textarea = document.getElementById('textoPrivado');
-        const originalPlaceholder = textarea.placeholder;
-        textarea.disabled = true;
-
-        // 2. ENFOQUE DIRECTO: Si pesa menos de 2 MB, pasa directo sin perder tiempo
-        if (archivo.size <= 10 * 1024 * 1024) {
-            textarea.placeholder = "Subiendo video rápido... 🎥 ${archivo.size}";
-            const lector = new FileReader();
-            lector.onload = function(evento) {
-                enviarVideoAlChat(evento.target.result);
-                restaurarInputChat(textarea, originalPlaceholder, input);
-            };
-            lector.readAsDataURL(archivo);
-            return;
-        }
-
-        // 3. ENFOQUE OPTIMIZADO: Si pesa entre 2 MB y 5 MB, reducimos su resolución a 480p
-        textarea.placeholder = "Optimizando video pesado... ⚙️⏳ ${archivo.size}";
-        
-        const videoOculto = document.createElement('video');
-        videoOculto.src = URL.createObjectURL(archivo);
-        videoOculto.muted = true;
-        videoOculto.playsInline = true;
-
-        videoOculto.onloadeddata = function() {
-            videoOculto.play();
-            
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Forzamos un ancho máximo de 480px para achicar drásticamente el peso del Base64
-            const maxAncho = 240;
-            const ratio = videoOculto.videoWidth / videoOculto.videoHeight;
-            canvas.width = videoOculto.videoWidth > maxAncho ? maxAncho : videoOculto.videoWidth;
-            canvas.height = canvas.width / ratio;
-
-            // Creamos una estructura para empaquetar los frames optimizados en un formato liviano
-            const stream = canvas.captureStream(10); // 15 FPS es el estándar perfecto para ahorrar espacio
-            
-            // Usamos una grabación rápida en segundo plano del renderizado optimizado
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp8',
-                videoBitsPerSecond: 350000 // Bitrate optimizado para chats de celular/web
-            });
-
-            const trozosVideo = [];
-            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) trozosVideo.push(e.data); };
-
-            mediaRecorder.onstop = () => {
-                const blobOptimizado = new Blob(trozosVideo, { type: 'video/webm' });
-                const lectorOptimizado = new FileReader();
-                lectorOptimizado.onloadend = function() {
-                    enviarVideoAlChat(lectorOptimizado.result);
-                    restaurarInputChat(textarea, originalPlaceholder, input);
-                };
-                lectorOptimizado.readAsDataURL(blobOptimizado);
-            };
-
-            mediaRecorder.start();
-
-            // Dibujamos el video original en el canvas de baja resolución
-            const intervaloId = setInterval(() => {
-                if (!videoOculto.paused && !videoOculto.ended) {
-                    ctx.drawImage(videoOculto, 0, 0, canvas.width, canvas.height);
+            if (input.files[0]) {
+                const archivo = input.files[0];
+                const maximoBytes = 100 * 1024 * 1024; 
+                if (archivo.size > maximoBytes) {
+                    alert("❌ El video es demasiado pesado. El límite máximo en las salas de KofyKoi son 100 MB.");
+                    input.value = ""; 
+                    return;
                 }
-            }, 1000 / 15);
 
-            videoOculto.onended = function() {
-                clearInterval(intervaloId);
-                mediaRecorder.stop();
-            };
-        };
-    }
-}
+                const textarea = document.getElementById('textoPrivado');
+                const originalPlaceholder = textarea.placeholder;
+                textarea.disabled = true;
 
-// Funciones auxiliares limpias para no repetir código
-function enviarVideoAlChat(base64Data) {
-    database.ref(`chats_privados/${salaActual}/mensajes`).push({
-        usuario: miNombre,
-        avatar: miAvatar,
-        mensaje: "",
-        video: base64Data,
-        fecha: Date.now(),
-        colorBurbuja: miColorBurbuja
-    });
-}
+                if (archivo.size <= 10 * 1024 * 1024) {
+                    textarea.placeholder = `Subiendo video rápido... 🎥 ${archivo.size}`;
+                    const lector = new FileReader();
+                    lector.onload = function(evento) {
+                        enviarVideoAlChat(evento.target.result);
+                        restaurarInputChat(textarea, originalPlaceholder, input);
+                    };
+                    lector.readAsDataURL(archivo);
+                    return;
+                }
 
-function restaurarInputChat(textarea, placeholderOriginal, input) {
-    textarea.placeholder = placeholderOriginal;
-    textarea.disabled = false;
-    input.value = "";
-}
+                textarea.placeholder = `Optimizando video pesado... ⚙️⏳ ${archivo.size}`;
+                
+                const videoOculto = document.createElement('video');
+                videoOculto.src = URL.createObjectURL(archivo);
+                videoOculto.muted = true;
+                videoOculto.playsInline = true;
 
-// Nuevo Audio
+                videoOculto.onloadeddata = function() {
+                    videoOculto.play();
+                    
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const maxAncho = 240;
+                    const ratio = videoOculto.videoWidth / videoOculto.videoHeight;
+                    canvas.width = videoOculto.videoWidth > maxAncho ? maxAncho : videoOculto.videoWidth;
+                    canvas.height = canvas.width / ratio;
 
-function prepararAudioArchivo(input) {
-    if (input.files[0]) {
-        const archivo = input.files[0];
-        
-        // Control de peso: Máximo 5 MB para no sobrecargar Firebase
-        const maximoBytes = 5 * 1024 * 1024; 
-        if (archivo.size > maximoBytes) {
-            alert(`❌ El archivo de audio es demasiado pesado (${(archivo.size / (1024 * 1024)).toFixed(2)} MB). El límite son 5 MB.`);
-            input.value = ""; 
-            return;
+                    const stream = canvas.captureStream(10); 
+                    const mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: 'video/webm;codecs=vp8',
+                        videoBitsPerSecond: 350000
+                    });
+
+                    const trozosVideo = [];
+                    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) trozosVideo.push(e.data); };
+
+                    mediaRecorder.onstop = () => {
+                        const blobOptimizado = new Blob(trozosVideo, { type: 'video/webm' });
+                        const lectorOptimizado = new FileReader();
+                        lectorOptimizado.onloadend = function() {
+                            enviarVideoAlChat(lectorOptimizado.result);
+                            restaurarInputChat(textarea, originalPlaceholder, input);
+                        };
+                        lectorOptimizado.readAsDataURL(blobOptimizado);
+                    };
+
+                    mediaRecorder.start();
+
+                    const intervaloId = setInterval(() => {
+                        if (!videoOculto.paused && !videoOculto.ended) {
+                            ctx.drawImage(videoOculto, 0, 0, canvas.width, canvas.height);
+                        }
+                    }, 1000 / 15);
+
+                    videoOculto.onended = function() {
+                        clearInterval(intervaloId);
+                        mediaRecorder.stop();
+                    };
+                };
+            }
         }
 
-        const textarea = document.getElementById('textoPrivado');
-        const originalPlaceholder = textarea.placeholder;
-        textarea.placeholder = "Subiendo audio... 🎵";
-        textarea.disabled = true;
-
-        const lector = new FileReader();
-        lector.onload = function(evento) {
-            const audioBase64 = evento.target.result;
-            
-            // Enviamos el archivo de audio a la base de datos
+        function enviarVideoAlChat(base64Data) {
             database.ref(`chats_privados/${salaActual}/mensajes`).push({
                 usuario: miNombre,
                 avatar: miAvatar,
                 mensaje: "",
-                audio: audioBase64, // Guardamos la cadena limpia del archivo
+                video: base64Data,
                 fecha: Date.now(),
                 colorBurbuja: miColorBurbuja
             });
+        }
 
-            // Restaurar la interfaz
-            textarea.placeholder = originalPlaceholder;
+        function restaurarInputChat(textarea, placeholderOriginal, input) {
+            textarea.placeholder = placeholderOriginal;
             textarea.disabled = false;
             input.value = "";
-        };
+        }
 
-        lector.readAsDataURL(archivo);
-    }
-}
+        function prepararAudioArchivo(input) {
+            if (input.files[0]) {
+                const archivo = input.files[0];
+                const maximoBytes = 5 * 1024 * 1024; 
+                if (archivo.size > maximoBytes) {
+                    alert(`❌ El archivo de audio es demasiado pesado (${(archivo.size / (1024 * 1024)).toFixed(2)} MB). El límite son 5 MB.`);
+                    input.value = ""; 
+                    return;
+                }
+
+                const textarea = document.getElementById('textoPrivado');
+                const originalPlaceholder = textarea.placeholder;
+                textarea.placeholder = "Subiendo audio... 🎵";
+                textarea.disabled = true;
+
+                const lector = new FileReader();
+                lector.onload = function(evento) {
+                    const audioBase64 = evento.target.result;
+                    database.ref(`chats_privados/${salaActual}/mensajes`).push({
+                        usuario: miNombre,
+                        avatar: miAvatar,
+                        mensaje: "",
+                        audio: audioBase64, 
+                        fecha: Date.now(),
+                        colorBurbuja: miColorBurbuja
+                    });
+                    textarea.placeholder = originalPlaceholder;
+                    textarea.disabled = false;
+                    input.value = "";
+                };
+                lector.readAsDataURL(archivo);
+            }
+        }
     </script>
 
     <script>
@@ -1082,259 +1105,188 @@ function prepararAudioArchivo(input) {
         database.ref('salas_publicas').orderByChild('nombre').equalTo(codigo).once('value', (snapshot) => {
             if (snapshot.exists()) {
                 salaActual = codigo;
-                usuarioDestinoGlobal = null; 
-
-                document.getElementById('chat-target-name').textContent = `Sala: ${codigo}`;
                 document.getElementById('chat-container').innerHTML = "";
                 cargarMensajes();
-                
-                console.log(`Te has unido a la sala pública: ${codigo}`);
             } else {
                 alert("La sala no existe. ¡Verifica el código!");
             }
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const codigoGuardado = localStorage.getItem('codigo_sala_autostart');
-
-        if (codigoGuardado) {
-            console.log("Código de sala detectado para autostart:", codigoGuardado);
-
-            const esperarInputReal = setInterval(() => {
-                const inputCodigo = document.getElementById('codigo-sala');
-                
-                if (inputCodigo) {
-                    clearInterval(esperarInputReal); 
-                    inputCodigo.value = codigoGuardado; 
-
-                    inputCodigo.dispatchEvent(new Event('input', { bubbles: true }));
-                    inputCodigo.dispatchEvent(new Event('change', { bubbles: true }));
-                    
-                    console.log("¡Texto inyectado con éxito!");
-
-                    setTimeout(() => {
-                        console.log("Ejecutando unirseASalaPorCodigo()...");
-                        unirseASalaPorCodigo();
-                    }, 250);
-
-                    localStorage.removeItem('codigo_sala_autostart');
-                }
-            }, 100);
-
-            setTimeout(() => clearInterval(esperarInputReal), 5000);
+    // --- SISTEMA DE STICKERS ---
+    function renderizarMisStickers() {
+        const listaContenedor = document.getElementById('listaStickers');
+        const sinStickersTexto = document.getElementById('sinStickersTexto');
+        const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
+        
+        listaContenedor.innerHTML = "";
+        
+        if (misStickers.length === 0) {
+            if (sinStickersTexto) listaContenedor.appendChild(sinStickersTexto);
+            return;
         }
-    });
 
-// --- SISTEMA DE STICKERS PROPIOS CON RECORTE MANUAL ---
+        misStickers.forEach((stickerBase64, index) => {
+            const divWrap = document.createElement('div');
+            divWrap.style = "position: relative; display: inline-block;";
 
-function renderizarMisStickers() {
-    const listaContenedor = document.getElementById('listaStickers');
-    const sinStickersTexto = document.getElementById('sinStickersTexto');
-    const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
-    
-    listaContenedor.innerHTML = "";
-    
-    if (misStickers.length === 0) {
-        if (sinStickersTexto) listaContenedor.appendChild(sinStickersTexto);
-        return;
+            const img = document.createElement('img');
+            img.src = stickerBase64;
+            img.className = "sticker-opcion";
+            img.onclick = () => enviarSticker(stickerBase64);
+
+            const btnBorrar = document.createElement('button');
+            btnBorrar.innerHTML = "✕";
+            btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;";
+            btnBorrar.onclick = (e) => {
+                e.stopPropagation(); 
+                eliminarStickerDeGaleria(index);
+            };
+
+            divWrap.appendChild(img);
+            divWrap.appendChild(btnBorrar);
+            listaContenedor.appendChild(divWrap);
+        });
     }
 
-    misStickers.forEach((stickerBase64, index) => {
-        const divWrap = document.createElement('div');
-        divWrap.style = "position: relative; display: inline-block;";
-
-        const img = document.createElement('img');
-        img.src = stickerBase64;
-        img.className = "sticker-opcion";
-        img.onclick = () => enviarSticker(stickerBase64);
-
-        const btnBorrar = document.createElement('button');
-        btnBorrar.innerHTML = "✕";
-        btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;";
-        btnBorrar.onclick = (e) => {
-            e.stopPropagation(); 
-            eliminarStickerDeGaleria(index);
-        };
-
-        divWrap.appendChild(img);
-        divWrap.appendChild(btnBorrar);
-        listaContenedor.appendChild(divWrap);
-    });
-}
-
-function togglePanelStickers() {
-    const panel = document.getElementById('panelStickers');
-    if (panel.style.display === 'none') {
-        panel.style.display = 'block';
-        renderizarMisStickers();
-    } else {
-        panel.style.display = 'none';
+    function togglePanelStickers() {
+        const panel = document.getElementById('panelStickers');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            renderizarMisStickers();
+        } else {
+            panel.style.display = 'none';
+        }
     }
-}
 
-// Abre un modal interactivo para que el usuario mueva el área de recorte
-function procesarNuevoSticker(input) {
-    if (input.files && input.files[0]) {
-        const lector = new FileReader();
-        lector.onload = function(evento) {
-            // Creamos una interfaz temporal para recortar
-            const overlayCorte = document.createElement('div');
-            overlayCorte.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; color:white; padding:20px;";
-            
-            overlayCorte.innerHTML = `
-                <h4 style="margin-bottom:10px; font-size:0.9rem;">Ajusta el recuadro para tu sticker 🌸</h4>
-                <div style="position:relative; max-width:90%; max-height:60vh; overflow:hidden; background:#222; border-radius:8px;">
-                    <img id="img-previa-corte" src="${evento.target.result}" style="max-width:100%; max-height:60vh; display:block; user-select:none;">
-                    <div id="selector-recorte" style="position:absolute; top:10%; left:10%; width:150px; height:150px; border:2px dashed #fff; box-shadow:0 0 0 4000px rgba(0,0,0,0.5); cursor:move; box-sizing:border-box;">
-                        <div id="resizer-control" style="position:absolute; bottom:0; right:0; width:15px; height:15px; background:#fff; cursor:se-resize;"></div>
+    function procesarNuevoSticker(input) {
+        if (input.files && input.files[0]) {
+            const lector = new FileReader();
+            lector.onload = function(evento) {
+                const overlayCorte = document.createElement('div');
+                overlayCorte.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; color:white; padding:20px;";
+                
+                overlayCorte.innerHTML = `
+                    <h4 style="margin-bottom:10px; font-size:0.9rem;">Ajusta el recuadro para tu sticker 🌸</h4>
+                    <div style="position:relative; max-width:90%; max-height:60vh; overflow:hidden; background:#222; border-radius:8px;">
+                        <img id="img-previa-corte" src="${evento.target.result}" style="max-width:100%; max-height:60vh; display:block; user-select:none;">
+                        <div id="selector-recorte" style="position:absolute; top:10%; left:10%; width:150px; height:150px; border:2px dashed #fff; box-shadow:0 0 0 4000px rgba(0,0,0,0.5); cursor:move; box-sizing:border-box;">
+                            <div id="resizer-control" style="position:absolute; bottom:0; right:0; width:15px; height:15px; background:#fff; cursor:se-resize;"></div>
+                        </div>
                     </div>
-                </div>
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button id="btn-cancelar-corte" class="btn-img" style="background:#ff4d4d; color:white; padding:8px 15px;">Cancelar</button>
-                    <button id="btn-confirmar-corte" class="btn-main" style="margin:0; padding:8px 15px;">¡Cortar Sticker! ✨</button>
-                </div>
-            `;
-            
-            document.body.appendChild(overlayCorte);
-            
-            const selector = overlayCorte.querySelector('#selector-recorte');
-            const resizer = overlayCorte.querySelector('#resizer-control');
-            const imgPrevia = overlayCorte.querySelector('#img-previa-corte');
-            
-            let mouseX, mouseY, selectorX, selectorY, selectorW, selectorH;
-            let modoMover = false;
-            let modoRedimensionar = false;
-            
-            // Lógica para arrastrar el recuadro o cambiarle el tamaño
-            selector.addEventListener('mousedown', (e) => {
-                if (e.target === resizer) {
-                    modoRedimensionar = true;
-                } else {
-                    modoMover = true;
-                }
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-                selectorX = selector.offsetLeft;
-                selectorY = selector.offsetTop;
-                selectorW = selector.offsetWidth;
-                selectorH = selector.offsetHeight;
-                e.preventDefault();
-            });
-            
-            window.addEventListener('mousemove', (e) => {
-                if (modoMover) {
-                    let dx = e.clientX - mouseX;
-                    let dy = e.clientY - mouseY;
-                    let nx = selectorX + dx;
-                    let ny = selectorY + dy;
-                    
-                    // Límites
-                    if (nx >= 0 && nx + selector.offsetWidth <= imgPrevia.offsetWidth) selector.style.left = nx + 'px';
-                    if (ny >= 0 && ny + selector.offsetHeight <= imgPrevia.offsetHeight) selector.style.top = ny + 'px';
-                } else if (modoRedimensionar) {
-                    let dx = e.clientX - mouseX;
-                    let dy = e.clientY - mouseY;
-                    let nw = selectorW + dx;
-                    let nh = selectorH + dy;
-                    
-                    if (nw > 40 && selector.offsetLeft + nw <= imgPrevia.offsetWidth) selector.style.width = nw + 'px';
-                    if (nh > 40 && selector.offsetTop + nh <= imgPrevia.offsetHeight) selector.style.height = nh + 'px';
-                }
-            });
-            
-            window.addEventListener('mouseup', () => {
-                modoMover = false;
-                modoRedimensionar = false;
-            });
-            
-            // Soporte para pantallas táctiles (Celu)
-            selector.addEventListener('touchstart', (e) => {
-                const t = e.touches[0];
-                if (e.target === resizer) modoRedimensionar = true; else modoMover = true;
-                mouseX = t.clientX; mouseY = t.clientY;
-                selectorX = selector.offsetLeft; selectorY = selector.offsetTop;
-                selectorW = selector.offsetWidth; selectorH = selector.offsetHeight;
-            });
-            
-            window.addEventListener('touchmove', (e) => {
-                if(e.touches.length === 0) return;
-                const t = e.touches[0];
-                if (modoMover) {
-                    let nx = selectorX + (t.clientX - mouseX);
-                    let ny = selectorY + (t.clientY - mouseY);
-                    if (nx >= 0 && nx + selector.offsetWidth <= imgPrevia.offsetWidth) selector.style.left = nx + 'px';
-                    if (ny >= 0 && ny + selector.offsetHeight <= imgPrevia.offsetHeight) selector.style.top = ny + 'px';
-                } else if (modoRedimensionar) {
-                    let nw = selectorW + (t.clientX - mouseX);
-                    let nh = selectorH + (t.clientY - mouseY);
-                    if (nw > 40 && selector.offsetLeft + nw <= imgPrevia.offsetWidth) selector.style.width = nw + 'px';
-                    if (nh > 40 && selector.offsetTop + nh <= imgPrevia.offsetHeight) selector.style.height = nh + 'px';
-                }
-            });
-            
-            window.addEventListener('touchend', () => { modoMover = false; modoRedimensionar = false; });
+                    <div style="margin-top:15px; display:flex; gap:10px;">
+                        <button id="btn-cancelar-corte" class="btn-img" style="background:#ff4d4d; color:white; padding:8px 15px;">Cancelar</button>
+                        <button id="btn-confirmar-corte" class="btn-main" style="margin:0; padding:8px 15px;">¡Cortar Sticker! ✨</button>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlayCorte);
+                
+                const selector = overlayCorte.querySelector('#selector-recorte');
+                const resizer = overlayCorte.querySelector('#resizer-control');
+                const imgPrevia = overlayCorte.querySelector('#img-previa-corte');
+                
+                let mouseX, mouseY, selectorX, selectorY, selectorW, selectorH;
+                let modoMover = false;
+                let modoRedimensionar = false;
+                
+                selector.addEventListener('mousedown', (e) => {
+                    if (e.target === resizer) modoRedimensionar = true; else modoMover = true;
+                    mouseX = e.clientX; mouseY = e.clientY;
+                    selectorX = selector.offsetLeft; selectorY = selector.offsetTop;
+                    selectorW = selector.offsetWidth; selectorH = selector.offsetHeight;
+                    e.preventDefault();
+                });
+                
+                window.addEventListener('mousemove', (e) => {
+                    if (modoMover) {
+                        let dx = e.clientX - mouseX; let dy = e.clientY - mouseY;
+                        let nx = selectorX + dx; let ny = selectorY + dy;
+                        if (nx >= 0 && nx + selector.offsetWidth <= imgPrevia.offsetWidth) selector.style.left = nx + 'px';
+                        if (ny >= 0 && ny + selector.offsetHeight <= imgPrevia.offsetHeight) selector.style.top = ny + 'px';
+                    } else if (modoRedimensionar) {
+                        let dx = e.clientX - mouseX; let dy = e.clientY - mouseY;
+                        let nw = selectorW + dx; let nh = selectorH + dy;
+                        if (nw > 40 && selector.offsetLeft + nw <= imgPrevia.offsetWidth) selector.style.width = nw + 'px';
+                        if (nh > 40 && selector.offsetTop + nh <= imgPrevia.offsetHeight) selector.style.height = nh + 'px';
+                    }
+                });
+                
+                window.addEventListener('mouseup', () => { modoMover = false; modoRedimensionar = false; });
+                
+                selector.addEventListener('touchstart', (e) => {
+                    const t = e.touches[0];
+                    if (e.target === resizer) modoRedimensionar = true; else modoMover = true;
+                    mouseX = t.clientX; mouseY = t.clientY;
+                    selectorX = selector.offsetLeft; selectorY = selector.offsetTop;
+                    selectorW = selector.offsetWidth; selectorH = selector.offsetHeight;
+                });
+                
+                window.addEventListener('touchmove', (e) => {
+                    if(e.touches.length === 0) return;
+                    const t = e.touches[0];
+                    if (modoMover) {
+                        let nx = selectorX + (t.clientX - mouseX); let ny = selectorY + (t.clientY - mouseY);
+                        if (nx >= 0 && nx + selector.offsetWidth <= imgPrevia.offsetWidth) selector.style.left = nx + 'px';
+                        if (ny >= 0 && ny + selector.offsetHeight <= imgPrevia.offsetHeight) selector.style.top = ny + 'px';
+                    } else if (modoRedimensionar) {
+                        let nw = selectorW + (t.clientX - mouseX); let nh = selectorH + (t.clientY - mouseY);
+                        if (nw > 40 && selector.offsetLeft + nw <= imgPrevia.offsetWidth) selector.style.width = nw + 'px';
+                        if (nh > 40 && selector.offsetTop + nh <= imgPrevia.offsetHeight) selector.style.height = nh + 'px';
+                    }
+                });
+                
+                window.addEventListener('touchend', () => { modoMover = false; modoRedimensionar = false; });
 
-            // Cancelar
-            overlayCorte.querySelector('#btn-cancelar-corte').onclick = () => {
-                overlayCorte.remove();
-                input.value = "";
+                overlayCorte.querySelector('#btn-cancelar-corte').onclick = () => { overlayCorte.remove(); input.value = ""; };
+                
+                overlayCorte.querySelector('#btn-confirmar-corte').onclick = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const factorEscalaX = imgPrevia.naturalWidth / imgPrevia.offsetWidth;
+                    const factorEscalaY = imgPrevia.naturalHeight / imgPrevia.offsetHeight;
+                    
+                    const sx = selector.offsetLeft * factorEscalaX;
+                    const sy = selector.offsetTop * factorEscalaY;
+                    const sw = selector.offsetWidth * factorEscalaX;
+                    const sh = selector.offsetHeight * factorEscalaY;
+                    
+                    canvas.width = 250;
+                    canvas.height = 250 * (sh / sw); 
+                    
+                    ctx.drawImage(imgPrevia, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                    const stickerFinal = canvas.toDataURL('image/png');
+                    
+                    const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
+                    misStickers.push(stickerFinal);
+                    localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
+                    
+                    overlayCorte.remove(); input.value = ""; renderizarMisStickers();
+                };
             };
-            
-            // Confirmar y procesar recorte exacto en Canvas
-            overlayCorte.querySelector('#btn-confirmar-corte').onclick = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Conseguir escala real de la imagen respecto al visor
-                const factorEscalaX = imgPrevia.naturalWidth / imgPrevia.offsetWidth;
-                const factorEscalaY = imgPrevia.naturalHeight / imgPrevia.offsetHeight;
-                
-                const sx = selector.offsetLeft * factorEscalaX;
-                const sy = selector.offsetTop * factorEscalaY;
-                const sw = selector.offsetWidth * factorEscalaX;
-                const sh = selector.offsetHeight * factorEscalaY;
-                
-                // Mantenemos las proporciones elegidas por el usuario
-                canvas.width = 250;
-                canvas.height = 250 * (sh / sw); 
-                
-                ctx.drawImage(imgPrevia, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-                const stickerFinal = canvas.toDataURL('image/png');
-                
-                const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
-                misStickers.push(stickerFinal);
-                localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
-                
-                overlayCorte.remove();
-                input.value = "";
-                renderizarMisStickers();
-            };
-        };
-        lector.readAsDataURL(input.files[0]);
+            lector.readAsDataURL(input.files[0]);
+        }
     }
-}
 
-function eliminarStickerDeGaleria(index) {
-    const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
-    misStickers.splice(index, 1);
-    localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
-    renderizarMisStickers();
-}
+    function eliminarStickerDeGaleria(index) {
+        const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
+        misStickers.splice(index, 1);
+        localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
+        renderizarMisStickers();
+    }
 
-function enviarSticker(urlSticker) {
-    if (!salaActual) return;
-    database.ref(`chats_privados/${salaActual}/mensajes`).push({
-        usuario: miNombre,
-        avatar: miAvatar,
-        mensaje: "",
-        sticker: urlSticker,
-        fecha: Date.now(),
-        colorBurbuja: miColorBurbuja
-    });
-    document.getElementById('panelStickers').style.display = 'none';
-}
+    function enviarSticker(urlSticker) {
+        if (!salaActual) return;
+        database.ref(`chats_privados/${salaActual}/mensajes`).push({
+            usuario: miNombre,
+            avatar: miAvatar,
+            mensaje: "",
+            sticker: urlSticker,
+            fecha: Date.now(),
+            colorBurbuja: miColorBurbuja
+        });
+        document.getElementById('panelStickers').style.display = 'none';
+    }
     </script>
 </body>
 </html>
-
