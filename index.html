@@ -12,9 +12,12 @@
     <header>
     <div class="logo">KofyKoi</div>
     <div class="header-user">
-        <span id="nav-username">@KofyUser</span>
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
+    <span id="nav-username">@KofyUser</span>
+    <div style="position: relative; width: 40px; height: 40px;">
+        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
     </div>
+</div>
 </header>
 
 <div class="container">
@@ -67,18 +70,17 @@
             <div id="sentinel" style="height: 20px;"></div>
         </main>
 
-        <aside class="sidebar">
-    <div class="card profile-card">
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil">
-        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 5px;">@KofyLover</h3>
-        
+        <aside>
+    <div class="card profile-card" style="text-align: center;">
+        <div class="avatar-container" style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            <img id="marcoPerfil" src="" style="display: none; position: absolute; top: -5px; left: -5px; width: 110px; height: 110px; pointer-events: none; z-index: 10;">
+        </div>
+        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 10px;">@KofyUser</h3>
         <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
-        
-        <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">Buscando momentos zen y mucho café. ✨</p>
-        <br>
-        <button class="btn-main" onclick="abrirModal()">Editar Perfil</button>
+        <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px; font-style: italic; color: gray;">¡Cargando bío!</p>
     </div>
-        </aside>
+</aside>
 
     <div id="modalPerfil" class="modal">
         <div class="modal-content">
