@@ -705,3 +705,80 @@ database.ref('mensajes_privados/').on('child_changed', (snapshot) => {
         });
     }
 });
+
+// --- LÓGICA DEL BUSCADOR DE USUARIOS ---
+function buscarUsuarios(texto) {
+    const dropdown = document.getElementById('search-results');
+    if (!dropdown) return;
+
+    const queryText = texto.trim().toLowerCase();
+
+    if (!queryText) {
+        dropdown.innerHTML = "";
+        dropdown.style.display = "none";
+        return;
+    }
+
+    // Buscamos en 'posts' para obtener los perfiles activos creados en la comunidad
+    database.ref('posts/').once('value').then((snapshot) => {
+        const usuariosEncontrados = {};
+
+        snapshot.forEach((child) => {
+            const datos = child.val();
+            const nombreUsuario = datos.usuario || "";
+            
+            // Si coincide con lo que escribe el usuario y no lo agregamos ya a la lista
+            if (nombreUsuario.toLowerCase().includes(queryText) && !usuariosEncontrados[nombreUsuario]) {
+                usuariosEncontrados[nombreUsuario] = {
+                    nombre: nombreUsuario,
+                    avatar: datos.avatar || 'https://i.pravatar.cc/150?u=default',
+                    bio: datos.biografia || ""
+                };
+            }
+        });
+
+        dropdown.innerHTML = "";
+        const listaUsuarios = Object.values(usuariosEncontrados);
+
+        if (listaUsuarios.length === 0) {
+            dropdown.innerHTML = `<div style="padding: 10px; font-size: 0.8rem; color: #888; font-style: italic;">No se encontraron usuarios</div>`;
+        } else {
+            listaUsuarios.forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.gap = '10px';
+                item.style.padding = '8px 12px';
+                item.style.cursor = 'pointer';
+                
+                item.innerHTML = `
+                    <img src="${u.avatar}" class="avatar-sm" style="width: 25px; height: 25px;">
+                    <span style="font-size: 0.85rem; font-weight: 600;">${u.nombre}</span>
+                `;
+
+                // Al hacer clic, se abre el modal que ya tienes implementado
+                item.onclick = () => {
+                    verPerfil(u.nombre, u.avatar, u.bio);
+                    document.getElementById('searchUser').value = "";
+                    dropdown.innerHTML = "";
+                    dropdown.style.display = "none";
+                };
+
+                dropdown.appendChild(item);
+            });
+        }
+        dropdown.style.display = "block";
+    });
+}
+
+// Cerrar el buscador si se hace clic fuera de él
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('search-results');
+    const input = document.getElementById('searchUser');
+    if (dropdown && e.target !== dropdown && e.target !== input) {
+        dropdown.innerHTML = "";
+        dropdown.style.display = "none";
+    }
+});
+

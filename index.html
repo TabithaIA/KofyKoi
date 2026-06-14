@@ -11,13 +11,14 @@
 
     <header>
     <div class="logo">KofyKoi</div>
+    
     <div class="header-user">
-    <span id="nav-username">@KofyUser</span>
-    <div style="position: relative; width: 40px; height: 40px;">
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-        <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
+        <span id="nav-username">@KofyUser</span>
+        <div style="position: relative; width: 40px; height: 40px;">
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
+        </div>
     </div>
-</div>
 </header>
 
 <div class="container">
@@ -31,6 +32,11 @@
                 </ul>
             </div>
         </aside>
+
+                <div class="search-container" style="position: relative; width: 40%; max-width: 300px;">
+        <input type="text" id="searchUser" placeholder="🔍 Buscar usuario" oninput="buscarUsuarios(this.value)" style="width: 100%; padding: 6px 12px; border-radius: 15px; border: none; font-size: 0.85rem; font-family: inherit;">
+        <div id="search-results" class="search-results-dropdown"></div>
+    </div>
 
                 <main>
             <div class="card" style="padding: 15px; margin-bottom: 20px;">
@@ -54,6 +60,19 @@
             </div>
 
             <div class="card">
+            <div class="slider-horizontal">
+                <button class="nav-item" onclick="location.href='match.html'">
+        <span>💕</span>
+        <small>Match por Texto</small>
+    </button>
+                <button class="nav-item" onclick="location.href='botellas.html'">
+        <span>🍾</span>
+        <small>Botellas Conectadas</small>
+    </button>
+            </div>
+            </div>
+
+            <div class="card">
                 <textarea id="postText" rows="2" placeholder="¿Qué hay de nuevo en tu mundo koi?"></textarea>
                 <div class="post-options">
                     <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
@@ -70,17 +89,7 @@
             <div id="sentinel" style="height: 20px;"></div>
         </main>
 
-        <aside>
-    <div class="card profile-card" style="text-align: center;">
-        <div class="avatar-container" style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
-            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-            <img id="marcoPerfil" src="" style="display: none; position: absolute; top: -5px; left: -5px; width: 110px; height: 110px; pointer-events: none; z-index: 10;">
-        </div>
-        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 10px;">@KofyUser</h3>
-        <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
-        <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px; font-style: italic; color: gray;">¡Cargando bío!</p>
-    </div>
-</aside>
+        
 
     <div id="modalPerfil" class="modal">
         <div class="modal-content">
@@ -120,11 +129,6 @@
     <button class="nav-item main-btn" onclick="location.href='index.html'">
         <span>🏠</span>
         <small>Inicio</small>
-    </button>
-
-    <button class="nav-item" onclick="location.href='botellas.html'">
-        <span>🍾</span>
-        <small>Botellas</small>
     </button>
 
     <button class="nav-item" onclick="location.href='tienda.html'">

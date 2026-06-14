@@ -414,3 +414,46 @@ body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-co
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
 }
 
+/* --- ESTILOS DEL DESPLEGABLE DE BÚSQUEDA --- */
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: var(--blanco);
+    border: 2px solid var(--rosa);
+    border-radius: 12px;
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 2000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.search-result-item {
+    transition: background 0.2s ease;
+    color: var(--oscuro-suave);
+}
+
+.search-result-item:hover {
+    background: var(--fondo);
+}
+
+/* Integración con Modo Oscuro Automático */
+@media (prefers-color-scheme: dark) {
+    #searchUser {
+        background-color: #2c3e50 !important;
+        color: #f0f0f5 !important;
+    }
+    
+    .search-results-dropdown {
+        background: #1e1e24 !important;
+        border-color: var(--rosa) !important;
+    }
+
+    .search-result-item:hover {
+        background: #2c3e50 !important;
+    }
+}
+

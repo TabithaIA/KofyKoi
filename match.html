@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KofyKoi - Match Secreto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .match-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            text-align: center;
+        }
+        .timer-badge {
+            background: var(--rosa);
+            color: var(--oscuro-suave);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            border: 2px solid var(--morado-deep);
+            display: none;
+        }
+        .chat-match-container {
+            width: 100%;
+            height: 280px;
+            border: 2px solid var(--azul-claro);
+            border-radius: 15px;
+            background: var(--fondo);
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .match-input-area {
+            display: none;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .action-box {
+            display: none;
+            gap: 15px;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .pulse-btn {
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(106, 90, 205, 0.4); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(106, 90, 205, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(106, 90, 205, 0); }
+        }
+        @media (prefers-color-scheme: dark) {
+            .chat-match-container { background: #121214 !important; }
+            .timer-badge { background: #b85076 !important; color: white !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">KofyKoi</div>
+        <div class="header-user">
+            <span id="nav-username">@KofyUser</span>
+        </div>
+    </header>
+
+    <div class="container" style="grid-template-columns: 1fr; max-width: 600px;">
+        <main>
+            <div class="card match-box">
+                <div id="estado-match">
+                    <h2 style="color: var(--morado-deep); margin-bottom: 10px;">Match Anónimo ⏳</h2>
+                    <p style="color: gray; font-size: 0.9rem; margin-bottom: 20px;">Habla de forma 100% anónima durante 180 segundos. Si ambos deciden aceptar antes de que el tiempo expire, se revelarán sus perfiles y se abrirá un chat privado.</p>
+                    <button id="btnIniciarMatch" class="btn-main pulse-btn" style="font-size: 1.1rem; padding: 12px 30px; border-radius: 25px;" onclick="buscarPareja()">
+                        Buscar Conversación Secreta 🌸
+                    </button>
+                </div>
+
+                <div id="matchTimer" class="timer-badge">180s</div>
+                
+                <div id="chatMatch" class="chat-match-container"></div>
+                
+                <div id="inputMatchArea" class="match-input-area">
+                    <input type="text" id="msgMatchInput" class="input-comment" placeholder="Escribe un mensaje koi..." onkeypress="if(event.key === 'Enter') enviarMensajeMatch()">
+                    <button class="btn-main" onclick="enviarMensajeMatch()" style="border-radius: 15px; padding: 0 15px;">Enviar</button>
+                </div>
+
+                <div id="actionArea" class="action-box">
+                    <button id="btnAceptar" class="btn-main" style="background: #a1e3a1; color: #2e592e; min-width: 140px;" onclick="aceptarMatch()">Aceptar Amistad ✔️</button>
+                    <button id="btnRechazar" class="btn-img" style="background: #ffb3ba; color: #592e33; min-width: 140px; margin: 0;" onclick="cancelarTodo()">Rechazar / Salir ❌</button>
+                    <p id="feedbackMatch" style="width: 100%; font-size: 0.85rem; color: gray; margin-top: 5px; font-style: italic;"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item" onclick="location.href='perfil.html'"><span>👤</span><small>Perfil</small></button>
+        <button class="nav-item" onclick="location.href='chats.html'"><span>💬</span><small>Chats</small></button>
+        <button class="nav-item" onclick="location.href='notificaciones.html'"><span>🔔</span><small>Alertas</small></button>
+        <button class="nav-item main-btn" onclick="location.href='index.html'"><span>🏠</span><small>Inicio</small></button>
+        <button class="nav-item" onclick="location.href='tienda.html'"><span>🏪</span><small>Tienda</small></button>
+        <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
+    <script>
+        // Configuración nativa de KofyKoi
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
+            authDomain: "kofikoi.firebaseapp.com",
+            databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
+            projectId: "kofikoi",
+            storageBucket: "kofikoi.firebasestorage.app",
+            messagingSenderId: "27280210890",
+            appId: "1:27280210890:web:354c9bf51bfcb6b438ad33",
+            measurementId: "G-P7KFPMFHHW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+        let miKeyLimpia = miNombre.replace(/[.#$[\]]/g, "_");
+        let salaMatchId = null;
+        let parejaNombre = null;
+        let timerInterval = null;
+        let escuchandoEstadoSala = null;
+        let yaAcepte = false;
+
+        document.getElementById('nav-username').textContent = miNombre;
+
+        function buscarPareja() {
+            document.getElementById('estado-match').innerHTML = `<h3 style="color: var(--morado-deep);">Buscando en el estanque koi... 🌊</h3><p style="font-size:0.8rem; color:gray;">Esperando a otro pez misterioso...</p>`;
+            
+            const colaRef = database.ref('queue_match/');
+            
+            colaRef.once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    let listaEnCola = snapshot.val();
+                    let llaves = Object.keys(listaEnCola);
+                    let idPareja = llaves[0];
+                    parejaNombre = listaEnCola[idPareja].nombre;
+
+                    if (parejaNombre === miNombre) {
+                        database.ref(`queue_match/${idPareja}`).remove();
+                        buscarPareja();
+                        return;
+                    }
+
+                    salaMatchId = `match_${idPareja}_vs_${miKeyLimpia}`;
+                    
+                    database.ref(`salas_match/${salaMatchId}`).set({
+                        usuario1: parejaNombre,
+                        usuario2: miNombre,
+                        tiempoInicio: Date.now(),
+                        aceptaU1: false,
+                        aceptaU2: false,
+                        estado: "jugando"
+                    }).then(() => {
+                        database.ref(`queue_match/${idPareja}`).remove();
+                        iniciarConversacion();
+                    });
+
+                } else {
+                    let nuevaEsperaRef = colaRef.push();
+                    nuevaEsperaRef.set({
+                        nombre: miNombre,
+                        fecha: Date.now()
+                    });
+
+                    escuchandoEstadoSala = database.ref('salas_match/').on('child_added', (salaSnap) => {
+                        let sala = salaSnap.val();
+                        if (sala.usuario1 === miNombre || sala.usuario2 === miNombre) {
+                            salaMatchId = salaSnap.key;
+                            parejaNombre = (sala.usuario1 === miNombre) ? sala.usuario2 : sala.usuario1;
+                            database.ref(`queue_match/${nuevaEsperaRef.key}`).remove();
+                            database.ref('salas_match/').off('child_added', escuchandoEstadoSala);
+                            iniciarConversacion();
+                        }
+                    });
+                }
+            });
+        }
+
+        function iniciarConversacion() {
+            document.getElementById('estado-match').style.display = "none";
+            document.getElementById('matchTimer').style.display = "block";
+            document.getElementById('chatMatch').style.display = "block";
+            document.getElementById('inputMatchArea').style.display = "flex";
+            document.getElementById('actionArea').style.display = "flex";
+
+            document.getElementById('chatMatch').innerHTML = `<div style="text-align:center; color:var(--morado-deep); font-size:0.85rem; font-style:italic; margin-bottom:10px;">¡Conexión establecida con Misterioso Koi! 🎭<br>Tienes 180s para decidir si aceptan la amistad.</div>`;
+
+            // Escuchar mensajes en tiempo real
+            database.ref(`salas_match/${salaMatchId}/mensajes`).on('child_added', (msgSnap) => {
+                let m = msgSnap.val();
+                let bubble = document.createElement('div');
+                bubble.className = "bubble animacion-entrada";
+                
+                // IMPORTANTE: Se muestra como "Misterioso Koi", protegiendo la identidad
+                if (m.remitente === miNombre) {
+                    bubble.style.background = "var(--lavanda)";
+                    bubble.style.marginLeft = "auto";
+                    bubble.innerHTML = `<strong>Tú:</strong> ${m.texto}`;
+                } else {
+                    bubble.style.background = "var(--blanco)";
+                    bubble.style.marginRight = "auto";
+                    bubble.innerHTML = `<strong>Misterioso Koi:</strong> ${m.texto}`;
+                }
+                
+                let box = document.getElementById('chatMatch');
+                box.appendChild(bubble);
+                box.scrollTop = box.scrollHeight;
+            });
+
+            // Cuenta regresiva activa de 180 segundos
+            let tiempoRestante = 180;
+            timerInterval = setInterval(() => {
+                tiempoRestante--;
+                document.getElementById('matchTimer').textContent = `${tiempoRestante}s`;
+
+                if (tiempoRestante <= 0) {
+                    clearInterval(timerInterval);
+                    expirarMatchPorTiempo();
+                }
+            }, 1000);
+
+            // Escuchar cambios en las decisiones de ambos en tiempo real
+            database.ref(`salas_match/${salaMatchId}`).on('value', (snap) => {
+                if (!snap.exists()) return;
+                let sala = snap.val();
+
+                // Verificar quién es el usuario actual dentro de la estructura de la sala
+                let soyU1 = (sala.usuario1 === miNombre);
+                let elOtroAcepto = soyU1 ? sala.aceptaU2 : sala.aceptaU1;
+
+                if (elOtroAcepto && !yaAcepte) {
+                    document.getElementById('feedbackMatch').textContent = "¡El Misterioso Koi te ha aceptado! Falta tu confirmación... 💓";
+                }
+
+                // SI AMBOS ACEPTAN ANTES DE EXPlRAR
+                if (sala.aceptaU1 && sala.aceptaU2) {
+                    detenerTodoYLimpiarEventos();
+
+                    // BORRAMOS TODO lo temporal de inmediato para no ocupar espacio
+                    database.ref(`salas_match/${salaMatchId}`).remove().then(() => {
+                        // Creamos el ID único para tu chat privado permanente nativo
+                        const idsOrdenados = [miNombre.replace(/[.#$[\]]/g, "_"), parejaNombre.replace(/[.#$[\]]/g, "_")].sort();
+                        const chatRoomId = `${idsOrdenados[0]}_${idsOrdenados[1]}`;
+
+                        localStorage.setItem('chat_actual_id', chatRoomId);
+                        localStorage.setItem('chat_actual_destino', parejaNombre);
+
+                        alert(`¡Match mutuo completado! Revelando identidad: Te conectaste con ${parejaNombre}. 🎉`);
+                        location.href = 'privchat.html';
+                    });
+                }
+            });
+        }
+
+        function enviarMensajeMatch() {
+            let input = document.getElementById('msgMatchInput');
+            let t = input.value.trim();
+            if (!t) return;
+
+            database.ref(`salas_match/${salaMatchId}/mensajes`).push({
+                remitente: miNombre,
+                texto: t,
+                fecha: Date.now()
+            });
+            input.value = "";
+        }
+
+        function aceptarMatch() {
+            yaAcepte = true;
+            document.getElementById('btnAceptar').disabled = true;
+            document.getElementById('btnAceptar').style.opacity = "0.5";
+            document.getElementById('feedbackMatch').textContent = "¡Has aceptado! Esperando respuesta del Misterioso Koi... 🕒";
+
+            database.ref(`salas_match/${salaMatchId}`).once('value').then((snap) => {
+                if (!snap.exists()) return;
+                let sala = snap.val();
+                if (sala.usuario1 === miNombre) {
+                    database.ref(`salas_match/${salaMatchId}/aceptaU1`).set(true);
+                } else {
+                    database.ref(`salas_match/${salaMatchId}/aceptaU2`).set(true);
+                }
+            });
+        }
+
+        function expirarMatchPorTiempo() {
+            detenerTodoYLimpiarEventos();
+            if (salaMatchId) {
+                database.ref(`salas_match/${salaMatchId}`).remove();
+            }
+            alert("⏰ ¡El tiempo terminó y no se llegó a una amistad mutua! El chat fue eliminado.");
+            location.href = 'index.html';
+        }
+
+        function cancelarTodo() {
+            detenerTodoYLimpiarEventos();
+            if (salaMatchId) {
+                database.ref(`salas_match/${salaMatchId}`).remove();
+            }
+            alert("Match cancelado. Volviendo al estanque principal.");
+            location.href = 'index.html';
+        }
+
+        function detenerTodoYLimpiarEventos() {
+            clearInterval(timerInterval);
+            if (salaMatchId) {
+                database.ref(`salas_match/${salaMatchId}/mensajes`).off();
+                database.ref(`salas_match/${salaMatchId}`).off();
+            }
+            if (escuchandoEstadoSala) {
+                database.ref('salas_match/').off('child_added', escuchandoEstadoSala);
+            }
+        }
+
+        // Si se sale de improvisto o cierra la app, se autodestruye para no dejar basura
+        window.onbeforeunload = function() {
+            detenerTodoYLimpiarEventos();
+            if (salaMatchId) {
+                database.ref(`salas_match/${salaMatchId}`).remove();
+            }
+        };
+    </script>
+</body>
+</html>
