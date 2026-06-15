@@ -26,6 +26,33 @@
             border: 2px solid var(--morado-deep);
             display: none;
         }
+        /* Contador de usuarios conectados */
+        .online-counter {
+            background: rgba(161, 227, 161, 0.2);
+            color: #2e592e;
+            border: 1px dashed #a1e3a1;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulseDot 1.5s infinite;
+        }
+        @keyframes pulseDot {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
         .chat-match-container {
             width: 100%;
             height: 280px;
@@ -62,6 +89,7 @@
         @media (prefers-color-scheme: dark) {
             .chat-match-container { background: #121214 !important; }
             .timer-badge { background: #b85076 !important; color: white !important; }
+            .online-counter { color: #a1e3a1; }
         }
     </style>
 </head>
@@ -80,6 +108,13 @@
                 <div id="estado-match">
                     <h2 style="color: var(--morado-deep); margin-bottom: 10px;">Match Anónimo ⏳</h2>
                     <p style="color: gray; font-size: 0.9rem; margin-bottom: 20px;">Habla de forma 100% anónima durante 180 segundos. Si ambos deciden aceptar antes de que el tiempo expire, se revelarán sus perfiles y se abrirá un chat privado.</p>
+                    
+                    <div class="online-counter">
+                        <span class="online-dot"></span>
+                        <span id="txtConectados">Cargando usuarios en línea...</span>
+                    </div>
+                    <br>
+
                     <button id="btnIniciarMatch" class="btn-main pulse-btn" style="font-size: 1.1rem; padding: 12px 30px; border-radius: 25px;" onclick="buscarPareja()">
                         Buscar Conversación Secreta 🌸
                     </button>
@@ -141,6 +176,33 @@
 
         document.getElementById('nav-username').textContent = miNombre;
 
+        // --- SISTEMA DE PRESENCIA (USUARIOS EN LÍNEA) ---
+        const presenciaRef = database.ref(`usuarios_en_linea/${miKeyLimpia}`);
+        
+        // Al conectar, nos registramos y programamos borrar el nodo si nos desconectamos
+        database.ref(".info/connected").on("value", (snapshot) => {
+            if (snapshot.val() === true) {
+                presenciaRef.set(true);
+                presenciaRef.onDisconnect().remove();
+            }
+        });
+
+        // Escuchar en tiempo real cuántos usuarios están conectados en este módulo
+        database.ref("usuarios_en_linea").on("value", (snapshot) => {
+            let cantidad = 0;
+            if (snapshot.exists()) {
+                cantidad = Object.keys(snapshot.val()).length;
+            }
+            
+            const txtConectados = document.getElementById("txtConectados");
+            if (cantidad === 1) {
+                txtConectados.textContent = "Estás solo en el estanque... ¡invita amigos! 🌊";
+            } else {
+                txtConectados.textContent = `${cantidad} peces en el estanque listos para hablar 🎏`;
+            }
+        });
+        // ------------------------------------------------
+
         function buscarPareja() {
             document.getElementById('estado-match').innerHTML = `<h3 style="color: var(--morado-deep);">Buscando en el estanque koi... 🌊</h3><p style="font-size:0.8rem; color:gray;">Esperando a otro pez misterioso...</p>`;
             
@@ -195,6 +257,9 @@
         }
 
         function iniciarConversacion() {
+            // Quitamos nuestro registro de "en línea en la sala de espera" al empezar el chat privado
+            presenciaRef.remove();
+
             document.getElementById('estado-match').style.display = "none";
             document.getElementById('matchTimer').style.display = "block";
             document.getElementById('chatMatch').style.display = "block";
@@ -209,7 +274,6 @@
                 let bubble = document.createElement('div');
                 bubble.className = "bubble animacion-entrada";
                 
-                // IMPORTANTE: Se muestra como "Misterioso Koi", protegiendo la identidad
                 if (m.remitente === miNombre) {
                     bubble.style.background = "var(--lavanda)";
                     bubble.style.marginLeft = "auto";
@@ -242,7 +306,6 @@
                 if (!snap.exists()) return;
                 let sala = snap.val();
 
-                // Verificar quién es el usuario actual dentro de la estructura de la sala
                 let soyU1 = (sala.usuario1 === miNombre);
                 let elOtroAcepto = soyU1 ? sala.aceptaU2 : sala.aceptaU1;
 
@@ -250,13 +313,10 @@
                     document.getElementById('feedbackMatch').textContent = "¡El Misterioso Koi te ha aceptado! Falta tu confirmación... 💓";
                 }
 
-                // SI AMBOS ACEPTAN ANTES DE EXPlRAR
                 if (sala.aceptaU1 && sala.aceptaU2) {
                     detenerTodoYLimpiarEventos();
 
-                    // BORRAMOS TODO lo temporal de inmediato para no ocupar espacio
                     database.ref(`salas_match/${salaMatchId}`).remove().then(() => {
-                        // Creamos el ID único para tu chat privado permanente nativo
                         const idsOrdenados = [miNombre.replace(/[.#$[\]]/g, "_"), parejaNombre.replace(/[.#$[\]]/g, "_")].sort();
                         const chatRoomId = `${idsOrdenados[0]}_${idsOrdenados[1]}`;
 
@@ -320,6 +380,7 @@
 
         function detenerTodoYLimpiarEventos() {
             clearInterval(timerInterval);
+            presenciaRef.remove(); // Asegurar limpieza de presencia
             if (salaMatchId) {
                 database.ref(`salas_match/${salaMatchId}/mensajes`).off();
                 database.ref(`salas_match/${salaMatchId}`).off();
@@ -329,7 +390,6 @@
             }
         }
 
-        // Si se sale de improvisto o cierra la app, se autodestruye para no dejar basura
         window.onbeforeunload = function() {
             detenerTodoYLimpiarEventos();
             if (salaMatchId) {
@@ -339,3 +399,4 @@
     </script>
 </body>
 </html>
+
