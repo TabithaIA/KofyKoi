@@ -543,6 +543,11 @@ function reportarPost(idPost, usuario, mensaje) {
 
 // --- VISTA PERFIL Y SEGUIDORES ---
 // --- MODIFICACIÓN EN VISTA PERFIL (script.js) ---
+// --- CAMBIOS EN VISTA PERFIL (script.js) ---
+
+// Variable global para remover la escucha al cerrar el modal
+let estadoPerfilRef = null;
+
 function verPerfil(nombre, avatar, bio) {
     const modal = document.getElementById('modalVistaPerfil');
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -552,12 +557,43 @@ function verPerfil(nombre, avatar, bio) {
     document.getElementById('vistaImg').src = avatar || 'https://i.pravatar.cc/150?u=default';
     document.getElementById('vistaBio').textContent = bio || "Sin biografía aún. ✨";
     
+    // --- LÓGICA DE ESTADO EN LÍNEA (FIREBASE REALTIME) ---
+    const txtEstado = document.getElementById('vistaEstado');
+    if (txtEstado) {
+        const usuarioKeyLimpia = nombre.replace(/[.#$[\]]/g, "_");
+        // Apagamos cualquier escucha previa por seguridad
+        if (estadoPerfilRef) estadoPerfilRef.off();
+
+        estadoPerfilRef = database.ref(`estado_usuarios/${usuarioKeyLimpia}`);
+        estadoPerfilRef.on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                const datosConexion = snapshot.val();
+                if (datosConexion.status === 'online') {
+                    txtEstado.textContent = "🟢 En línea";
+                    txtEstado.style.color = "#2ecc71"; // Verde koi dinámico
+                } else if (datosConexion.ultimaConexion) {
+                    const fecha = new Date(datosConexion.ultimaConexion);
+                    const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                    txtEstado.textContent = `🌙 Últ. vez hoy a las ${horaFormateada}`;
+                    txtEstado.style.color = "#7f8c8d";
+                } else {
+                    txtEstado.textContent = "💤 Desconectado";
+                    txtEstado.style.color = "gray";
+                }
+            } else {
+                txtEstado.textContent = "💤 Desconectado";
+                txtEstado.style.color = "gray";
+            }
+        });
+    }
+    // -----------------------------------------------------
+
     const btnSeguir = document.getElementById('btnSeguir');
-    const btnChatear = document.getElementById('btnChatear'); // <--- Capturamos el nuevo botón
+    const btnChatear = document.getElementById('btnChatear');
 
     if (nombre === miNombre) {
         if (btnSeguir) btnSeguir.style.display = "none";
-        if (btnChatear) btnChatear.style.display = "none"; // No podés chatear con vos mismo
+        if (btnChatear) btnChatear.style.display = "none"; 
     } else {
         if (btnSeguir) {
             btnSeguir.style.display = "block";
@@ -565,7 +601,6 @@ function verPerfil(nombre, avatar, bio) {
         }
         if (btnChatear) {
             btnChatear.style.display = "block";
-            // Al hacer clic, genera la sala y redirige
             btnChatear.onclick = () => abrirChatPrivado(nombre);
         }
     }
@@ -575,6 +610,17 @@ function verPerfil(nombre, avatar, bio) {
         if (count) count.textContent = `${s.numChildren()} seguidores 🌸`;
     });
     modal.style.display = 'flex';
+}
+
+function cerrarVista() {
+    const modal = document.getElementById('modalVistaPerfil');
+    if (modal) modal.style.display = 'none';
+    
+    // Apagamos la escucha en tiempo real del estado al cerrar el modal
+    if (estadoPerfilRef) {
+        estadoPerfilRef.off();
+        estadoPerfilRef = null;
+    }
 }
 
 // Nueva función para redireccionar al chat
@@ -609,11 +655,6 @@ function actualizarBotonSeguir(siguiendo) {
     if (btn) btn.textContent = siguiendo ? "Siguiendo ✨" : "Seguir 🌸";
 }
 
-function cerrarVista() {
-    const modal = document.getElementById('modalVistaPerfil');
-    if (modal) modal.style.display = 'none';
-}
-
 function mostrarNotificacion(usuario, mensaje) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     if (usuario === miNombre) return;
@@ -631,12 +672,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const b = localStorage.getItem('kofy_bio');
     const a = localStorage.getItem('kofy_avatar');
 
-    if (n) {
+        if (n) {
         document.getElementById('nav-username').textContent = n;
         if(document.getElementById('nombrePerfil')) document.getElementById('nombrePerfil').textContent = n;
+        
+        // 1. Escuchar Seguidores en tiempo real
         database.ref(`seguidores/${n}`).on('value', (s) => {
             const c = document.getElementById('misSeguidoresCount');
-            if (c) c.textContent = `${s.numChildren()} seguidores`;
+            if (c) c.textContent = `${s.numChildren()} seguidores 🌸`;
+        });
+
+        // 2. Escuchar Seguidos en tiempo real (consultando dónde figura el usuario)
+        database.ref('seguidores').on('value', (snapshot) => {
+            let contadorSeguidos = 0;
+            snapshot.forEach((nodoUsuarioSeguido) => {
+                if (nodoUsuarioSeguido.hasChild(n)) {
+                    contadorSeguidos++;
+                }
+            });
+            const cSeguidos = document.getElementById('misSeguidosCount');
+            if (cSeguidos) cSeguidos.textContent = `${contadorSeguidos} seguidos ✨`;
         });
     }
     if (b && document.getElementById('bioPerfil')) document.getElementById('bioPerfil').textContent = b;
@@ -781,4 +836,98 @@ document.addEventListener('click', (e) => {
         dropdown.style.display = "none";
     }
 });
+
+// --- LÓGICA DE LISTADO DE SEGUIDORES Y SEGUIDOS ---
+
+function abrirModalRelaciones(tipo) {
+    const modal = document.getElementById('modalRelaciones');
+    const titulo = document.getElementById('tituloRelaciones');
+    const lista = document.getElementById('listaRelaciones');
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+
+    if (!modal || !lista) return;
+
+    lista.innerHTML = `<small style="color: #888; font-style: italic;">Cargando lista... ☕</small>`;
+    modal.style.display = 'flex';
+
+    if (tipo === 'seguidores') {
+        titulo.textContent = "Mis Seguidores 🌸";
+        
+        database.ref(`seguidores/${miNombre}`).once('value').then((snapshot) => {
+            lista.innerHTML = "";
+            if (!snapshot.exists()) {
+                lista.innerHTML = `<p style="font-size: 0.85rem; color: #888; text-align: center;">No tienes seguidores aún. ¡Sigue interactuando! ✨</p>`;
+                return;
+            }
+            
+            snapshot.forEach((child) => {
+                const nombreSeguidores = child.key;
+                obtenerYRenderizarItemUsuario(nombreSeguidores, lista);
+            });
+        });
+        
+    } else if (tipo === 'seguidos') {
+        titulo.textContent = "Usuarios que sigo ✨";
+        
+        database.ref('seguidores').once('value').then((snapshot) => {
+            lista.innerHTML = "";
+            let tieneSeguidos = false;
+
+            snapshot.forEach((nodoUsuarioSeguido) => {
+                if (nodoUsuarioSeguido.hasChild(miNombre)) {
+                    tieneSeguidos = true;
+                    obtenerYRenderizarItemUsuario(nodoUsuarioSeguido.key, lista);
+                }
+            });
+
+            if (!tieneSeguidos) {
+                lista.innerHTML = `<p style="font-size: 0.85rem; color: #888; text-align: center;">No sigues a ningún usuario todavía. 🌸</p>`;
+            }
+        });
+    }
+}
+
+// Auxiliar para buscar la última foto/bio guardada de un usuario en los posts y armar la fila
+function obtenerYRenderizarItemUsuario(nombreUsuario, contenedorLista) {
+    database.ref('posts/').once('value').then((snapshot) => {
+        let avatar = 'https://i.pravatar.cc/150?u=default';
+        let bio = "";
+
+        // Buscamos en el histórico de posts un registro del usuario para jalar su avatar y bio más actual
+        snapshot.forEach((child) => {
+            const datos = child.val();
+            if (datos.usuario === nombreUsuario) {
+                avatar = datos.avatar || avatar;
+                bio = datos.biografia || bio;
+            }
+        });
+
+        const item = document.createElement('div');
+        item.className = 'relationship-item';
+        item.style.cursor = 'pointer';
+        
+        item.innerHTML = `
+            <img src="${avatar}" class="avatar-sm" style="width: 35px; height: 35px; border: 2px solid var(--morado-deep);">
+            <div style="display: flex; flex-direction: column;">
+                <span>${nombreUsuario}</span>
+                <small style="font-size: 0.65rem; color: gray; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${bio || "Sin biografía aún. ✨"}
+                </small>
+            </div>
+        `;
+
+        // Al hacer clic en un usuario de la lista, abre su tarjeta de perfil con las funciones nativas que ya creaste
+        item.onclick = () => {
+            cerrarModalRelaciones();
+            verPerfil(nombreUsuario, avatar, bio);
+        };
+
+        contenedorLista.appendChild(item);
+    });
+}
+
+function cerrarModalRelaciones() {
+    const modal = document.getElementById('modalRelaciones');
+    if (modal) modal.style.display = 'none';
+}
 

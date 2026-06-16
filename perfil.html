@@ -20,13 +20,16 @@
     <div class="container">
         <aside>
     <div class="card profile-card">
-    <div class="avatar-container" style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-        <img id="marcoPerfil" src="" style="display: none; position: absolute; top: -5px; left: -5px; width: 110px; height: 110px; pointer-events: none; z-index: 10;">
-    </div>
-    <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 10px;">@KofyLover</h3>
+        <div class="avatar-container" style="position: relative; width: 100px; height: 100px; margin: 0 auto;">
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-lg" id="imgPerfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            <img id="marcoPerfil" src="" style="display: none; position: absolute; top: -5px; left: -5px; width: 110px; height: 110px; pointer-events: none; z-index: 10;">
+        </div>
+        <h3 id="nombrePerfil" style="font-size: 0.9rem; margin-top: 10px;">@KofyLover</h3>
         
-        <p id="misSeguidoresCount" style="font-size: 0.8rem; font-weight: bold; color: var(--morado-deep);">- seguidores</p>
+        <div class="follow-counters" style="display: flex; justify-content: center; gap: 15px; margin: 10px 0; font-size: 0.8rem; font-weight: bold;">
+            <span id="misSeguidoresCount" style="color: var(--morado-deep); cursor: pointer;" onclick="abrirModalRelaciones('seguidores')">- seguidores</span>
+            <span id="misSeguidosCount" style="color: var(--morado-deep); cursor: pointer;" onclick="abrirModalRelaciones('seguidos')">- seguidos</span>
+        </div>
         
         <p id="bioPerfil" style="font-size: 0.9rem; margin-top: 5px;">Buscando momentos zen y mucho café. ✨</p>
         <br>
@@ -100,6 +103,17 @@
         </button>
         
         <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
+    </div>
+</div>
+
+<div id="modalRelaciones" class="modal">
+    <div class="modal-content" style="max-height: 400px; display: flex; flex-direction: column;">
+        <h3 id="tituloRelaciones" style="color: var(--morado-deep); margin-bottom: 15px;">Usuarios 🌸</h3>
+        
+        <div id="listaRelaciones" style="flex: 1; overflow-y: auto; text-align: left; padding-right: 5px; margin-bottom: 15px;">
+            </div>
+        
+        <button class="btn-img" onclick="cerrarModalRelaciones()" style="width: 100%;">Cerrar</button>
     </div>
 </div>
 

@@ -457,3 +457,34 @@ body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-co
     }
 }
 
+/* --- ESTILOS PARA LISTAS DE SEGUIDORES/SEGUIDOS --- */
+.relationship-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--fondo);
+    border: 1px solid var(--azul-claro);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: transform 0.2s;
+}
+
+.relationship-item:hover {
+    transform: scale(1.02);
+}
+
+.relationship-item span {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--oscuro-suave);
+}
+
+/* Soporte para Modo Oscuro Automático */
+@media (prefers-color-scheme: dark) {
+    .relationship-item {
+        background: #2c3e50 !important;
+        border-color: var(--rosa) !important;
+    }
+}
+
