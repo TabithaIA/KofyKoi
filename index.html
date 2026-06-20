@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KofyKoi</title>
+    <head>
+    <meta charset="UTF-8">
+    <title>KofyKoi - Chat y Amigos</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -142,10 +146,12 @@
     </button>
 </nav>
 
-<div id="modalVistaPerfil" class="modal">
+        <div id="modalVistaPerfil" class="modal">
     <div class="modal-content">
         <img src="" id="vistaImg" class="avatar-lg">
         <h2 id="vistaNombre" style="margin-top:10px;"></h2>
+        
+        <p id="vistaEstado" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; color: gray;">Desconectado 💤</p>
         
         <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores</p>
         
@@ -156,8 +162,8 @@
         </button>
 
         <button id="btnChatear" class="btn-main" style="margin-top: 10px; background: var(--azul-claro); color: var(--oscuro-suave);">
-    Enviar Mensaje 💬
-</button>
+            Enviar Mensaje 💬
+        </button>
         
         <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
     </div>
