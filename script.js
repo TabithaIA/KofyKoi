@@ -300,6 +300,13 @@ function cargarMasPosts() {
 }
 
 // 3. Generador de HTML de Post (Mantenida fuera para reusabilidad)
+// --- NUEVA FUNCIÓN PARA EL EDITOR ENRIQUECIDO ---
+function formatear(comando, valor = null) {
+    document.execCommand(comando, false, valor);
+    document.getElementById('postText').focus();
+}
+
+// --- ACTUALIZACIÓN DEL GENERADOR DE POSTS ---
 function crearElementoPost(id, datos) {
     const fecha = new Date(datos.fecha);
     const fechaFormateada = fecha.toLocaleDateString('es-AR');
@@ -309,23 +316,29 @@ function crearElementoPost(id, datos) {
     const postDiv = document.createElement('div');
     postDiv.className = 'card kofy-post';
     postDiv.dataset.id = id;
+    postDiv.style.cursor = 'pointer';
     
-    // Construimos la lista de comentarios existentes
+    // Al hacer clic en la tarjeta se abre la vista detallada, salvo que toques un botón, input o enlace
+    postDiv.onclick = (e) => {
+        const elementosIgnorados = ['BUTTON', 'INPUT', 'SPAN', 'STRONG', 'A', 'TEXTAREA'];
+        if (!elementosIgnorados.includes(e.target.tagName)) {
+            abrirModalPost(id, datos);
+        }
+    };
+    
     let comentariosHTML = '';
     if (datos.comentarios) {
         Object.keys(datos.comentarios).forEach(comentarioId => {
             const c = datos.comentarios[comentarioId];
-            
-            // El botón de borrar sale si el comentario es tuyo O si tú eres el dueño del post principal
             const puedeBorrar = (c.usuario === miNombre || datos.usuario === miNombre);
             const botonBorrarC = puedeBorrar 
-                ? `<button onclick="borrarComentario('${id}', '${comentarioId}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem; margin-left:auto;">🗑️</button>` 
+                ? `<button onclick="event.stopPropagation(); borrarComentario('${id}', '${comentarioId}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem; margin-left:auto;">🗑️</button>` 
                 : '';
 
             comentariosHTML += `
                 <div class="comment-item" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                     <div>
-                        <strong onclick="verPerfil('${c.usuario}', '', '')" style="cursor:pointer; color:var(--morado-deep)">
+                        <strong onclick="event.stopPropagation(); verPerfil('${c.usuario}', '', '')" style="cursor:pointer; color:var(--morado-deep)">
                             ${c.usuario}
                         </strong>: ${c.mensaje}
                     </div>
@@ -335,17 +348,18 @@ function crearElementoPost(id, datos) {
         });
     }
 
+    // Nota: cambiamos datos.mensaje a innerHTML en la renderización del párrafo para que procese las etiquetas <b> y <br>
     postDiv.innerHTML = `
         <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm">
-                <strong onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
+                <strong onclick="event.stopPropagation(); verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
                     ${datos.usuario}
                 </strong>
             </div>
-            <button onclick="borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
+            <button onclick="event.stopPropagation(); borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
         </div>
-        <p>${datos.mensaje}</p>
+        <div class="post-body-text" style="margin-top: 10px; word-break: break-word; line-height: 1.5;">${datos.mensaje}</div>
         ${datos.imagen ? `<img src="${datos.imagen}" loading="lazy" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
         
         <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">
@@ -353,11 +367,11 @@ function crearElementoPost(id, datos) {
         </div>
 
         <div class="actions" style="display: flex; align-items: center; width: 100%; margin-top: 10px;">
-            <span onclick="enviarLike('${id}')" style="cursor:pointer">❤️ <span id="likes-${id}">${datos.likes || 0}</span> Me gusta</span>
-            <button class="btn-report" onclick="reportarPost('${id}', '${datos.usuario}', '${datos.mensaje}')">Reportar 🚩</button>
+            <span onclick="event.stopPropagation(); enviarLike('${id}')" style="cursor:pointer">❤️ <span id="likes-${id}">${datos.likes || 0}</span> Me gusta</span>
+            <button class="btn-report" onclick="event.stopPropagation(); reportarPost('${id}', '${datos.usuario}', '${datos.mensaje}')">Reportar 🚩</button>
         </div>
 
-        <div class="comments-section">
+        <div class="comments-section" onclick="event.stopPropagation();">
             <div class="comments-list" id="comments-list-${id}">
                 ${comentariosHTML}
             </div>
@@ -370,43 +384,43 @@ function crearElementoPost(id, datos) {
     return postDiv;
 }
 
-function publicarComentario(idPost) {
-    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
-    const input = document.getElementById(`input-comment-${idPost}`);
-    if (!input) return;
-    
-    const textoComentario = input.value.trim();
-    if (!textoComentario) return;
+// --- LÓGICA DE APERTURA DEL POST DETALLADO ---
+function abrirModalPost(id, datos) {
+    const modal = document.getElementById('modalPostDetalle');
+    const contenido = document.getElementById('modalPostContenido');
+    if (!modal || !contenido) return;
 
-    // Guardamos el comentario dentro de la estructura del post en Firebase
-    database.ref(`posts/${idPost}/comentarios`).push({
-        usuario: miNombre,
-        mensaje: textoComentario,
-        fecha: Date.now()
-    }).then(() => {
-        input.value = ""; // Limpiamos el input
-    }).catch(err => console.error("Error al comentar:", err));
+    // Clonamos la estructura visual pero adaptada para apreciarse en grande
+    const postClonado = crearElementoPost(id, datos);
+    
+    // Removemos el evento de clic de apertura en el clon para evitar bucles
+    postClonado.onclick = null;
+    postClonado.style.cursor = 'default';
+    postClonado.style.boxShadow = 'none';
+    postClonado.style.padding = '0';
+    postClonado.style.background = 'transparent';
+
+    contenido.innerHTML = "";
+    contenido.appendChild(postClonado);
+    modal.style.display = 'flex';
 }
 
-// --- DETECTAR SCROLL ---
-const observer = new IntersectionObserver((entries) => {
-    // Solo cargamos si el elemento es visible Y no estamos ya cargando algo
-    if (entries[0].isIntersecting && !cargandoMas) {
-        cargarMasPosts();
-    }
-}, { 
-    threshold: 0.5, // Espera a que el sentinel se vea un 50%
-    rootMargin: "100px" // Carga un poquito antes de llegar al final para que sea fluido
-});
+function cerrarModalPost() {
+    const modal = document.getElementById('modalPostDetalle');
+    if (modal) modal.style.display = 'none';
+}
 
-// --- LÓGICA DE PUBLICACIÓN (CON COMPRESIÓN) ---
+// --- REEMPLAZA LA FUNCIÓN DE PUBLICACIÓN PARA LEER EL NUEVO EDITOR ---
 function publicar() {
     const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
-    const texto = document.getElementById('postText').value;
+    const editor = document.getElementById('postText');
+    // .innerHTML nos guarda los saltos de renglón (<br>) y las negritas (<b>)
+    const texto = editor.innerHTML.trim(); 
     const inputImagen = document.getElementById('postImage');
     const archivo = inputImagen ? inputImagen.files[0] : null;
 
-    if (!texto && !archivo) return alert("¡Escribe algo o sube una foto! 🌸");
+    // Validación intermedia para divs editables (a veces queda un <br> huérfano)
+    if (texto === "<br>" || !texto && !archivo) return alert("¡Escribe algo o sube una foto! 🌸");
 
     if (archivo) {
         const reader = new FileReader();
@@ -442,9 +456,39 @@ function enviarPost(usuario, mensaje, imagenData) {
         fecha: Date.now(),
         likes: 0
     });
-    document.getElementById('postText').value = "";
+    // Limpiamos el div editable vaciando su HTML
+    document.getElementById('postText').innerHTML = "";
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
 }
+
+function publicarComentario(idPost) {
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    const input = document.getElementById(`input-comment-${idPost}`);
+    if (!input) return;
+    
+    const textoComentario = input.value.trim();
+    if (!textoComentario) return;
+
+    // Guardamos el comentario dentro de la estructura del post en Firebase
+    database.ref(`posts/${idPost}/comentarios`).push({
+        usuario: miNombre,
+        mensaje: textoComentario,
+        fecha: Date.now()
+    }).then(() => {
+        input.value = ""; // Limpiamos el input
+    }).catch(err => console.error("Error al comentar:", err));
+}
+
+// --- DETECTAR SCROLL ---
+const observer = new IntersectionObserver((entries) => {
+    // Solo cargamos si el elemento es visible Y no estamos ya cargando algo
+    if (entries[0].isIntersecting && !cargandoMas) {
+        cargarMasPosts();
+    }
+}, { 
+    threshold: 0.5, // Espera a que el sentinel se vea un 50%
+    rootMargin: "100px" // Carga un poquito antes de llegar al final para que sea fluido
+});
 
 // --- INTERACCIONES: LIKES, BORRADO, REPORTES ---
 function enviarLike(idPost) {
