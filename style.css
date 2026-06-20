@@ -50,131 +50,59 @@ header {
 .logo { font-family: 'Pacifico', cursive; font-size: 1.8rem; color: var(--rosa); }
 .header-user { display: flex; align-items: center; gap: 10px; }
 
+/* --- CONTENEDOR PRINCIPALES --- */
 .container {
-    display: grid;
-    grid-template-columns: 280px 1fr 280px;
-    gap: 20px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 20px 10px;
 }
 
+/* El contenedor del feed con el diseño Pinterest */
+#feed-container {
+    column-count: 2;       /* 2 columnas en celulares */
+    column-gap: 15px;      /* Espacio entre columnas */
+    width: 100%;
+}
+
+/* --- TARJETAS DE PUBLICACIÓN REESTRUCTURADAS (kofy-post) --- */
 .card {
     background: var(--blanco);
     border-radius: 20px;
-    padding: 20px;
+    padding: 15px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
-.profile-card { text-align: center; border: 3px solid var(--lavanda); }
-.avatar-lg { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--rosa); object-fit: cover; background: #eee; }
-.avatar-sm { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; }
-
-textarea {
-    width: 100%; border: 2px solid var(--azul-claro);
-    border-radius: 15px; padding: 15px; font-family: inherit; resize: none; outline: none;
-}
-
-.post-options { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-
-button { cursor: pointer; border: none; border-radius: 20px; font-weight: 600; transition: 0.3s; }
-.btn-main { background: var(--morado-deep); color: white; padding: 10px 20px; }
-.btn-main:hover { background: var(--lavanda); transform: scale(1.05); }
-.btn-img { background: var(--rosa); color: var(--oscuro-suave); padding: 8px 15px; font-size: 0.8rem; }
-
-.kofy-post { animation: slideUp 0.5s ease-out; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.post-img-attached { width: 100%; border-radius: 15px; margin-top: 10px; }
-.actions { margin-top: 15px; display: flex; gap: 15px; color: var(--morado-deep); font-size: 0.9rem; }
-
-.modal {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(54, 69, 79, 0.8); z-index: 2000; justify-content: center; align-items: center;
-}
-.modal-content { 
-    background: white; padding: 30px; border-radius: 25px; width: 380px; text-align: center; 
-    border: 5px solid var(--rosa);
-}
-
-@media (max-width: 900px) { .container { grid-template-columns: 1fr; } .sidebar { display: none; } }
-
-/* Estilos para la barra inferior */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
+/* Forzamos a que las tarjetas del feed no se rompan ni se corten */
+.kofy-post { 
+    display: inline-block; 
     width: 100%;
-    height: 65px;
-    background-color: var(--blanco);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-    z-index: 1000;
-    border-top: 3px solid var(--rosa);
+    box-sizing: border-box;
+    animation: slideUp 0.5s ease-out; 
 }
 
-.nav-item {
-    background: none;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: var(--morado-deep);
-    font-family: 'Quicksand', sans-serif;
-    cursor: pointer;
-    transition: 0.2s;
-}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-.nav-item span {
-    font-size: 1.4rem;
-}
+.post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.post-img-attached { width: 100%; border-radius: 15px; margin-top: 10px; display: block; }
 
-.nav-item small {
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-
-.nav-item:hover {
-    transform: translateY(-3px);
-    color: var(--rosa);
-}
-
-/* Botón central resaltado */
-.main-btn {
-    background: var(--azul-claro);
-    padding: 10px;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    margin-top: -30px; /* Lo eleva un poco */
-    border: 4px solid var(--fondo);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-/* Ajuste para que el feed no se tape con la barra en móviles */
-body {
-    padding-bottom: 80px;
-}
-
-.bubble {
-    padding: 10px 14px;
-    border-radius: 18px;
-    margin-bottom: 10px;
-    max-width: 80%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column; /* Esto pone la hora debajo del texto */
+/* --- INTERACCIONES DE LIKES Y REPORTES CORREGIDAS --- */
+.actions { 
+    margin-top: 12px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    color: var(--morado-deep); 
+    font-size: 0.85rem; 
+    flex-wrap: wrap; /* Si no cabe en pantallas muy chicas, se acomoda abajo sin encimarse */
+    gap: 5px;
 }
 
 .btn-report {
     background: none;
-    color: #ffb3ba; /* Un rosa suave para que no sea agresivo */
+    color: #ffb3ba; 
     font-size: 0.75rem;
     cursor: pointer;
-    margin-left: auto; /* Lo empuja a la derecha */
 }
 
 .btn-report:hover {
@@ -182,47 +110,7 @@ body {
     text-decoration: underline;
 }
 
-/* Animación para que los mensajes aparezcan uno a uno */
-.animacion-entrada {
-    animation: aparecerSuave 0.5s ease forwards;
-    opacity: 0;
-    transform: translateY(10px);
-}
-
-@keyframes aparecerSuave {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.skeleton {
-    background: #eee;
-    height: 100px;
-    border-radius: 15px;
-    margin-bottom: 20px;
-    animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.4; }
-    50% { opacity: 1; }
-    100% { opacity: 0.4; }
-}
-
-#stories-container::-webkit-scrollbar {
-    display: none; /* Escondemos la barra para que se vea más limpio */
-}
-
-#stories-container {
-    scrollbar-width: none;
-}
-
-.avatar-sm:active {
-    transform: scale(0.9);
-}
-
-/* --- SECCIÓN DE COMENTARIOS --- */
+/* --- SECCIÓN DE COMENTARIOS AJUSTADA --- */
 .comments-section {
     margin-top: 15px;
     padding-top: 10px;
@@ -245,246 +133,172 @@ body {
     animation: aparecerSuave 0.3s ease forwards;
 }
 
-.comment-item strong {
-    color: var(--morado-deep);
-}
+.comment-item strong { color: var(--morado-deep); }
 
+/* Formulario de comentarios flexible para que el botón no se monte */
 .comment-form {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     margin-top: 8px;
+    width: 100%;
+    align-items: center;
 }
 
 .input-comment {
     flex: 1;
+    min-width: 0; /* Evita que el input se desborde del contenedor de la columna */
     border: 1px solid var(--azul-claro);
     border-radius: 15px;
-    padding: 6px 12px;
-    font-size: 0.85rem;
+    padding: 8px 12px;
+    font-size: 0.8rem;
     font-family: inherit;
 }
 
-/* --- ESTILOS PARA EL SLIDER DE SALAS PÚBLICAS --- */
-.slider-horizontal {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    scrollbar-width: none; /* Oculta scroll en Firefox */
-    padding-bottom: 5px;
+.comment-form .btn-main {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 12px;
+    white-space: nowrap; /* Evita que el texto "Enviar" se parta en dos renglones */
 }
 
-.slider-horizontal::-webkit-scrollbar {
-    display: none; /* Oculta scroll en Chrome/Safari */
+/* Resto de elementos de la interfaz */
+.profile-card { text-align: center; border: 3px solid var(--lavanda); }
+.avatar-lg { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--rosa); object-fit: cover; background: #eee; }
+.avatar-sm { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #eee; }
+
+textarea {
+    width: 100%; border: 2px solid var(--azul-claro);
+    border-radius: 15px; padding: 15px; font-family: inherit; resize: none; outline: none;
 }
+
+.post-options { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+
+button { cursor: pointer; border: none; border-radius: 20px; font-weight: 600; transition: 0.3s; }
+.btn-main { background: var(--morado-deep); color: white; padding: 10px 20px; }
+.btn-main:hover { background: var(--lavanda); transform: scale(1.05); }
+.btn-img { background: var(--rosa); color: var(--oscuro-suave); padding: 8px 15px; font-size: 0.8rem; }
+
+/* Modales */
+.modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(54, 69, 79, 0.8); z-index: 2000; justify-content: center; align-items: center;
+}
+.modal-content { 
+    background: white; padding: 30px; border-radius: 25px; width: 380px; text-align: center; 
+    border: 5px solid var(--rosa);
+}
+
+/* Ajuste para que el feed no se tape con la barra en móviles */
+body { padding-bottom: 80px; }
+
+@media (max-width: 900px) { 
+    .sidebar { display: none; } 
+}
+
+/* Responsivo para cambiar a 3 columnas en pantallas más grandes de computadoras */
+@media (min-width: 768px) {
+    #feed-container {
+        column-count: 3;
+        column-gap: 20px;
+    }
+}
+
+/* --- BARRA INFERIOR DE NAVEGACIÓN --- */
+.bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; width: 100%; height: 65px;
+    background-color: var(--blanco);
+    display: flex; justify-content: space-around; align-items: center;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.1); z-index: 1000;
+    border-top: 3px solid var(--rosa);
+}
+
+.nav-item {
+    background: none; border: none;
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--morado-deep); font-family: 'Quicksand', sans-serif;
+    cursor: pointer; transition: 0.2s;
+}
+.nav-item span { font-size: 1.4rem; }
+.nav-item small { font-size: 0.7rem; font-weight: 600; }
+.nav-item:hover { transform: translateY(-3px); color: var(--rosa); }
+
+.main-btn {
+    background: var(--azul-claro); padding: 10px; border-radius: 50%;
+    width: 60px; height: 60px; margin-top: -30px;
+    border: 4px solid var(--fondo); box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Skeletons y Animaciones */
+.skeleton {
+    background: #eee; height: 100px; border-radius: 15px; margin-bottom: 20px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+@keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+.animacion-entrada { animation: aparecerSuave 0.5s ease forwards; opacity: 0; transform: translateY(10px); }
+@keyframes aparecerSuave { to { opacity: 1; transform: translateY(0); } }
+
+/* Sliders de Salas */
+.slider-horizontal { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 5px; }
+.slider-horizontal::-webkit-scrollbar { display: none; }
 
 .room-card {
-    flex: 0 0 auto; /* Evita que las tarjetas se deformen o encojan */
-    width: 140px;
-    background: var(--fondo);
-    border: 2px solid var(--azul-claro);
-    border-radius: 15px;
-    padding: 10px;
-    text-align: center;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    flex: 0 0 auto; width: 140px; background: var(--fondo);
+    border: 2px solid var(--azul-claro); border-radius: 15px;
+    padding: 10px; text-align: center; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
     transition: transform 0.2s;
 }
-
-.room-card:hover {
-    transform: scale(1.02);
-}
-
+.room-card:hover { transform: scale(1.02); }
 .room-card p {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--oscuro-suave);
-    margin: 5px 0;
-    word-break: break-word;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 0.8rem; font-weight: 600; color: var(--oscuro-suave); margin: 5px 0;
+    word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
+.btn-delete-room { position: absolute; top: 5px; right: 5px; background: none; border: none; cursor: pointer; font-size: 0.8rem; padding: 2px; }
 
-.btn-delete-room {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.8rem;
-    padding: 2px;
+/* --- BÚSQUEDA Y RELACIONES --- */
+.search-results-dropdown {
+    position: absolute; top: 100%; left: 0; width: 100%;
+    background: var(--blanco); border: 2px solid var(--rosa); border-radius: 12px;
+    margin-top: 5px; max-height: 200px; overflow-y: auto; z-index: 2000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none;
 }
+.search-result-item { transition: background 0.2s ease; color: var(--oscuro-suave); }
+.search-result-item:hover { background: var(--fondo); }
+
+.relationship-item {
+    display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+    background: var(--fondo); border: 1px solid var(--azul-claro); border-radius: 12px;
+    margin-bottom: 8px; transition: transform 0.2s;
+}
+.relationship-item:hover { transform: scale(1.02); }
+.relationship-item span { font-size: 0.85rem; font-weight: 600; color: var(--oscuro-suave); }
 
 /* ==========================================================================
-   MODO OSCURO AUTOMÁTICO (Sincronizado con el Sistema Operativo)
+   MODO OSCURO AUTOMÁTICO
    ========================================================================== */
 @media (prefers-color-scheme: dark) {
     :root {
-        --fondo: #121214;
-        --blanco: #1e1e24;
-        --oscuro-suave: #f0f0f5;
-        --morado-deep: #634FC0;
-        --azul-claro: #2c3e50;
-        --lavanda: #4a3b52;
-        --rosa: #b85076;
+        --fondo: #121214; --blanco: #1e1e24; --oscuro-suave: #f0f0f5;
+        --morado-deep: #634FC0; --azul-claro: #2c3e50; --lavanda: #4a3b52; --rosa: #b85076;
     }
-
-    body {
-        background-color: var(--fondo);
-        color: var(--oscuro-suave);
-    }
-
-    /* Forzar el cambio absoluto en los chats, salas privadas y alertas */
-    .chat-layout,
-    .chat-box,
-    .messages-container,
-    
-    .noti-container,
-    .noti-card,
-    .card,
-    .modal-content {
-        background: #1e1e24 !important;
-        background-color: #1e1e24 !important;
-        color: #f0f0f5 !important;
-        border-color: #2c3e50 !important;
-    }
-
-    /* Títulos e indicadores */
-    h2, h3, h4,
-    .noti-header h2 {
-        color: #f0f0f5 !important;
-    }
-
-    /* Entradas de texto, comentarios y burbujas de los demás */
-    textarea,
-    input,
-    .input-comment,
-    .comment-item,
-    .room-card,
-    
-    }
-
-    /* Encabezado del chat privado */
-    .chat-header {
-        background: #2e2459 !important;
-        background-color: #2e2459 !important;
-        color: #ffffff !important;
-        border-bottom: 2px solid #b85076 !important;
-    }
-
-    /* Textos secundarios */
-    .noti-title,
-    .noti-text,
-    .room-card p,
-    .comment-item strong {
-        color: #e2dcf0 !important;
-    }
-
-    .noti-time,
-    .bubble small {
-        color: #aaaaaa !important;
-    }
-
-    .nav-item {
-        color: #9b8ed9 !important;
-    }
-
-    .nav-item:hover,
-    .nav-item.active {
-        color: #b85076 !important;
-    }
-
-    .main-btn {
-        background-color: #2a445e !important;
-        border-color: #121214 !important;
-    }
-
-    .skeleton {
-        background: #2d2d35 !important;
-    }
+    body { background-color: var(--fondo); color: var(--oscuro-suave); }
+    .card, .modal-content { background: #1e1e24 !important; color: #f0f0f5 !important; border-color: #2c3e50 !important; }
+    h2, h3, h4 { color: #f0f0f5 !important; }
+    textarea, input, .input-comment, .comment-item, .room-card { background-color: #2c3e50 !important; color: #f0f0f5 !important; }
+    .room-card p, .comment-item strong { color: #e2dcf0 !important; }
+    .nav-item { color: #9b8ed9 !important; }
+    .nav-item:hover { color: #b85076 !important; }
+    .main-btn { background-color: #2a445e !important; border-color: #121214 !important; }
+    .skeleton { background: #2d2d35 !important; }
+    #searchUser { background-color: #2c3e50 !important; color: #f0f0f5 !important; }
+    .search-results-dropdown { background: #1e1e24 !important; border-color: var(--rosa) !important; }
+    .search-result-item:hover { background: #2c3e50 !important; }
+    .relationship-item { background: #2c3e50 !important; border-color: var(--rosa) !important; }
 }
 
-/* Transición global para suavizar el cambio al alternar el sistema */
-body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-comment, .chat-container, .messages-container, .bubble, .noti-card, .chat-header, .chat-box {
+body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-comment {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
-}
-
-/* --- ESTILOS DEL DESPLEGABLE DE BÚSQUEDA --- */
-.search-results-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background: var(--blanco);
-    border: 2px solid var(--rosa);
-    border-radius: 12px;
-    margin-top: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 2000;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    display: none;
-}
-
-.search-result-item {
-    transition: background 0.2s ease;
-    color: var(--oscuro-suave);
-}
-
-.search-result-item:hover {
-    background: var(--fondo);
-}
-
-/* Integración con Modo Oscuro Automático */
-@media (prefers-color-scheme: dark) {
-    #searchUser {
-        background-color: #2c3e50 !important;
-        color: #f0f0f5 !important;
-    }
-    
-    .search-results-dropdown {
-        background: #1e1e24 !important;
-        border-color: var(--rosa) !important;
-    }
-
-    .search-result-item:hover {
-        background: #2c3e50 !important;
-    }
-}
-
-/* --- ESTILOS PARA LISTAS DE SEGUIDORES/SEGUIDOS --- */
-.relationship-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    background: var(--fondo);
-    border: 1px solid var(--azul-claro);
-    border-radius: 12px;
-    margin-bottom: 8px;
-    transition: transform 0.2s;
-}
-
-.relationship-item:hover {
-    transform: scale(1.02);
-}
-
-.relationship-item span {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--oscuro-suave);
-}
-
-/* Soporte para Modo Oscuro Automático */
-@media (prefers-color-scheme: dark) {
-    .relationship-item {
-        background: #2c3e50 !important;
-        border-color: var(--rosa) !important;
-    }
 }
 
