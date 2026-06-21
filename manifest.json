@@ -1,0 +1,16 @@
+{
+  "short_name": "KofyKoi",
+  "name": "KofyKoi - Chat y Amigos",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "type": "image/png",
+      "sizes": "1024x1024"
+    }
+  ],
+  "start_url": "/index.html",
+  "background_color": "#121212",
+  "theme_color": "#ff4081",
+  "display": "standalone",
+  "orientation": "portrait"
+}

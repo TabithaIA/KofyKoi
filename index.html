@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <head>
-    <meta charset="UTF-8">
     <title>KofyKoi - Chat y Amigos</title>
     <link rel="icon" type="image/png" href="favicon.png">
-</head>
+
+<!-- Vincular el Manifest -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- Script para registrar el Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('¡Service Worker registrado con éxito!', reg))
+        .catch(err => console.warn('Error al registrar el Service Worker', err));
+    });
+  }
+</script>
+
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
