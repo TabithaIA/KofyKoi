@@ -360,7 +360,17 @@ function crearElementoPost(id, datos) {
             <button onclick="event.stopPropagation(); borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
         </div>
         <div class="post-body-text" style="margin-top: 10px; word-break: break-word; line-height: 1.5;">${datos.mensaje}</div>
+                <div class="post-body-text" style="margin-top: 10px; word-break: break-word; line-height: 1.5;">${datos.mensaje}</div>
+        
+        <!-- Renderizado inteligente: Renderiza Imagen o Video según corresponda -->
         ${datos.imagen ? `<img src="${datos.imagen}" loading="lazy" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
+        
+        ${datos.video ? `
+            <video src="${datos.video}" loop muted autoplay playsinline controls 
+                   style="width: 100%; border-radius: 10px; margin-top: 10px; background: #000;"
+                   onclick="event.stopPropagation(); this.paused ? this.play() : this.pause();">
+            </video>
+        ` : ''}
         
         <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">
             Publicado el ${fechaFormateada} a las ${horaFormateada}
@@ -411,18 +421,52 @@ function cerrarModalPost() {
 }
 
 // --- REEMPLAZA LA FUNCIÓN DE PUBLICACIÓN PARA LEER EL NUEVO EDITOR ---
+// --- NUEVA FUNCIÓN DE PUBLICACIÓN CON SOPORTE DE VIDEO OPTIMIZADO ---
 function publicar() {
     const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const editor = document.getElementById('postText');
-    // .innerHTML nos guarda los saltos de renglón (<br>) y las negritas (<b>)
     const texto = editor.innerHTML.trim(); 
+    
     const inputImagen = document.getElementById('postImage');
-    const archivo = inputImagen ? inputImagen.files[0] : null;
+    const inputVideo = document.getElementById('postVideo');
+    
+    const archivoImagen = inputImagen ? inputImagen.files[0] : null;
+    const archivoVideo = inputVideo ? inputVideo.files[0] : null;
 
-    // Validación intermedia para divs editables (a veces queda un <br> huérfano)
-    if (texto === "<br>" || !texto && !archivo) return alert("¡Escribe algo o sube una foto! 🌸");
+    if (texto === "<br>" || (!texto && !archivoImagen && !archivoVideo)) {
+        return alert("¡Escribe algo o sube un archivo multimedia! 🌸");
+    }
 
-    if (archivo) {
+    // Caso 1: Se seleccionó un Video
+    if (archivoVideo) {
+        // Validación de optimización por peso (Ej: Máximo 10MB para cuidar tu Firebase)
+        const maxBytes = 50 * 1024 * 1024; // 10MB
+        if (archivoVideo.size > maxBytes) {
+            return alert("¡El video es demasiado pesado! Por seguridad, sube videos menores a 50MB. 🎥");
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const videoUrl = e.target.result;
+            
+            // Creamos un elemento de video en memoria para verificar la duración
+            const videoTemporal = document.createElement('video');
+            videoTemporal.src = videoUrl;
+            
+            videoTemporal.onloadedmetadata = function() {
+                // Optimización por tiempo: Máximo 15 segundos por post
+                if (videoTemporal.duration > 121) { 
+                    return alert("¡Video muy largo! Córtalo a 120 segundos o menos para mantener el feed optimizado. ✨");
+                }
+                
+                // Si pasa los filtros, se sube como Base64 de tipo video
+                enviarPost(nombre, texto, "", videoUrl);
+            };
+        };
+        reader.readAsDataURL(archivoVideo);
+
+    // Caso 2: Se seleccionó una Imagen (Tu código optimizado con Canvas)
+    } else if (archivoImagen) {
         const reader = new FileReader();
         reader.onload = function (e) {
             const img = new Image();
@@ -435,30 +479,36 @@ function publicar() {
                 canvas.width = maxAncho;
                 canvas.height = img.height * escala;
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const fotoComprimida = canvas.toDataURL('image/jpeg', 0.5);
-                enviarPost(nombre, texto, fotoComprimida);
+                const fotoComprimida = canvas.toDataURL('image/jpeg', 0.4);
+                enviarPost(nombre, texto, fotoComprimida, "");
             };
         };
-        reader.readAsDataURL(archivo);
+        reader.readAsDataURL(archivoImagen);
+        
+    // Caso 3: Sólo Texto
     } else {
-        enviarPost(nombre, texto, "");
+        enviarPost(nombre, texto, "", "");
     }
 }
 
-function enviarPost(usuario, mensaje, imagenData) {
+// --- ACTUALIZACIÓN DE ENVIARPOST PARA GUARDAR EL LLAVERO DE VIDEO ---
+function enviarPost(usuario, mensaje, imagenData, videoData) {
     const bioActual = localStorage.getItem('kofy_bio') || "";
     database.ref('posts/').push({
         usuario: usuario,
         mensaje: mensaje,
         imagen: imagenData,
+        video: videoData || "", // Guardamos el video en base64
         avatar: currentAvatarUrl,
         biografia: bioActual,
         fecha: Date.now(),
         likes: 0
     });
-    // Limpiamos el div editable vaciando su HTML
+    
+    // Limpieza de inputs
     document.getElementById('postText').innerHTML = "";
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
+    if (document.getElementById('postVideo')) document.getElementById('postVideo').value = "";
 }
 
 function publicarComentario(idPost) {

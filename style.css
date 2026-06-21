@@ -335,3 +335,20 @@ body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-co
     color: white !important;
     transform: scale(1.08);
 }
+
+/* Asegurar comportamiento fluido de videos en el feed tipo Pinterest */
+.kofy-post video {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 350px; /* Evita que videos verticales rompan demasiado el diseño */
+    object-fit: cover; /* Recorte limpio e inteligente */
+}
+
+/* Ajuste sutil para controles de video en Modo Oscuro */
+@media (prefers-color-scheme: dark) {
+    .kofy-post video {
+        border: 1px solid var(--azul-claro);
+    }
+}
+

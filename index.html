@@ -103,10 +103,16 @@
     <div id="postText" contenteditable="true" placeholder="¿Qué hay de nuevo en tu mundo koi?" style="width: 100%; min-height: 80px; max-height: 200px; overflow-y: auto; border: 2px solid var(--azul-claro); border-radius: 15px; padding: 15px; font-family: inherit; outline: none; background: var(--blanco); text-align: left;"></div>
     
     <div class="post-options" style="margin-top: 10px;">
-        <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
+    <!-- Inputs ocultos para archivos -->
+    <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
+    <input type="file" id="postVideo" accept="video/*" style="display: none;" onchange="console.log('Video seleccionado')">
+    
+    <div style="display: flex; gap: 8px;">
         <button class="btn-img" onclick="document.getElementById('postImage').click()">Añadir Foto 📸</button>
-        <button class="btn-main" onclick="publicar()">Publicar</button>
+        <button class="btn-img" style="background: var(--azul-claro);" onclick="document.getElementById('postVideo').click()">Añadir Video 🎥</button>
     </div>
+    <button class="btn-main" onclick="publicar()">Publicar</button>
+</div>
 </div>
 
 <!-- ========================================================== -->
