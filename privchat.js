@@ -9,15 +9,10 @@ let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || "#e0d8f0";
 const chatRoomId = localStorage.getItem('chat_actual_id');
 const usuarioDestino = localStorage.getItem('chat_actual_destino');
 
-// privchat.js 
-
 document.addEventListener('DOMContentLoaded', () => {
     // Cargar barra de navegación superior
     document.getElementById('nav-username').textContent = miNombre;
     document.getElementById('imgNav').src = miAvatar;
-
-    // NUEVO: Pedir permiso de alertas al cargar la interfaz
-    solicitarPermisoNotificaciones();
 
     // Verificar si hay chat seleccionado
     if (chatRoomId && usuarioDestino) {
@@ -191,25 +186,5 @@ function procesarYSubirFondo(inputElement) {
         img.src = evento.target.result;
     };
     lector.readAsDataURL(archivo);
-}
-
-// Nueva función para solicitar permiso de alertas push de sistema
-function solicitarPermisoNotificaciones() {
-    Notification.requestPermission().then((permiso) => {
-        if (permiso === 'granted') {
-            // Obtenemos el token de Firebase
-            messaging.getToken({ vapidKey: 'TU_KEY_PUBLICA_VAPID_DE_FIREBASE' })
-                .then((tokenActual) => {
-                    if (tokenActual) {
-                        const miNombreKey = miNombre.replace(/[.#$[\]]/g, "_");
-                        // Guardamos el token en una lista global para que otros sepan nuestro "ID de envío"
-                        database.ref(`usuarios_tokens/${miNombreKey}`).set({
-                            fcmToken: tokenActual,
-                            ultimaActualizacion: Date.now()
-                        });
-                    }
-                }).catch(err => console.error("Error al obtener token FCM:", err));
-        }
-    });
 }
 
