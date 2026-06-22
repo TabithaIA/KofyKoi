@@ -34,6 +34,62 @@
             text-align: center;
             border-bottom: 2px solid var(--rosa);
         }
+        
+        /* Barra de herramientas para color y fondo */
+        .chat-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: #fdfbfd;
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+            gap: 10px;
+        }
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--oscuro-suave);
+            font-weight: 600;
+        }
+        /* Círculo interactivo selector de color */
+        .color-picker-wrapper {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--lavanda);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .color-picker-wrapper input[type="color"] {
+            padding: 0;
+            width: 200%;
+            height: 200%;
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-tool-action {
+            background: var(--lavanda);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--oscuro-suave);
+            font-family: inherit;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-tool-action:hover {
+            background: var(--rosa);
+        }
+
         .messages-container {
             flex: 1;
             padding: 15px;
@@ -42,6 +98,8 @@
             flex-direction: column;
             gap: 10px;
             background: #fafcff;
+            background-size: cover;
+            background-position: center;
         }
         .msg {
             padding: 10px 14px;
@@ -113,6 +171,20 @@
             <div class="chat-header" id="chat-with-title">
                 💬 Selecciona un usuario desde su perfil
             </div>
+            
+            <div class="chat-tools">
+                <div class="tool-item">
+                    <span>Burbuja:</span>
+                    <div class="color-picker-wrapper">
+                        <input type="color" id="pickerBurbuja" oninput="actualizarColorDesdePicker(this.value)" disabled>
+                    </div>
+                </div>
+                <div class="tool-item">
+                    <button class="btn-tool-action" id="btnFondoFoto" onclick="document.getElementById('inputFondoGaleria').click()" disabled>🖼️ Cambiar Fondo</button>
+                    <input type="file" id="inputFondoGaleria" accept="image/*" style="display: none;" onchange="procesarYSubirFondo(this)">
+                </div>
+            </div>
+
             <div class="messages-container" id="messages-container">
                 <p style="text-align: center; color: gray; font-size: 0.85rem; margin-top: 20px;">
                     Entra al perfil de alguien en el inicio y pulsa "Enviar Mensaje" para abrir un chat zen privado.
@@ -131,29 +203,24 @@
         <span>👤</span>
         <small>Perfil</small>
     </button>
-
     <button class="nav-item" onclick="location.href='chats.html'">
         <span>💬</span>
         <small>Chats</small>
     </button>
-
     <button class="nav-item" onclick="location.href='notificaciones.html'">
         <span>🔔</span>
         <small>Alertas</small>
     </button>
-
     <button class="nav-item main-btn" onclick="location.href='index.html'">
         <span>🏠</span>
         <small>Inicio</small>
     </button>
-
     <button class="nav-item" onclick="location.href='tienda.html'">
-        <span>🏪</span>
+        <span>🛍️</span>
         <small>Tienda</small>
     </button>
-
     <button class="nav-item" onclick="location.href='datos.html'">
-        <span>❕</span>
+        <span>📊</span>
         <small>Info</small>
     </button>
 </nav>

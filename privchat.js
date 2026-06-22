@@ -3,6 +3,9 @@
 const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
 const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
 
+// --- VINCULACIÓN CON LA TIENDA: Cargar color equipado en las salas grupales ---
+let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || "#e0d8f0";
+
 const chatRoomId = localStorage.getItem('chat_actual_id');
 const usuarioDestino = localStorage.getItem('chat_actual_destino');
 
@@ -17,6 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('msgInput').disabled = false;
         document.getElementById('btnEnviarMsg').disabled = false;
+        
+        // Habilitar y sincronizar el punto del círculo con tu color equipado
+        const picker = document.getElementById('pickerBurbuja');
+        if (picker) {
+            picker.disabled = false;
+            picker.value = miColorBurbuja; 
+        }
+        if (document.getElementById('btnFondoFoto')) {
+            document.getElementById('btnFondoFoto').disabled = false;
+        }
 
         cargarMensajes(chatRoomId);
     }
@@ -29,7 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
 function cargarMensajes(roomId) {
     const container = document.getElementById('messages-container');
     
-    database.ref(`mensajes_privados/${roomId}`).on('value', (snapshot) => {
+    // Escuchar el fondo personalizado desde el subnodo /config
+    database.ref(`mensajes_privados/${roomId}/config/fondo`).on('value', (snapFondo) => {
+        if (snapFondo.exists()) {
+            container.style.backgroundImage = `url('${snapFondo.val()}')`;
+        } else {
+            container.style.backgroundImage = "none";
+            container.style.backgroundColor = "#fafcff"; 
+        }
+    });
+
+    // Escuchar los mensajes apuntando ordenadamente al subnodo /mensajes
+    database.ref(`mensajes_privados/${roomId}/mensajes`).on('value', (snapshot) => {
         container.innerHTML = ""; 
         
         if (!snapshot.exists()) {
@@ -39,7 +63,7 @@ function cargarMensajes(roomId) {
 
         snapshot.forEach((child) => {
             const datos = child.val();
-            const msgId = child.key; // ID único del mensaje en Firebase
+            const msgId = child.key; 
             const msgDiv = document.createElement('div');
             
             const horaFormateada = new Date(datos.fecha).toLocaleTimeString([], { 
@@ -49,11 +73,18 @@ function cargarMensajes(roomId) {
 
             if (datos.remitente === miNombre) {
                 msgDiv.className = "msg me";
-                // Si el mensaje es mío, le asignamos el evento para poder borrarlo
+                // Aplicar el color de burbuja que tenías guardado al enviar
+                if (datos.colorBurbuja) {
+                    msgDiv.style.backgroundColor = datos.colorBurbuja;
+                }
                 msgDiv.onclick = () => confirmarBorrarMensaje(msgId);
                 msgDiv.title = "Haz clic para borrar mensaje 🗑️";
             } else {
                 msgDiv.className = "msg other";
+                // Aplicar el color de burbuja personalizado del otro usuario
+                if (datos.colorBurbuja) {
+                    msgDiv.style.backgroundColor = datos.colorBurbuja;
+                }
             }
 
             msgDiv.innerHTML = `
@@ -68,39 +99,92 @@ function cargarMensajes(roomId) {
     });
 }
 
-// --- REEMPLAZA ESTA FUNCIÓN EN TU chats.js ORIGINAL PARA ENLAZAR LAS NOTIFICACIONES ---
 function enviarMensajePrivado() {
     const input = document.getElementById('msgInput');
     const texto = input.value.trim();
     
     if (!texto || !chatRoomId) return;
 
-    // 1. Guardamos el mensaje en la sala de chat privada
-    database.ref(`mensajes_privados/${chatRoomId}`).push({
+    // Guardar dentro de /mensajes adjuntando el color de burbuja activo
+    database.ref(`mensajes_privados/${chatRoomId}/mensajes`).push({
         remitente: miNombre,
         texto: texto,
-        fecha: Date.now()
+        fecha: Date.now(),
+        colorBurbuja: miColorBurbuja 
     }).then(() => {
-        input.value = ""; // Limpiamos la caja de texto
+        input.value = ""; 
         
-        // 2. ¡Creamos la notificación para el destinatario en Firebase!
         const usuarioDestinoKey = usuarioDestino.replace(/[.#$[\]]/g, "_");
         database.ref(`notificaciones/${usuarioDestinoKey}`).push({
             titulo: `Mensaje privado de ${miNombre} 💬`,
-            mensaje: texto.substring(0, 50), // Guardamos una vista previa del texto
+            mensaje: texto.substring(0, 50), 
             fecha: Date.now()
         });
 
     }).catch(err => console.error("Error al enviar mensaje:", err));
 }
 
-// Nueva función para eliminar el mensaje de Firebase
 function confirmarBorrarMensaje(msgId) {
     const seguro = confirm("¿Quieres borrar este mensaje para todos? 🌸");
     if (seguro && chatRoomId) {
-        database.ref(`mensajes_privados/${chatRoomId}/${msgId}`).remove()
+        database.ref(`mensajes_privados/${chatRoomId}/mensajes/${msgId}`).remove()
             .then(() => console.log("Mensaje eliminado correctamente."))
             .catch(err => console.error("Error al eliminar mensaje:", err));
     }
+}
+
+// Actualizar color dinámicamente usando el círculo deslizante de colores
+function actualizarColorDesdePicker(colorHex) {
+    miColorBurbuja = colorHex;
+    localStorage.setItem('kofy_color_burbuja', colorHex);
+}
+
+// Abrir imagen, optimizar el tamaño por Canvas y subir el base64 a Firebase
+function procesarYSubirFondo(inputElement) {
+    if (!inputElement.files || !inputElement.files[0] || !chatRoomId) return;
+
+    const archivo = inputElement.files[0];
+    const lector = new FileReader();
+
+    lector.onload = function(evento) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Dimensiones para Full HD móvil fluido optimizado
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 1200;
+            let ancho = img.width;
+            let alto = img.height;
+
+            if (ancho > alto) {
+                if (ancho > MAX_WIDTH) {
+                    alto *= MAX_WIDTH / ancho;
+                    ancho = MAX_WIDTH;
+                }
+            } else {
+                if (alto > MAX_HEIGHT) {
+                    ancho *= MAX_HEIGHT / alto;
+                    alto = MAX_HEIGHT;
+                }
+            }
+
+            canvas.width = ancho;
+            canvas.height = alto;
+            ctx.drawImage(img, 0, 0, ancho, alto);
+
+            // Exportar comprimido a calidad equilibrada (JPEG 0.6)
+            const imagenOptimizadaBase64 = canvas.toDataURL('image/jpeg', 0.6);
+
+            database.ref(`mensajes_privados/${chatRoomId}/config`).update({
+                fondo: imagenOptimizadaBase64
+            }).then(() => {
+                alert("¡Fondo del chat privado actualizado y sincronizado! 🖼️✨");
+            }).catch(err => console.error("Error al guardar el fondo:", err));
+        };
+        img.src = evento.target.result;
+    };
+    lector.readAsDataURL(archivo);
 }
 
