@@ -156,10 +156,20 @@
 <body>
 
 <header>
+    <a href="notificaciones.html">
+        <p style="object-fit: cover;">🔔</p>
+    </a>
     <div class="logo">KofyKoi</div>
+    
     <div class="header-user">
         <span id="nav-username">@KofyUser</span>
-        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
+        <div style="position: relative; width: 40px; height: 40px;">
+            <a href="perfil.html">
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
+        </div>
+            </a>
+
     </div>
 </header>
 
@@ -197,17 +207,9 @@
 </div>
 
 <nav class="bottom-nav">
-    <button class="nav-item" onclick="location.href='perfil.html'">
-        <span>👤</span>
-        <small>Perfil</small>
-    </button>
     <button class="nav-item" onclick="location.href='chats.html'">
         <span>💬</span>
         <small>Chats</small>
-    </button>
-    <button class="nav-item" onclick="location.href='notificaciones.html'">
-        <span>🔔</span>
-        <small>Alertas</small>
     </button>
     <button class="nav-item main-btn" onclick="location.href='index.html'">
         <span>🏠</span>
