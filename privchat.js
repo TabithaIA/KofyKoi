@@ -9,15 +9,10 @@ let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || "#e0d8f0";
 const chatRoomId = localStorage.getItem('chat_actual_id');
 const usuarioDestino = localStorage.getItem('chat_actual_destino');
 
-// privchat.js 
-
 document.addEventListener('DOMContentLoaded', () => {
     // Cargar barra de navegación superior
     document.getElementById('nav-username').textContent = miNombre;
     document.getElementById('imgNav').src = miAvatar;
-
-    // Pedir permiso de alertas al cargar la interfaz
-    solicitarPermisoNotificaciones();
 
     // Verificar si hay chat seleccionado
     if (chatRoomId && usuarioDestino) {
@@ -26,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('msgInput').disabled = false;
         document.getElementById('btnEnviarMsg').disabled = false;
         
-        // Habilitar botón para adjuntar multimedia si existe en el HTML
+        // AGREGADO: Habilitar botón para adjuntar multimedia si existe en el HTML
         if (document.getElementById('btnAdjuntarMedia')) {
             document.getElementById('btnAdjuntarMedia').disabled = false;
         }
@@ -73,8 +68,7 @@ function cargarMensajes(roomId) {
 
         snapshot.forEach((child) => {
             const datos = child.val();
-            // Control de seguridad: Si por algún motivo el nodo está vacío, saltarlo para no romper el bucle
-            if (!datos) return;
+            if (!datos) return; // Control de seguridad básico
 
             const msgId = child.key; 
             const msgDiv = document.createElement('div');
@@ -86,6 +80,7 @@ function cargarMensajes(roomId) {
 
             if (datos.remitente === miNombre) {
                 msgDiv.className = "msg me";
+                // Aplicar el color de burbuja que tenías guardado al enviar
                 if (datos.colorBurbuja) {
                     msgDiv.style.backgroundColor = datos.colorBurbuja;
                 }
@@ -93,12 +88,13 @@ function cargarMensajes(roomId) {
                 msgDiv.title = "Haz clic para borrar mensaje 🗑️";
             } else {
                 msgDiv.className = "msg other";
+                // Aplicar el color de burbuja personalizado del otro usuario
                 if (datos.colorBurbuja) {
                     msgDiv.style.backgroundColor = datos.colorBurbuja;
                 }
             }
 
-            // CONTROL DEFENSIVO: Renderizado seguro preparado para mensajes viejos sin propiedad 'tipo'
+            // MODIFICACIÓN SEGURA: Renderizar según el tipo si existe, o usar texto plano por defecto
             let contenidoRenderizado = "";
             if (datos.tipo === "imagen") {
                 contenidoRenderizado = `<img src="${datos.texto}" style="max-width: 100%; border-radius: 12px; margin-top: 5px; display: block;">`;
@@ -107,8 +103,8 @@ function cargarMensajes(roomId) {
             } else if (datos.tipo === "audio") {
                 contenidoRenderizado = `<audio src="${datos.texto}" controls style="max-width: 100%; margin-top: 5px; display: block;"></audio>`;
             } else {
-                // Si es texto plano o un mensaje antiguo de tu base de datos
-                contenidoRenderizado = `<span class="msg-text">${datos.texto || ''}</span>`;
+                // Mensajes de texto normales y mensajes antiguos sin el campo 'tipo'
+                contenidoRenderizado = `<span class="msg-text">${datos.texto}</span>`;
             }
 
             msgDiv.innerHTML = `
@@ -129,7 +125,7 @@ function enviarMensajePrivado() {
     
     if (!texto || !chatRoomId) return;
 
-    // Guardar exactamente con tu estructura original intacta para evitar conflictos de esquemas
+    // Guardar dentro de /mensajes adjuntando el color de burbuja activo
     database.ref(`mensajes_privados/${chatRoomId}/mensajes`).push({
         remitente: miNombre,
         texto: texto,
@@ -176,6 +172,7 @@ function procesarYSubirFondo(inputElement) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
+            // Dimensiones para Full HD móvil fluido optimizado
             const MAX_WIDTH = 800;
             const MAX_HEIGHT = 1200;
             let ancho = img.width;
@@ -197,6 +194,7 @@ function procesarYSubirFondo(inputElement) {
             canvas.height = alto;
             ctx.drawImage(img, 0, 0, ancho, alto);
 
+            // Exportar comprimido a calidad equilibrada (JPEG 0.6)
             const imagenOptimizadaBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
             database.ref(`mensajes_privados/${chatRoomId}/config`).update({
@@ -210,7 +208,10 @@ function procesarYSubirFondo(inputElement) {
     lector.readAsDataURL(archivo);
 }
 
-// Función optimizada para capturar, validar tamaño de multimedia y enviar a Firebase
+// ============================================================================
+// AGREGADO: Funciones de Optimización y Envío de Archivos Multimedia
+// ============================================================================
+
 function procesarYEnviarMedia(inputElement) {
     if (!inputElement.files || !inputElement.files[0] || !chatRoomId) return;
 
@@ -218,7 +219,7 @@ function procesarYEnviarMedia(inputElement) {
     const tipoMime = archivo.type;
     const lector = new FileReader();
 
-    // 1. COMPRESIÓN DE IMÁGENES (Vía Canvas a JPEG de rendimiento fluido)
+    // 1. IMÁGENES: Redimensionar con canvas a JPEG 0.5 para ahorrar espacio
     if (tipoMime.startsWith('image/')) {
         lector.onload = function(evento) {
             const img = new Image();
@@ -246,10 +247,10 @@ function procesarYEnviarMedia(inputElement) {
         };
         lector.readAsDataURL(archivo);
 
-    // 2. CONTROL DE PESO PARA VIDEOS (Para no saturar el Realtime Database)
+    // 2. VIDEOS: Validar peso máximo para prevenir congelamientos en tiempo real
     } else if (tipoMime.startsWith('video/')) {
         if (archivo.size > 2.5 * 1024 * 1024) {
-            alert("El video supera el tamaño máximo permitido de 2.5 MB para el chat zen. 🎬");
+            alert("El video supera el tamaño zen de 2.5 MB. ¡Prueba con un clip más corto! 🎬");
             return;
         }
         lector.onload = function(evento) {
@@ -257,10 +258,10 @@ function procesarYEnviarMedia(inputElement) {
         };
         lector.readAsDataURL(archivo);
 
-    // 3. CONTROL DE PESO PARA AUDIO Y MÚSICA
+    // 3. AUDIO / MÚSICA: Validar peso máximo antes de codificar
     } else if (tipoMime.startsWith('audio/')) {
         if (archivo.size > 3 * 1024 * 1024) {
-            alert("El archivo de audio o música supera el límite de 3 MB. 🎵");
+            alert("El archivo musical supera el límite zen de 3 MB. 🎵");
             return;
         }
         lector.onload = function(evento) {
@@ -269,10 +270,9 @@ function procesarYEnviarMedia(inputElement) {
         lector.readAsDataURL(archivo);
     }
     
-    inputElement.value = "";
+    inputElement.value = ""; // Resetear selector
 }
 
-// Envío unificado al subnodo con flag de tipo multimedia explícito
 function subirMensajeMultimedia(base64Data, tipoContenido) {
     database.ref(`mensajes_privados/${chatRoomId}/mensajes`).push({
         remitente: miNombre,
@@ -287,24 +287,6 @@ function subirMensajeMultimedia(base64Data, tipoContenido) {
             mensaje: `Te envió un archivo multimedia (${tipoContenido}) 📂`, 
             fecha: Date.now()
         });
-    }).catch(err => console.error("Error al subir contenido multimedia:", err));
-}
-
-// Nueva función para solicitar permiso de alertas push de sistema
-function solicitarPermisoNotificaciones() {
-    Notification.requestPermission().then((permiso) => {
-        if (permiso === 'granted') {
-            messaging.getToken({ vapidKey: 'TU_KEY_PUBLICA_VAPID_DE_FIREBASE' })
-                .then((tokenActual) => {
-                    if (tokenActual) {
-                        const miNombreKey = miNombre.replace(/[.#$[\]]/g, "_");
-                        database.ref(`usuarios_tokens/${miNombreKey}`).set({
-                            fcmToken: tokenActual,
-                            ultimaActualizacion: Date.now()
-                        });
-                    }
-                }).catch(err => console.error("Error al obtener token FCM:", err));
-        }
-    });
+    }).catch(err => console.error("Error al subir multimedia:", err));
 }
 
