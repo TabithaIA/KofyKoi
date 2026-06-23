@@ -3,16 +3,21 @@
 const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
 const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
 
-// --- VINCULACIÓN CON LA TIENDA: Cargar color equipado en las salas grupales ---
+// --- VINCULACIÓN CON LA TIENDA: Cargar color équipé en las salas grupales ---
 let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || "#e0d8f0";
 
 const chatRoomId = localStorage.getItem('chat_actual_id');
 const usuarioDestino = localStorage.getItem('chat_actual_destino');
 
+// privchat.js 
+
 document.addEventListener('DOMContentLoaded', () => {
     // Cargar barra de navegación superior
     document.getElementById('nav-username').textContent = miNombre;
     document.getElementById('imgNav').src = miAvatar;
+
+    // NUEVO: Pedir permiso de alertas al cargar la interfaz
+    solicitarPermisoNotificaciones();
 
     // Verificar si hay chat seleccionado
     if (chatRoomId && usuarioDestino) {
@@ -20,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('msgInput').disabled = false;
         document.getElementById('btnEnviarMsg').disabled = false;
+        
+        // NUEVO: Habilitar botón para adjuntar multimedia optimizada
+        if (document.getElementById('btnAdjuntarMedia')) {
+            document.getElementById('btnAdjuntarMedia').disabled = false;
+        }
         
         // Habilitar y sincronizar el punto del círculo con tu color equipado
         const picker = document.getElementById('pickerBurbuja');
@@ -87,8 +97,21 @@ function cargarMensajes(roomId) {
                 }
             }
 
+            // NUEVO: Renderizado condicional inteligente según el tipo de contenido multimedia
+            let contenidoRenderizado = "";
+            if (datos.tipo === "imagen") {
+                contenidoRenderizado = `<img src="${datos.texto}" style="max-width: 100%; border-radius: 12px; margin-top: 5px; display: block;">`;
+            } else if (datos.tipo === "video") {
+                contenidoRenderizado = `<video src="${datos.texto}" controls style="max-width: 100%; border-radius: 12px; margin-top: 5px; display: block;"></video>`;
+            } else if (datos.tipo === "audio") {
+                contenidoRenderizado = `<audio src="${datos.texto}" controls style="max-width: 100%; margin-top: 5px; display: block;"></audio>`;
+            } else {
+                // Por defecto o si el tipo es texto plano
+                contenidoRenderizado = `<span class="msg-text">${datos.texto}</span>`;
+            }
+
             msgDiv.innerHTML = `
-                <span class="msg-text">${datos.texto}</span>
+                ${contenidoRenderizado}
                 <span class="msg-time">${horaFormateada}</span>
             `;
             
@@ -105,10 +128,11 @@ function enviarMensajePrivado() {
     
     if (!texto || !chatRoomId) return;
 
-    // Guardar dentro de /mensajes adjuntando el color de burbuja activo
+    // Guardar dentro de /mensajes adjuntando el color de burbuja activo y tipo texto
     database.ref(`mensajes_privados/${chatRoomId}/mensajes`).push({
         remitente: miNombre,
         texto: texto,
+        tipo: "texto",
         fecha: Date.now(),
         colorBurbuja: miColorBurbuja 
     }).then(() => {
@@ -186,5 +210,110 @@ function procesarYSubirFondo(inputElement) {
         img.src = evento.target.result;
     };
     lector.readAsDataURL(archivo);
+}
+
+// NUEVO: Función principal para capturar, reducir peso de multimedia y enviar a Firebase
+function procesarYEnviarMedia(inputElement) {
+    if (!inputElement.files || !inputElement.files[0] || !chatRoomId) return;
+
+    const archivo = inputElement.files[0];
+    const tipoMime = archivo.type;
+    const lector = new FileReader();
+
+    // 1. TRATAMIENTO PARA IMÁGENES (Compresión agresiva vía Canvas a JPEG 0.5)
+    if (tipoMime.startsWith('image/')) {
+        lector.onload = function(evento) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const MAX_WIDTH = 600; // Ancho máximo escalado para la burbuja de conversación
+                let ancho = img.width;
+                let alto = img.height;
+
+                if (ancho > MAX_WIDTH) {
+                    alto *= MAX_WIDTH / ancho;
+                    ancho = MAX_WIDTH;
+                }
+
+                canvas.width = ancho;
+                canvas.height = alto;
+                ctx.drawImage(img, 0, 0, ancho, alto);
+
+                // Convertimos a base64 liviano
+                const imagenComprimidaBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                subirMensajeMultimedia(imagenComprimidaBase64, "imagen");
+            };
+            img.src = evento.target.result;
+        };
+        lector.readAsDataURL(archivo);
+
+    // 2. TRATAMIENTO PARA VIDEOS (Control de peso estricto para base de datos en tiempo real)
+    } else if (tipoMime.startsWith('video/')) {
+        // Límite preventivo de 2.5 MB para no laguear las queries en tiempo real
+        if (archivo.size > 2.5 * 1024 * 1024) {
+            alert("El video supera el tamaño zen máximo de 2.5 MB. ¡Prueba con un clip más corto! 🎬");
+            return;
+        }
+        lector.onload = function(evento) {
+            subirMensajeMultimedia(evento.target.result, "video");
+        };
+        lector.readAsDataURL(archivo);
+
+    // 3. TRATAMIENTO PARA AUDIO Y MÚSICA (.mp3, .ogg, etc.)
+    } else if (tipoMime.startsWith('audio/')) {
+        // Límite preventivo de 3 MB para archivos musicales o notas de voz largas
+        if (archivo.size > 3 * 1024 * 1024) {
+            alert("El archivo de música o audio supera el límite de 3 MB. 🎵");
+            return;
+        }
+        lector.onload = function(evento) {
+            subirMensajeMultimedia(evento.target.result, "audio");
+        };
+        lector.readAsDataURL(archivo);
+    }
+    
+    // Limpiar el input para permitir volver a adjuntar de corrido el mismo archivo
+    inputElement.value = "";
+}
+
+// NUEVO: Función para inyectar el nodo multimedia estructurado en la base de datos
+function subirMensajeMultimedia(base64Data, tipoContenido) {
+    database.ref(`mensajes_privados/${chatRoomId}/mensajes`).push({
+        remitente: miNombre,
+        texto: base64Data, 
+        tipo: tipoContenido, // Guarda explícitamente "imagen", "video" o "audio"
+        fecha: Date.now(),
+        colorBurbuja: miColorBurbuja 
+    }).then(() => {
+        // Alertas instantáneas del sistema de notificaciones cruzadas de KofyKoi
+        const usuarioDestinoKey = usuarioDestino.replace(/[.#$[\]]/g, "_");
+        database.ref(`notificaciones/${usuarioDestinoKey}`).push({
+            titulo: `Mensaje privado de ${miNombre} 💬`,
+            mensaje: `Te envió un archivo multimedia (${tipoContenido}) 📂`, 
+            fecha: Date.now()
+        });
+    }).catch(err => console.error("Error al subir contenido multimedia:", err));
+}
+
+// Nueva función para solicitar permiso de alertas push de sistema
+function solicitarPermisoNotificaciones() {
+    Notification.requestPermission().then((permiso) => {
+        if (permiso === 'granted') {
+            // Obtenemos el token de Firebase
+            messaging.getToken({ vapidKey: 'TU_KEY_PUBLICA_VAPID_DE_FIREBASE' })
+                .then((tokenActual) => {
+                    if (tokenActual) {
+                        const miNombreKey = miNombre.replace(/[.#$[\]]/g, "_");
+                        // Guardamos el token en una lista global para que otros sepan nuestro "ID de envío"
+                        database.ref(`usuarios_tokens/${miNombreKey}`).set({
+                            fcmToken: tokenActual,
+                            ultimaActualizacion: Date.now()
+                        });
+                    }
+                }).catch(err => console.error("Error al obtener token FCM:", err));
+        }
+    });
 }
 

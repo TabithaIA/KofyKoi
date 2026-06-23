@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <head>
     <meta charset="UTF-8">
     <title>KofyKoi - Chat y Amigos</title>
     <link rel="icon" type="image/png" href="favicon.png">
@@ -158,20 +156,10 @@
 <body>
 
 <header>
-    <a href="notificaciones.html">
-        <p style="object-fit: cover;">🔔</p>
-    </a>
     <div class="logo">KofyKoi</div>
-    
     <div class="header-user">
         <span id="nav-username">@KofyUser</span>
-        <div style="position: relative; width: 40px; height: 40px;">
-            <a href="perfil.html">
-            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-            <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
-        </div>
-            </a>
-
+        <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav">
     </div>
 </header>
 
@@ -201,6 +189,10 @@
                 </p>
             </div>
             <div class="chat-input-area">
+                <!-- NUEVO: Botón multimedia integrado estéticamente sin alterar el layout principal -->
+                <button class="btn-tool-action" id="btnAdjuntarMedia" onclick="document.getElementById('inputMultimedia').click()" style="border-radius: 15px; padding: 10px;" disabled>📎</button>
+                <input type="file" id="inputMultimedia" accept="image/*,video/*,audio/*" style="display: none;" onchange="procesarYEnviarMedia(this)">
+
                 <input type="text" id="msgInput" placeholder="Escribe un mensaje privado..." disabled>
                 <button class="btn-main" id="btnEnviarMsg" onclick="enviarMensajePrivado()" style="border-radius: 15px;" disabled>Enviar</button>
             </div>
@@ -209,9 +201,17 @@
 </div>
 
 <nav class="bottom-nav">
+    <button class="nav-item" onclick="location.href='perfil.html'">
+        <span>👤</span>
+        <small>Perfil</small>
+    </button>
     <button class="nav-item" onclick="location.href='chats.html'">
         <span>💬</span>
         <small>Chats</small>
+    </button>
+    <button class="nav-item" onclick="location.href='notificaciones.html'">
+        <span>🔔</span>
+        <small>Alertas</small>
     </button>
     <button class="nav-item main-btn" onclick="location.href='index.html'">
         <span>🏠</span>
@@ -229,6 +229,8 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-messaging-compat.js"></script>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
@@ -242,6 +244,14 @@
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    
+    // NUEVO: Inicializar mensajería vinculándola a tu sw.js existente
+    const messaging = firebase.messaging();
+    
+    navigator.serviceWorker.register('sw.js')
+        .then((registration) => {
+            messaging.useServiceWorker(registration);
+        }).catch(err => console.log('Error registrando SW:', err));
 </script>
 <script src="privchat.js"></script>
 </body>
