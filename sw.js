@@ -59,13 +59,41 @@ const messaging = firebase.messaging();
 // Capturar el mensaje cuando la pestaña está cerrada o en segundo plano
 messaging.onBackgroundMessage((payload) => {
     console.log("Notificación en segundo plano recibida:", payload);
-    const title = payload.notification.title;
+    
+    // Control flexible por si los datos vienen estructurados bajo 'notification' o 'data'
+    const title = payload.notification?.title || payload.data?.title || "Nuevo mensaje zen 🌸";
+    const body = payload.notification?.body || payload.data?.mensaje || "¡Tienes novedades en KofyKoi!";
+    
     const options = {
-        body: payload.notification.body,
+        body: body,
         icon: 'favicon.png', 
         badge: 'favicon.png',
-        vibrate: [100, 50, 100]
+        vibrate: [100, 50, 100],
+        data: {
+            url: '/chats.html' // URL de destino al pulsar la notificación
+        }
     };
-    self.registration.showNotification(title, options);
+    
+    return self.registration.showNotification(title, options);
+});
+
+// Interceptar el clic en la notificación del sistema para abrir o enfocar la app
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // Si la aplicación ya está abierta, poner el foco sobre ella
+            for (let client of windowClients) {
+                if (client.url.includes('/chats.html') && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Si no estaba abierta, abrir una nueva ventana con la vista de chats
+            if (clients.openWindow) {
+                return clients.openWindow(event.notification.data?.url || '/');
+            }
+        })
+    );
 });
 

@@ -1,4 +1,4 @@
-// chats.js - Manejo del Chat Privado y Eliminación en Tiempo Real
+// privchat.js - Manejo del Chat Privado, Eliminación en Tiempo Real y Notificaciones
 
 const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
 const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('msgInput').disabled = false;
         document.getElementById('btnEnviarMsg').disabled = false;
         
-        // AGREGADO: Habilitar botón para adjuntar multimedia si existe en el HTML
+        // Habilitar botón para adjuntar multimedia si existe en el HTML
         if (document.getElementById('btnAdjuntarMedia')) {
             document.getElementById('btnAdjuntarMedia').disabled = false;
         }
@@ -80,7 +80,6 @@ function cargarMensajes(roomId) {
 
             if (datos.remitente === miNombre) {
                 msgDiv.className = "msg me";
-                // Aplicar el color de burbuja que tenías guardado al enviar
                 if (datos.colorBurbuja) {
                     msgDiv.style.backgroundColor = datos.colorBurbuja;
                 }
@@ -88,13 +87,12 @@ function cargarMensajes(roomId) {
                 msgDiv.title = "Haz clic para borrar mensaje 🗑️";
             } else {
                 msgDiv.className = "msg other";
-                // Aplicar el color de burbuja personalizado del otro usuario
                 if (datos.colorBurbuja) {
                     msgDiv.style.backgroundColor = datos.colorBurbuja;
                 }
             }
 
-            // MODIFICACIÓN SEGURA: Renderizar según el tipo si existe, o usar texto plano por defecto
+            // Renderizar según el tipo si existe, o usar texto plano por defecto
             let contenidoRenderizado = "";
             if (datos.tipo === "imagen") {
                 contenidoRenderizado = `<img src="${datos.texto}" style="max-width: 100%; border-radius: 12px; margin-top: 5px; display: block;">`;
@@ -103,7 +101,6 @@ function cargarMensajes(roomId) {
             } else if (datos.tipo === "audio") {
                 contenidoRenderizado = `<audio src="${datos.texto}" controls style="max-width: 100%; margin-top: 5px; display: block;"></audio>`;
             } else {
-                // Mensajes de texto normales y mensajes antiguos sin el campo 'tipo'
                 contenidoRenderizado = `<span class="msg-text">${datos.texto}</span>`;
             }
 
@@ -135,9 +132,13 @@ function enviarMensajePrivado() {
         input.value = ""; 
         
         const usuarioDestinoKey = usuarioDestino.replace(/[.#$[\]]/g, "_");
+        
+        // Modificado para estructurar el payload compatible con onBackgroundMessage
         database.ref(`notificaciones/${usuarioDestinoKey}`).push({
-            titulo: `Mensaje privado de ${miNombre} 💬`,
-            mensaje: texto.substring(0, 50), 
+            notification: {
+                title: `Mensaje privado de ${miNombre} 💬`,
+                body: texto.substring(0, 50)
+            },
             fecha: Date.now()
         });
 
@@ -172,7 +173,6 @@ function procesarYSubirFondo(inputElement) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Dimensiones para Full HD móvil fluido optimizado
             const MAX_WIDTH = 800;
             const MAX_HEIGHT = 1200;
             let ancho = img.width;
@@ -194,7 +194,6 @@ function procesarYSubirFondo(inputElement) {
             canvas.height = alto;
             ctx.drawImage(img, 0, 0, ancho, alto);
 
-            // Exportar comprimido a calidad equilibrada (JPEG 0.6)
             const imagenOptimizadaBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
             database.ref(`mensajes_privados/${chatRoomId}/config`).update({
@@ -209,7 +208,7 @@ function procesarYSubirFondo(inputElement) {
 }
 
 // ============================================================================
-// AGREGADO: Funciones de Optimización y Envío de Archivos Multimedia
+// Funciones de Optimización y Envío de Archivos Multimedia
 // ============================================================================
 
 function procesarYEnviarMedia(inputElement) {
@@ -219,7 +218,6 @@ function procesarYEnviarMedia(inputElement) {
     const tipoMime = archivo.type;
     const lector = new FileReader();
 
-    // 1. IMÁGENES: Redimensionar con canvas a JPEG 0.5 para ahorrar espacio
     if (tipoMime.startsWith('image/')) {
         lector.onload = function(evento) {
             const img = new Image();
@@ -247,7 +245,6 @@ function procesarYEnviarMedia(inputElement) {
         };
         lector.readAsDataURL(archivo);
 
-    // 2. VIDEOS: Validar peso máximo para prevenir congelamientos en tiempo real
     } else if (tipoMime.startsWith('video/')) {
         if (archivo.size > 2.5 * 1024 * 1024) {
             alert("El video supera el tamaño zen de 2.5 MB. ¡Prueba con un clip más corto! 🎬");
@@ -258,7 +255,6 @@ function procesarYEnviarMedia(inputElement) {
         };
         lector.readAsDataURL(archivo);
 
-    // 3. AUDIO / MÚSICA: Validar peso máximo antes de codificar
     } else if (tipoMime.startsWith('audio/')) {
         if (archivo.size > 3 * 1024 * 1024) {
             alert("El archivo musical supera el límite zen de 3 MB. 🎵");
@@ -270,7 +266,7 @@ function procesarYEnviarMedia(inputElement) {
         lector.readAsDataURL(archivo);
     }
     
-    inputElement.value = ""; // Resetear selector
+    inputElement.value = ""; 
 }
 
 function subirMensajeMultimedia(base64Data, tipoContenido) {
@@ -282,9 +278,13 @@ function subirMensajeMultimedia(base64Data, tipoContenido) {
         colorBurbuja: miColorBurbuja 
     }).then(() => {
         const usuarioDestinoKey = usuarioDestino.replace(/[.#$[\]]/g, "_");
+        
+        // Modificado para estructurar correctamente el payload multimedia en las notificaciones
         database.ref(`notificaciones/${usuarioDestinoKey}`).push({
-            titulo: `Mensaje privado de ${miNombre} 💬`,
-            mensaje: `Te envió un archivo multimedia (${tipoContenido}) 📂`, 
+            notification: {
+                title: `Mensaje privado de ${miNombre} 💬`,
+                body: `Te envió un archivo multimedia (${tipoContenido}) 📂`
+            },
             fecha: Date.now()
         });
     }).catch(err => console.error("Error al subir multimedia:", err));
