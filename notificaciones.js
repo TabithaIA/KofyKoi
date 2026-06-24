@@ -15,16 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function cargarNotificaciones() {
     const container = document.getElementById('noti-list-container');
     // Sanitizamos el nombre del usuario para que Firebase no de error de llaves
-    const usuarioKey = miNombre.replace(/[.#$[\]]/g, "_");
+    const usuarioKey = miNombre.replace(/[.#$[\\]]/g, "_");
 
     database.ref(`notificaciones/${usuarioKey}`).on('value', (snapshot) => {
         container.innerHTML = "";
 
         if (!snapshot.exists()) {
             container.innerHTML = `
-                <div class="empty-state">
-                    <p style="font-size: 2.5rem; margin-bottom: 10px;">🌸</p>
-                    <p>Todo está en perfecta calma por aquí.<br>No tienes notificaciones pendientes.</p>
+                <div class=\"empty-state\">
+                    <p style=\"font-size: 2.5rem; margin-bottom: 10px;\">🌸</p>\n                    <p>Todo está en perfecta calma por aquí.<br>No tienes notificaciones pendientes.</p>
                 </div>
             `;
             return;
@@ -43,13 +42,17 @@ function cargarNotificaciones() {
             
             const hora = new Date(noti.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // === SOLUCIÓN AQUÍ: Detectar dinámicamente si es formato nuevo (v1) o viejo ===
+            const tituloReal = noti.notification ? noti.notification.title : (noti.titulo || "Nuevo mensaje 💬");
+            const cuerpoReal = noti.notification ? noti.notification.body : (noti.mensaje || "Te enviaron algo... ✨");
+
             card.innerHTML = `
-                <div class="noti-content">
-                    <span class="noti-title">${noti.titulo}</span>
-                    <span class="noti-text">${noti.mensaje}</span>
-                    <span class="noti-time">${hora}</span>
+                <div class=\"noti-content\">
+                    <span class=\"noti-title\">${tituloReal}</span>
+                    <span class=\"noti-text\">${cuerpoReal}</span>
+                    <span class=\"noti-time\">${hora}</span>
                 </div>
-                <button class="btn-delete-noti" onclick="quitarNotificacion('${noti.id}')" title="Quitar alerta">✕</button>
+                <button class=\"btn-delete-noti\" onclick=\"quitarNotificacion('${noti.id}')\" title=\"Quitar alerta\">✕</button>
             `;
 
             container.appendChild(card);
