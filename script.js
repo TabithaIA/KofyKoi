@@ -859,7 +859,7 @@ function buscarUsuarios(texto) {
     const dropdown = document.getElementById('search-results');
     if (!dropdown) return;
 
-    const queryText = texto.trim().toLowerCase();
+    const queryText = texto.trim(); // Mantenemos el texto original para Firebase
 
     if (!queryText) {
         dropdown.innerHTML = "";
@@ -867,68 +867,60 @@ function buscarUsuarios(texto) {
         return;
     }
 
-    // Buscamos en 'posts' para obtener los perfiles activos creados en la comunidad
-    database.ref('posts/').once('value').then((snapshot) => {
-        const usuariosEncontrados = {};
+    // Filtramos directamente desde el servidor de Firebase usando el índice de usuario
+    database.ref('posts/')
+        .orderByChild('usuario')
+        .startAt(queryText)
+        .endAt(queryText + "\uf8ff") // Truco de Firebase para buscar usuarios que "empiecen por..."
+        .limitToFirst(10) // Evitamos sobrecargar la interfaz
+        .once('value').then((snapshot) => {
+            const usuariosEncontrados = {};
 
-        snapshot.forEach((child) => {
-            const datos = child.val();
-            const nombreUsuario = datos.usuario || "";
-            
-            // Si coincide con lo que escribe el usuario y no lo agregamos ya a la lista
-            if (nombreUsuario.toLowerCase().includes(queryText) && !usuariosEncontrados[nombreUsuario]) {
-                usuariosEncontrados[nombreUsuario] = {
-                    nombre: nombreUsuario,
-                    avatar: datos.avatar || 'https://i.pravatar.cc/150?u=default',
-                    bio: datos.biografia || ""
-                };
-            }
-        });
-
-        dropdown.innerHTML = "";
-        const listaUsuarios = Object.values(usuariosEncontrados);
-
-        if (listaUsuarios.length === 0) {
-            dropdown.innerHTML = `<div style="padding: 10px; font-size: 0.8rem; color: #888; font-style: italic;">No se encontraron usuarios</div>`;
-        } else {
-            listaUsuarios.forEach(u => {
-                const item = document.createElement('div');
-                item.className = 'search-result-item';
-                item.style.display = 'flex';
-                item.style.alignItems = 'center';
-                item.style.gap = '10px';
-                item.style.padding = '8px 12px';
-                item.style.cursor = 'pointer';
+            snapshot.forEach((child) => {
+                const datos = child.val();
+                const nombreUsuario = datos.usuario || "";
                 
-                item.innerHTML = `
-                    <img src="${u.avatar}" class="avatar-sm" style="width: 25px; height: 25px;">
-                    <span style="font-size: 0.85rem; font-weight: 600;">${u.nombre}</span>
-                `;
-
-                // Al hacer clic, se abre el modal que ya tienes implementado
-                item.onclick = () => {
-                    verPerfil(u.nombre, u.avatar, u.bio);
-                    document.getElementById('searchUser').value = "";
-                    dropdown.innerHTML = "";
-                    dropdown.style.display = "none";
-                };
-
-                dropdown.appendChild(item);
+                if (!usuariosEncontrados[nombreUsuario]) {
+                    usuariosEncontrados[nombreUsuario] = {
+                        nombre: nombreUsuario,
+                        avatar: datos.avatar || 'https://i.pravatar.cc/150?u=default',
+                        bio: datos.biografia || ""
+                    };
+                }
             });
-        }
-        dropdown.style.display = "block";
-    });
-}
 
-// Cerrar el buscador si se hace clic fuera de él
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('search-results');
-    const input = document.getElementById('searchUser');
-    if (dropdown && e.target !== dropdown && e.target !== input) {
-        dropdown.innerHTML = "";
-        dropdown.style.display = "none";
-    }
-});
+            dropdown.innerHTML = "";
+            const listaUsuarios = Object.values(usuariosEncontrados);
+
+            if (listaUsuarios.length === 0) {
+                dropdown.innerHTML = `<div style="padding: 10px; font-size: 0.8rem; color: #888; font-style: italic;">No se encontraron usuarios</div>`;
+            } else {
+                listaUsuarios.forEach(u => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.gap = '10px';
+                    item.style.padding = '8px 12px';
+                    item.style.cursor = 'pointer';
+                    
+                    item.innerHTML = `
+                        <img src="${u.avatar}" class="avatar-sm" style="width: 25px; height: 25px;">
+                        <span style="font-size: 0.85rem; font-weight: 600;">${u.nombre}</span>
+                    `;
+
+                    item.onclick = () => {
+                        verPerfil(u.nombre, u.avatar, u.bio);
+                        document.getElementById('searchUser').value = "";
+                        dropdown.innerHTML = "";
+                        dropdown.style.display = "none";
+                    };
+                    dropdown.appendChild(item);
+                });
+            }
+            dropdown.style.display = "block";
+        });
+}
 
 // --- LÓGICA DE LISTADO DE SEGUIDORES Y SEGUIDOS ---
 
@@ -982,41 +974,42 @@ function abrirModalRelaciones(tipo) {
 
 // Auxiliar para buscar la última foto/bio guardada de un usuario en los posts y armar la fila
 function obtenerYRenderizarItemUsuario(nombreUsuario, contenedorLista) {
-    database.ref('posts/').once('value').then((snapshot) => {
-        let avatar = 'https://i.pravatar.cc/150?u=default';
-        let bio = "";
+    // Le pedimos a Firebase solo el registro más reciente de este usuario en específico
+    database.ref('posts/')
+        .orderByChild('usuario')
+        .equalTo(nombreUsuario)
+        .limitToLast(1)
+        .once('value').then((snapshot) => {
+            let avatar = 'https://i.pravatar.cc/150?u=default';
+            let bio = "";
 
-        // Buscamos en el histórico de posts un registro del usuario para jalar su avatar y bio más actual
-        snapshot.forEach((child) => {
-            const datos = child.val();
-            if (datos.usuario === nombreUsuario) {
+            snapshot.forEach((child) => {
+                const datos = child.val();
                 avatar = datos.avatar || avatar;
                 bio = datos.biografia || bio;
-            }
+            });
+
+            const item = document.createElement('div');
+            item.className = 'relationship-item';
+            item.style.cursor = 'pointer';
+            
+            item.innerHTML = `
+                <img src="${avatar}" class="avatar-sm" style="width: 35px; height: 35px; border: 2px solid var(--morado-deep);">
+                <div style="display: flex; flex-direction: column;">
+                    <span>${nombreUsuario}</span>
+                    <small style="font-size: 0.65rem; color: gray; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${bio || "Sin biografía aún. ✨"}
+                    </small>
+                </div>
+            `;
+
+            item.onclick = () => {
+                cerrarModalRelaciones();
+                verPerfil(nombreUsuario, avatar, bio);
+            };
+
+            contenedorLista.appendChild(item);
         });
-
-        const item = document.createElement('div');
-        item.className = 'relationship-item';
-        item.style.cursor = 'pointer';
-        
-        item.innerHTML = `
-            <img src="${avatar}" class="avatar-sm" style="width: 35px; height: 35px; border: 2px solid var(--morado-deep);">
-            <div style="display: flex; flex-direction: column;">
-                <span>${nombreUsuario}</span>
-                <small style="font-size: 0.65rem; color: gray; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${bio || "Sin biografía aún. ✨"}
-                </small>
-            </div>
-        `;
-
-        // Al hacer clic en un usuario de la lista, abre su tarjeta de perfil con las funciones nativas que ya creaste
-        item.onclick = () => {
-            cerrarModalRelaciones();
-            verPerfil(nombreUsuario, avatar, bio);
-        };
-
-        contenedorLista.appendChild(item);
-    });
 }
 
 function cerrarModalRelaciones() {
