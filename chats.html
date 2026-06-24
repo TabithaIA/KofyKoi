@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <head>
-    <meta charset="UTF-8">
     <title>KofyKoi - Chat y Amigos</title>
     <link rel="icon" type="image/png" href="favicon.png">
-</head>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -121,7 +118,7 @@
             margin-bottom: 5px; 
         }
 
-        #modalRacha .modal-content, #modalFijados .modal-content {
+        #modalRacha .modal-content, #modalFijados .modal-content, #modalHistorialSalas .modal-content {
             max-width: 400px;
             max-height: 80vh;
             overflow-y: auto;
@@ -158,37 +155,69 @@
             margin-top: 5px;
             align-self: center;
         }
+
+        /* Estilos del Historial de Salas */
+        .sala-guardada-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fef8f8;
+            border: 1px solid var(--rosa);
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+        .sala-guardada-item:hover {
+            background: #fff0f2;
+        }
+        .sala-clickeable {
+            flex: 1;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sala-tag-badge {
+            font-size: 0.7rem;
+            background: var(--lavanda);
+            color: var(--oscuro-suave);
+            padding: 2px 6px;
+            border-radius: 6px;
+            width: fit-content;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 
     <header>
-    <a href="notificaciones.html">
-        <p style="object-fit: cover;">🔔</p>
-    </a>
-    <div class="logo">KofyKoi</div>
-    
-    <div class="header-user">
-        <span id="nav-username">@KofyUser</span>
-        <div style="position: relative; width: 40px; height: 40px;">
-            <a href="perfil.html">
-            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-            <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
+        <a href="notificaciones.html">
+            <p>🔔</p>
+        </a>
+        <div class="logo">KofyKoi</div>
+        
+        <div class="header-user">
+            <span id="nav-username">@KofyUser</span>
+            <div style="position: relative; width: 40px; height: 40px;">
+                <a href="perfil.html">
+                    <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
+                </a>
+            </div>
         </div>
-            </a>
-
-    </div>
-</header>
+    </header>
 
     <div class="container" style="grid-template-columns: 1fr;">
         <main>
             <div class="card" id="selector-sala">
                 <h3 style="color: var(--morado-deep); margin-bottom: 10px;">Salas Privadas 🗝️</h3>
                 <p style="font-size: 0.85rem; margin-bottom: 15px;">Ingresa un código y compártelo con otras personas para empezar una conversación secreta.</p>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
                     <input type="text" id="roomCode" placeholder="Código de la sala..." style="border: 2px solid var(--rosa);">
                     <button class="btn-main" onclick="unirseASala()">Entrar</button>
                 </div>
+                <button class="btn-img" onclick="abrirModalHistorial()" style="width: 100%; background: var(--lavanda); font-size: 0.8rem; padding: 8px;">🔑 Ver mis salas guardadas</button>
             </div>
 
             <div id="sala-info" class="card">
@@ -233,7 +262,7 @@
                 </div>
 
                 <div class="chat-input-area" style="margin-top: 10px;">
-                    <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius: 10px; border: 1px solid #ddd;"></textarea>
+                    <textarea id="textoPrivado" rows="1" placeholder="Escribe un mensaje..." style="padding: 10px; flex: 1; border-radius: 10px; border: 1px solid #ddd;" onkeydown="manejarTecladoChat(event)"></textarea>
                     <button class="btn-main" onclick="enviarMensajeSala()">Enviar</button>
                  </div>
             </div>
@@ -261,6 +290,17 @@
         <button class="nav-item" onclick="location.href='tienda.html'"><span>🏪</span><small>Tienda</small></button>
         <button class="nav-item" onclick="location.href='datos.html'"><span>❕</span><small>Info</small></button>
     </nav>
+
+    <!-- Modal del Historial de salas guardadas -->
+    <div id="modalHistorialSalas" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--morado-deep); margin-bottom: 15px;">Salas Guardadas 🔑</h3>
+            <div id="historialSalasContenedor" style="max-height: 45vh; overflow-y: auto; display: flex; flex-direction: column;">
+                <!-- Se inyecta con JS -->
+            </div>
+            <button class="btn-img" onclick="cerrarModalHistorial()" style="margin-top: 20px; width: 100%;">Cerrar</button>
+        </div>
+    </div>
 
     <div id="modalVistaPerfil" class="modal">
         <div class="modal-content">
@@ -304,7 +344,7 @@
         <div class="modal-content">
             <h3 style="color: var(--morado-deep); margin-bottom: 15px;">Mensajes Fijados 📌</h3>
             <div id="fijadosContenedor" style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                <p style="font-size: 0.85rem; color: gray; text-align: center;">No hay mensajes fijados en esta sala.</p>
+                <p style="font-size: 0.85rem; color: gray; text-align: center;">No hay mensajes fijados in esta sala.</p>
             </div>
             <button class="btn-img" onclick="cerrarModalFijados()" style="margin-top: 20px; width: 100%;">Cerrar</button>
         </div>
@@ -333,7 +373,6 @@
         const limiteMensajes = 10;     
 
         let salaActual = "";
-        let cargaInicialChat = false;
         const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
         const miAvatar = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
         let miColorBurbuja = localStorage.getItem('kofy_color_burbuja') || ""; 
@@ -349,7 +388,6 @@
                 document.getElementById('misSeguidoresCount').textContent = `${s.numChildren()} seguidores`;
             });
             
-            // --- NUEVO: ESCUCHAR COSMÉTICOS PROPIOS EN TIEMPO REAL ---
             const miID = miNombre.replace(/[.#$[\]]/g, "_");
             database.ref(`usuarios_economia/${miID}`).on('value', snap => {
                 const data = snap.val() || {};
@@ -357,25 +395,107 @@
                 const perfilMarco = document.getElementById('perfilMarco');
                 
                 if (data.marcoActivo) {
-                    navMarco.src = data.marcoActivo; navMarco.style.display = 'block';
-                    perfilMarco.src = data.marcoActivo; perfilMarco.style.display = 'block';
+                    if (navMarco) { navMarco.src = data.marcoActivo; navMarco.style.display = 'block'; }
+                    if (perfilMarco) { perfilMarco.src = data.marcoActivo; perfilMarco.style.display = 'block'; }
                 } else {
-                    navMarco.style.display = 'none';
-                    perfilMarco.style.display = 'none';
+                    if (navMarco) navMarco.style.display = 'none';
+                    if (perfilMarco) perfilMarco.style.display = 'none';
                 }
             });
 
             monitorearBateria();
             enviarMisDatosExtra();
+
+            window.addEventListener('click', (event) => {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = "none";
+                }
+            });
         });
 
-        // --- NUEVA FUNCIÓN: APLICAR COSMÉTICOS AL DOM ---
+        // --- SISTEMA DE HISTORIAL DE SALAS ---
+        function obtenerHistorialSalas() {
+            return JSON.parse(localStorage.getItem('kofy_historial_salas')) || {};
+        }
+
+        function guardarCodigoEnHistorial(codigo) {
+            const historial = obtenerHistorialSalas();
+            if (!historial[codigo]) {
+                historial[codigo] = { tag: "" };
+                localStorage.setItem('kofy_historial_salas', JSON.stringify(historial));
+            }
+        }
+
+        function abrirModalHistorial() {
+            renderizarHistorialSalas();
+            document.getElementById('modalHistorialSalas').style.display = 'flex';
+        }
+
+        function cerrarModalHistorial() {
+            document.getElementById('modalHistorialSalas').style.display = 'none';
+        }
+
+        function renderizarHistorialSalas() {
+            const contenedor = document.getElementById('historialSalasContenedor');
+            contenedor.innerHTML = "";
+            const historial = obtenerHistorialSalas();
+            const codigos = Object.keys(historial);
+
+            if (codigos.length === 0) {
+                contenedor.innerHTML = `<p style="font-size: 0.85rem; color: gray; text-align: center; margin: 20px 0;">No tienes ninguna sala guardada todavía.</p>`;
+                return;
+            }
+
+            codigos.forEach(codigo => {
+                const info = historial[codigo];
+                const divItem = document.createElement('div');
+                divItem.className = "sala-guardada-item";
+
+                divItem.innerHTML = `
+                    <div class="sala-clickeable" onclick="entrarASalaAutomatica('${codigo}')">
+                        <strong style="color: var(--morado-deep); font-size: 0.95rem;">#${codigo}</strong>
+                        ${info.tag ? `<span class="sala-tag-badge">${info.tag}</span>` : '<span style="font-size: 0.7rem; color: #aaa; font-style: italic;">Sin etiqueta</span>'}
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn-img" onclick="cambiarEtiquetaSala('${codigo}')" style="font-size: 0.7rem; padding: 4px 8px; background: var(--azul-claro);" title="Editar etiqueta">🏷️</button>
+                        <button class="btn-img" onclick="eliminarSalaDeHistorial('${codigo}')" style="font-size: 0.7rem; padding: 4px 8px; background: #ff4d4d; color: white;" title="Eliminar del historial">🗑️</button>
+                    </div>
+                `;
+                contenedor.appendChild(divItem);
+            });
+        }
+
+        function cambiarEtiquetaSala(codigo) {
+            const historial = obtenerHistorialSalas();
+            const nuevaEtiqueta = prompt(`Escribe una etiqueta para la sala #${codigo}:`, historial[codigo].tag || "");
+            if (nuevaEtiqueta !== null) {
+                historial[codigo].tag = nuevaEtiqueta.trim();
+                localStorage.setItem('kofy_historial_salas', JSON.stringify(historial));
+                renderizarHistorialSalas();
+            }
+        }
+
+        function eliminarSalaDeHistorial(codigo) {
+            if (confirm(`¿Quieres quitar la sala #${codigo} de tu historial?`)) {
+                const historial = obtenerHistorialSalas();
+                delete historial[codigo];
+                localStorage.setItem('kofy_historial_salas', JSON.stringify(historial));
+                renderizarHistorialSalas();
+            }
+        }
+
+        function entrarASalaAutomatica(codigo) {
+            document.getElementById('roomCode').value = codigo;
+            cerrarModalHistorial();
+            unirseASala();
+        }
+        // -------------------------------------
+
         function aplicarCosmeticosEnElemento(bubbleEl, msgId, username, esSticker) {
             const userID = username.replace(/[.#$[\]]/g, "_");
             database.ref(`usuarios_economia/${userID}`).once('value', snap => {
                 const eco = snap.val();
                 if (eco) {
-                    // Cargar Marco
                     if (eco.marcoActivo) {
                         const marcoImg = bubbleEl.querySelector(`#marco-img-${msgId}`);
                         if (marcoImg) {
@@ -383,7 +503,6 @@
                             marcoImg.style.display = 'block';
                         }
                     }
-                    // Cargar Burbuja
                     if (eco.burbujaActiva && !esSticker) {
                         bubbleEl.style.background = `url(${eco.burbujaActiva}) center/cover no-repeat`;
                         bubbleEl.style.color = "#ffffff";
@@ -448,21 +567,20 @@
             localStorage.setItem('kofy_color_burbuja', color);
         }
 
-        function dibujarMensaje(id, datos) {
-            const contenedor = document.getElementById('mensajesPrivados');
-            if (document.getElementById(`msg-${id}`)) return;
+        function crearEstructuraMensaje(id, datos) {
             const msgDiv = document.createElement('div');
             const esMio = datos.usuario === miNombre;
             msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
             msgDiv.id = `msg-${id}`;
             
             if (datos.sticker) {
+                msgDiv.style.backgroundColor = 'transparent';
                 msgDiv.style.boxShadow = 'none';
                 msgDiv.style.padding = '5px';
             } else if (datos.colorBurbuja) {
                 msgDiv.style.backgroundColor = datos.colorBurbuja;
             }
-
+            
             const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
 
             msgDiv.innerHTML = `
@@ -487,10 +605,23 @@
                 ${datos.sticker ? `<img src="${datos.sticker}" class="chat-sticker">` : ''}
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
-            
-            contenedor.appendChild(msgDiv);
             aplicarCosmeticosEnElemento(msgDiv, id, datos.usuario, !!datos.sticker);
+            return msgDiv;
+        }
+
+        function dibujarMensaje(id, datos) {
+            if (document.getElementById(`msg-${id}`)) return;
+            const contenedor = document.getElementById('mensajesPrivados');
+            const msgDiv = crearEstructuraMensaje(id, datos);
+            contenedor.appendChild(msgDiv);
             contenedor.scrollTop = contenedor.scrollHeight;
+        }
+
+        function manejarTecladoChat(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviarMensajeSala();
+            }
         }
 
         function verPerfil(nombre, avatar, bio) {
@@ -503,7 +634,6 @@
 
             const userID = nombre.replace(/[.#$[\]]/g, "_");
             
-            // --- NUEVO: OBTENER MARCO DEL USUARIO VISTO ---
             database.ref(`usuarios_economia/${userID}`).once('value', snap => {
                 const eco = snap.val() || {};
                 const marcoModal = document.getElementById('vistaMarco');
@@ -715,6 +845,10 @@
             const codigo = document.getElementById('roomCode').value.trim().toLowerCase();
             if (!codigo) return;
             salaActual = codigo;
+            
+            // Guardar código exitoso en el historial
+            guardarCodigoEnHistorial(codigo);
+
             document.getElementById('selector-sala').style.display = "none";
             document.getElementById('sala-info').style.display = "block";
             
@@ -821,48 +955,6 @@
                     if (player) player.stopVideo();
                 }
             });
-        }
-
-        function crearEstructuraMensaje(id, datos) {
-            const msgDiv = document.createElement('div');
-            const esMio = datos.usuario === miNombre;
-            msgDiv.className = `bubble ${esMio ? 'mine' : 'other'}`;
-            msgDiv.id = `msg-${id}`;
-            
-            if (datos.sticker) {
-                msgDiv.style.backgroundColor = 'transparent';
-                msgDiv.style.boxShadow = 'none';
-                msgDiv.style.padding = '5px';
-            } else if (datos.colorBurbuja) {
-                msgDiv.style.backgroundColor = datos.colorBurbuja;
-            }
-            
-            const datosSeguros = btoa(unescape(encodeURIComponent(JSON.stringify(datos))));
-
-            msgDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <div style="position: relative; width: 25px; height: 25px; flex-shrink: 0; display: inline-block;">
-                            <img src="${datos.avatar}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                            <img id="marco-img-${id}" src="" style="display:none; position: absolute; top: -25%; left: -25%; width: 150%; height: 150%; pointer-events: none; z-index: 10;">
-                        </div>
-                        <span style="font-size: 0.65rem; font-weight: bold; cursor: pointer;" onclick="verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')">${esMio ? 'Tú' : datos.usuario}</span>
-                    </div>
-                    <div style="display: flex; gap: 5px; align-items: center;">
-                        <button onclick="fijarMensajePrivado('${id}', '${datosSeguros}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;" title="Fijar mensaje">📌</button>
-                        ${esMio ? `<button onclick="borrarMensajePrivado('${id}')" style="background:none; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">🗑️</button>` : ''}
-                    </div>
-                </div>
-                ${datos.sticker ? `<div style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: gray; margin-bottom: 2px; font-weight: bold;">✨ Sticker</div>` : ''}
-                ${datos.mensaje ? `<div>${datos.mensaje}</div>` : ''}
-                ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
-                ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
-                ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
-                ${datos.sticker ? `<img src="${datos.sticker}" class="chat-sticker">` : ''}
-                <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            `;
-            aplicarCosmeticosEnElemento(msgDiv, id, datos.usuario, !!datos.sticker);
-            return msgDiv;
         }
 
         function enviarMensajeSala() {
@@ -1100,7 +1192,13 @@
     }
 
     function borrarVideo() { database.ref(`chats_privados/${salaActual}/cine`).remove(); clearInterval(intervaloSync); }
-    function extraerID(url) { return url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/user\/\S+|\/ytscreeningroom\?v=))([\w\-]{11})/)[1]; }
+    
+    function extraerID(url) { 
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    }
+
     function subirVideo() { 
         const url = document.getElementById('videoUrl').value;
         if(url) database.ref(`chats_privados/${salaActual}/cine`).set({url: url, estado: "reproduciendo", segundo: 0});
