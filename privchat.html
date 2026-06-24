@@ -250,7 +250,7 @@
     // NUEVO: Inicializar mensajería vinculándola a tu sw.js existente
     const messaging = firebase.messaging();
     
-    navigator.serviceWorker.register('sw.js')
+    navigator.serviceWorker.register('firebase-messaging-sw.js')
         .then((registration) => {
             messaging.useServiceWorker(registration);
         }).catch(err => console.log('Error registrando SW:', err));
