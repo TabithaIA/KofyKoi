@@ -328,11 +328,11 @@ function crearElementoPost(id, datos) {
                 color = "#fff";
                 icono = "🛡️";
             } else if (rol.toLowerCase() === 'vip') {
-                background = "#9b59b6"; // Morado para VIPs
+                background = "gold"; // Dorado para VIPs
                 color = "#fff";
                 icono = "👑";
             } else if (rol.toLowerCase() === 'team') {
-                background = "gold";
+                background = "#9b59b6";
                 color = "#36454F";
                 icono = "⭐";
             }
