@@ -610,7 +610,17 @@ function verPerfil(nombre, avatar, bio) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     if (!modal) return;
 
-    document.getElementById('vistaNombre').textContent = nombre;
+    // Limpiamos cualquier estrella previa para que no se duplique o se quede guardada al cambiar de perfil
+    const contenedorNombre = document.getElementById('vistaNombre');
+    contenedorNombre.innerHTML = nombre; 
+
+    // Verificamos si el perfil que estamos viendo es moderador
+    esModerador(nombre, (esMod) => {
+        if (esMod) {
+            contenedorNombre.innerHTML = `${nombre} <span style="background: gold; color: #36454F; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; margin-left: 6px; border: 1px solid #e6b800; display: inline-block; vertical-align: middle;">⭐ Moderador</span>`;
+        }
+    });
+
     document.getElementById('vistaImg').src = avatar || 'https://i.pravatar.cc/150?u=default';
     document.getElementById('vistaBio').textContent = bio || "Sin biografía aún. ✨";
     
