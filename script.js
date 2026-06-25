@@ -650,6 +650,7 @@ function verPerfil(nombre, avatar, bio) {
 
             if (rol.toLowerCase() === 'admin') { background = "#e74c3c"; color = "#fff"; icono = "🛡️"; }
             else if (rol.toLowerCase() === 'vip') { background = "#9b59b6"; color = "#fff"; icono = "👑"; }
+            else if (rol.toLowerCase() === 'team') { background = "#9b59b6"; color = "#fff"; icono = "⭐"; }
 
             contenedorNombre.innerHTML = `${nombre} <span style="background: ${background}; color: ${color}; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; margin-left: 6px; display: inline-block; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1);">${icono} ${rolFormateado}</span>`;
         }
