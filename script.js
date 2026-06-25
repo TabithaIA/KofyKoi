@@ -3,6 +3,15 @@ let currentAvatarUrl = localStorage.getItem('kofy_avatar') || "https://i.pravata
 let cargaInicialCompletada = false;
 let ultimoPostFecha = null;
 let cargandoMas = false;
+let estadoPerfilRef = null;
+
+// --- NUEVA LÓGICA DE ROLES PARA MODERADORES ---
+function esModerador(nombreUsuario, callback) {
+    const usuarioKey = nombreUsuario.replace(/[.#$[\]]/g, "_");
+    database.ref(`usuarios_roles/${usuarioKey}`).once('value').then((snapshot) => {
+        callback(snapshot.val() === 'moderador');
+    });
+}
 
 // --- CONFIGURACIÓN DE NOTIFICACIONES ---
 if ('Notification' in window && 'serviceWorker' in navigator) {
@@ -74,14 +83,12 @@ function crearSalaPublica() {
     }).catch(err => console.error("Error al crear sala:", err));
 }
 
-// --- REDIRECCIÓN AL CHATS.HTML USANDO CÓDIGO DE SALA ---
 function irASalaPublicaPorCodigo(codigoSala) {
     if (!codigoSala) return;
     localStorage.setItem('codigo_sala_autostart', codigoSala.trim());
     location.href = 'chats.html';
 }
 
-// --- ACTUALIZAR EL RENDERIZADO EN REALTIME ---
 database.ref('salas_publicas/').on('value', (snapshot) => {
     const container = document.getElementById('rooms-container');
     if (!container) return;
@@ -105,7 +112,6 @@ database.ref('salas_publicas/').on('value', (snapshot) => {
             ? `<button class="btn-delete-room" onclick="event.stopPropagation(); eliminarSalaPublica('${idSala}')">🗑️</button>` 
             : '';
 
-        // ¡Aquí llamamos a la nueva función asignando el nombre de la sala como código!
         roomCard.innerHTML = `
             ${botonBorrar}
             <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm" style="border: 2px solid var(--morado-deep);">
@@ -129,7 +135,6 @@ function eliminarSalaPublica(idSala) {
 }
 
 // --- LÓGICA DE STORIES (24 HORAS) ---
-
 function subirStory(input) {
     const archivo = input.files[0];
     if (!archivo) return;
@@ -142,18 +147,12 @@ function subirStory(input) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // --- OPTIMIZACIÓN ---
-            // Definimos un tamaño máximo (ej. 500px de ancho)
             const maxAncho = 500;
             const escala = maxAncho / img.width;
             canvas.width = maxAncho;
             canvas.height = img.height * escala;
 
-            // Dibujamos la imagen reescalada
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            // Convertimos a JPEG con calidad 0.4 (40%)
-            // Esto reduce el peso de ~2MB a unos ~30KB o menos
             const fotoOptimizada = canvas.toDataURL('image/jpeg', 0.4);
             
             const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -170,12 +169,11 @@ function subirStory(input) {
     reader.readAsDataURL(archivo);
 }
 
-// --- CARGA Y LIMPIEZA DE STORIES EN TIEMPO REAL ---
 database.ref('stories/').on('value', (snapshot) => {
     const container = document.getElementById('stories-container');
     if (!container) return;
 
-    container.innerHTML = ""; // Limpiamos para redibujar
+    container.innerHTML = ""; 
     const ahora = Date.now();
     const unDiaEnMs = 24 * 60 * 60 * 1000;
 
@@ -183,7 +181,6 @@ database.ref('stories/').on('value', (snapshot) => {
         const datos = child.val();
         const idStory = child.key;
 
-        // Si es menor a 24 horas, la mostramos
         if (ahora - datos.fecha < unDiaEnMs) {
             const storyCircle = document.createElement('div');
             storyCircle.style.textAlign = "center";
@@ -195,8 +192,6 @@ database.ref('stories/').on('value', (snapshot) => {
             `;
             container.appendChild(storyCircle);
         } else {
-            // --- LIMPIEZA AUTOMÁTICA ---
-            // Si ya expiró, la borramos de la base de datos definitivamente
             database.ref(`stories/${idStory}`).remove()
                 .then(() => console.log("Story antigua eliminada del servidor 🌸"))
                 .catch(err => console.error("Error al limpiar:", err));
@@ -210,7 +205,6 @@ function verStory(imgUrl, usuario, idStory) {
     modalStory.className = 'modal';
     modalStory.style.display = 'flex';
     
-    // Si la story es mía, muestro el botón de basura
     const botonBorrar = (usuario === miNombre) 
         ? `<button onclick="borrarStory('${idStory}', this)" style="background:rgba(255,0,0,0.7); color:white; padding:10px; border-radius:50%; position:absolute; bottom:20px; right:20px;">🗑️</button>` 
         : '';
@@ -229,17 +223,15 @@ function verStory(imgUrl, usuario, idStory) {
     document.body.appendChild(modalStory);
 }
 
-// Función para ejecutar el borrado
 function borrarStory(id, btn) {
     if (confirm("¿Quieres eliminar tu story antes de tiempo?")) {
         database.ref(`stories/${id}`).remove();
-        btn.parentElement.parentElement.remove(); // Cierra el modal
+        btn.parentElement.parentElement.remove(); 
     }
 }
 
 // --- LÓGICA DE POSTS (FEED) ---
 
-// 1. Escuchar posts NUEVOS en tiempo real
 database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     if (!cargaInicialCompletada) return; 
     
@@ -254,14 +246,12 @@ database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     }
 });
 
-// 2. Cargar bloques de posts (Paginación/Scroll Infinito)
 function cargarMasPosts() {
     if (cargandoMas) return;
     cargandoMas = true;
 
     let consulta = database.ref('posts/').orderByChild('fecha');
     
-    // Si ya tenemos un post, pedimos los anteriores a ese
     if (ultimoPostFecha) {
         consulta = consulta.endAt(ultimoPostFecha - 1);
     }
@@ -271,7 +261,6 @@ function cargarMasPosts() {
         const posts = [];
 
         snapshot.forEach(child => {
-            // Verificamos si el post ya existe en el DOM para no repetirlo
             if (!document.querySelector(`[data-id="${child.key}"]`)) {
                 posts.push({ id: child.key, ...child.val() });
             }
@@ -289,24 +278,20 @@ function cargarMasPosts() {
             });
             
             feed.appendChild(fragmento);
-            // Actualizamos la fecha del último post del array (que es el más viejo)
             ultimoPostFecha = posts[posts.length - 1].fecha;
         }
         
-        // Importante: resetear el estado para permitir la siguiente carga
         cargandoMas = false;
         cargaInicialCompletada = true;
     });
 }
 
-// 3. Generador de HTML de Post (Mantenida fuera para reusabilidad)
-// --- NUEVA FUNCIÓN PARA EL EDITOR ENRIQUECIDO ---
 function formatear(comando, valor = null) {
     document.execCommand(comando, false, valor);
     document.getElementById('postText').focus();
 }
 
-// --- ACTUALIZACIÓN DEL GENERADOR DE POSTS ---
+// --- GENERADOR DE HTML DE POST ACTUALIZADO CON BADGE DE MODERADOR ---
 function crearElementoPost(id, datos) {
     const fecha = new Date(datos.fecha);
     const fechaFormateada = fecha.toLocaleDateString('es-AR');
@@ -318,7 +303,6 @@ function crearElementoPost(id, datos) {
     postDiv.dataset.id = id;
     postDiv.style.cursor = 'pointer';
     
-    // Al hacer clic en la tarjeta se abre la vista detallada, salvo que toques un botón, input o enlace
     postDiv.onclick = (e) => {
         const elementosIgnorados = ['BUTTON', 'INPUT', 'SPAN', 'STRONG', 'A', 'TEXTAREA'];
         if (!elementosIgnorados.includes(e.target.tagName)) {
@@ -326,6 +310,17 @@ function crearElementoPost(id, datos) {
         }
     };
     
+    // Verificamos de forma dinámica el rol del usuario en la base de datos
+    esModerador(datos.usuario, (esMod) => {
+        const badgeHTML = esMod ? `<span class="badge-moderador" style="background: gold; color: #36454F; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e6b800; display: inline-flex; align-items: center;">⭐ Moderador</span>` : "";
+        
+        // Buscamos el contenedor del header dentro de este post para insertar el badge sin romper el flujo asíncrono
+        const headerBadgeContainer = postDiv.querySelector(`.moderador-container-${id}`);
+        if (headerBadgeContainer) {
+            headerBadgeContainer.innerHTML = badgeHTML;
+        }
+    });
+
     let comentariosHTML = '';
     if (datos.comentarios) {
         Object.keys(datos.comentarios).forEach(comentarioId => {
@@ -348,7 +343,6 @@ function crearElementoPost(id, datos) {
         });
     }
 
-    // Nota: cambiamos datos.mensaje a innerHTML en la renderización del párrafo para que procese las etiquetas <b> y <br>
     postDiv.innerHTML = `
         <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -356,12 +350,12 @@ function crearElementoPost(id, datos) {
                 <strong onclick="event.stopPropagation(); verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
                     ${datos.usuario}
                 </strong>
+                <div class="moderador-container-${id}" style="display: inline-block;"></div> <!-- Aquí caerá la estrella de moderación -->
             </div>
             <button onclick="event.stopPropagation(); borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
         </div>
         <div class="post-body-text" style="margin-top: 10px; word-break: break-word; line-height: 1.5;">${datos.mensaje}</div>
         
-        <!-- Renderizado inteligente: Renderiza Imagen o Video según corresponda -->
         ${datos.imagen ? `<img src="${datos.imagen}" loading="lazy" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
         
         ${datos.video ? `
@@ -393,16 +387,13 @@ function crearElementoPost(id, datos) {
     return postDiv;
 }
 
-// --- LÓGICA DE APERTURA DEL POST DETALLADO ---
 function abrirModalPost(id, datos) {
     const modal = document.getElementById('modalPostDetalle');
     const contenido = document.getElementById('modalPostContenido');
     if (!modal || !contenido) return;
 
-    // Clonamos la estructura visual pero adaptada para apreciarse en grande
     const postClonado = crearElementoPost(id, datos);
     
-    // Removemos el evento de clic de apertura en el clon para evitar bucles
     postClonado.onclick = null;
     postClonado.style.cursor = 'default';
     postClonado.style.boxShadow = 'none';
@@ -419,8 +410,6 @@ function cerrarModalPost() {
     if (modal) modal.style.display = 'none';
 }
 
-// --- REEMPLAZA LA FUNCIÓN DE PUBLICACIÓN PARA LEER EL NUEVO EDITOR ---
-// --- NUEVA FUNCIÓN DE PUBLICACIÓN CON SOPORTE DE VIDEO OPTIMIZADO ---
 function publicar() {
     const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const editor = document.getElementById('postText');
@@ -436,10 +425,8 @@ function publicar() {
         return alert("¡Escribe algo o sube un archivo multimedia! 🌸");
     }
 
-    // Caso 1: Se seleccionó un Video
     if (archivoVideo) {
-        // Validación de optimización por peso (Ej: Máximo 10MB para cuidar tu Firebase)
-        const maxBytes = 50 * 1024 * 1024; // 10MB
+        const maxBytes = 50 * 1024 * 1024; 
         if (archivoVideo.size > maxBytes) {
             return alert("¡El video es demasiado pesado! Por seguridad, sube videos menores a 50MB. 🎥");
         }
@@ -447,24 +434,18 @@ function publicar() {
         const reader = new FileReader();
         reader.onload = function (e) {
             const videoUrl = e.target.result;
-            
-            // Creamos un elemento de video en memoria para verificar la duración
             const videoTemporal = document.createElement('video');
             videoTemporal.src = videoUrl;
             
             videoTemporal.onloadedmetadata = function() {
-                // Optimización por tiempo: Máximo 15 segundos por post
                 if (videoTemporal.duration > 121) { 
                     return alert("¡Video muy largo! Córtalo a 120 segundos o menos para mantener el feed optimizado. ✨");
                 }
-                
-                // Si pasa los filtros, se sube como Base64 de tipo video
                 enviarPost(nombre, texto, "", videoUrl);
             };
         };
         reader.readAsDataURL(archivoVideo);
 
-    // Caso 2: Se seleccionó una Imagen (Tu código optimizado con Canvas)
     } else if (archivoImagen) {
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -484,27 +465,24 @@ function publicar() {
         };
         reader.readAsDataURL(archivoImagen);
         
-    // Caso 3: Sólo Texto
     } else {
         enviarPost(nombre, texto, "", "");
     }
 }
 
-// --- ACTUALIZACIÓN DE ENVIARPOST PARA GUARDAR EL LLAVERO DE VIDEO ---
 function enviarPost(usuario, mensaje, imagenData, videoData) {
     const bioActual = localStorage.getItem('kofy_bio') || "";
     database.ref('posts/').push({
         usuario: usuario,
         mensaje: mensaje,
         imagen: imagenData,
-        video: videoData || "", // Guardamos el video en base64
+        video: videoData || "", 
         avatar: currentAvatarUrl,
         biografia: bioActual,
         fecha: Date.now(),
         likes: 0
     });
     
-    // Limpieza de inputs
     document.getElementById('postText').innerHTML = "";
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
     if (document.getElementById('postVideo')) document.getElementById('postVideo').value = "";
@@ -518,28 +496,24 @@ function publicarComentario(idPost) {
     const textoComentario = input.value.trim();
     if (!textoComentario) return;
 
-    // Guardamos el comentario dentro de la estructura del post en Firebase
     database.ref(`posts/${idPost}/comentarios`).push({
         usuario: miNombre,
         mensaje: textoComentario,
         fecha: Date.now()
     }).then(() => {
-        input.value = ""; // Limpiamos el input
+        input.value = ""; 
     }).catch(err => console.error("Error al comentar:", err));
 }
 
-// --- DETECTAR SCROLL ---
 const observer = new IntersectionObserver((entries) => {
-    // Solo cargamos si el elemento es visible Y no estamos ya cargando algo
     if (entries[0].isIntersecting && !cargandoMas) {
         cargarMasPosts();
     }
 }, { 
-    threshold: 0.5, // Espera a que el sentinel se vea un 50%
-    rootMargin: "100px" // Carga un poquito antes de llegar al final para que sea fluido
+    threshold: 0.5, 
+    rootMargin: "100px" 
 });
 
-// --- INTERACCIONES: LIKES, BORRADO, REPORTES ---
 function enviarLike(idPost) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const postRef = database.ref(`posts/${idPost}`);
@@ -556,20 +530,17 @@ function enviarLike(idPost) {
     });
 }
 
-// Escucha cambios en los posts (por ejemplo, cuando alguien añade un comentario nuevo)
 database.ref('posts/').on('child_changed', (snapshot) => {
     const idPost = snapshot.key;
     const datos = snapshot.val();
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     
-    // 1. Actualizar Likes
     const likesSpan = document.getElementById(`likes-${idPost}`);
     if (likesSpan) likesSpan.innerText = datos.likes || 0;
 
-    // 2. Actualizar Comentarios en tiempo real con opción de borrado y enlace al perfil
     const listaComentarios = document.getElementById(`comments-list-${idPost}`);
     if (listaComentarios) {
-        listaComentarios.innerHTML = ""; // Limpiamos la lista vieja
+        listaComentarios.innerHTML = ""; 
         
         if (datos.comentarios) {
             Object.keys(datos.comentarios).forEach(comentarioId => {
@@ -634,13 +605,6 @@ function reportarPost(idPost, usuario, mensaje) {
     }
 }
 
-// --- VISTA PERFIL Y SEGUIDORES ---
-// --- MODIFICACIÓN EN VISTA PERFIL (script.js) ---
-// --- CAMBIOS EN VISTA PERFIL (script.js) ---
-
-// Variable global para remover la escucha al cerrar el modal
-let estadoPerfilRef = null;
-
 function verPerfil(nombre, avatar, bio) {
     const modal = document.getElementById('modalVistaPerfil');
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -650,11 +614,9 @@ function verPerfil(nombre, avatar, bio) {
     document.getElementById('vistaImg').src = avatar || 'https://i.pravatar.cc/150?u=default';
     document.getElementById('vistaBio').textContent = bio || "Sin biografía aún. ✨";
     
-    // --- LÓGICA DE ESTADO EN LÍNEA (FIREBASE REALTIME) ---
     const txtEstado = document.getElementById('vistaEstado');
     if (txtEstado) {
         const usuarioKeyLimpia = nombre.replace(/[.#$[\]]/g, "_");
-        // Apagamos cualquier escucha previa por seguridad
         if (estadoPerfilRef) estadoPerfilRef.off();
 
         estadoPerfilRef = database.ref(`estado_usuarios/${usuarioKeyLimpia}`);
@@ -663,7 +625,7 @@ function verPerfil(nombre, avatar, bio) {
                 const datosConexion = snapshot.val();
                 if (datosConexion.status === 'online') {
                     txtEstado.textContent = "🟢 En línea";
-                    txtEstado.style.color = "#2ecc71"; // Verde koi dinámico
+                    txtEstado.style.color = "#2ecc71"; 
                 } else if (datosConexion.ultimaConexion) {
                     const fecha = new Date(datosConexion.ultimaConexion);
                     const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
@@ -679,7 +641,6 @@ function verPerfil(nombre, avatar, bio) {
             }
         });
     }
-    // -----------------------------------------------------
 
     const btnSeguir = document.getElementById('btnSeguir');
     const btnChatear = document.getElementById('btnChatear');
@@ -709,27 +670,20 @@ function cerrarVista() {
     const modal = document.getElementById('modalVistaPerfil');
     if (modal) modal.style.display = 'none';
     
-    // Apagamos la escucha en tiempo real del estado al cerrar el modal
     if (estadoPerfilRef) {
         estadoPerfilRef.off();
         estadoPerfilRef = null;
     }
 }
 
-// Nueva función para redireccionar al chat
 function abrirChatPrivado(usuarioDestino) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
-    
-    // Creamos un ID único de chat ordenando los nombres alfabéticamente. 
-    // Así, no importa quién inicie el chat, el ID del canal "Ema y Juan" será siempre el mismo: "Ema_Juan"
     const idsOrdenados = [miNombre.replace(/[.#$[\]]/g, "_"), usuarioDestino.replace(/[.#$[\]]/g, "_")].sort();
     const chatRoomId = `${idsOrdenados[0]}_${idsOrdenados[1]}`;
 
-    // Guardamos temporalmente en el localStorage con quién vamos a hablar para que chats.html lo sepa
     localStorage.setItem('chat_actual_id', chatRoomId);
     localStorage.setItem('chat_actual_destino', usuarioDestino);
 
-    // Redireccionamos a la nueva página
     location.href = 'privchat.html';
 }
 
@@ -759,23 +713,20 @@ function mostrarNotificacion(usuario, mensaje) {
     setTimeout(() => toast.remove(), 4000);
 }
 
-// --- CARGA INICIAL AL CARGAR LA PÁGINA ---
 document.addEventListener('DOMContentLoaded', () => {
     const n = localStorage.getItem('kofy_nombre');
     const b = localStorage.getItem('kofy_bio');
     const a = localStorage.getItem('kofy_avatar');
 
-        if (n) {
+    if (n) {
         document.getElementById('nav-username').textContent = n;
         if(document.getElementById('nombrePerfil')) document.getElementById('nombrePerfil').textContent = n;
         
-        // 1. Escuchar Seguidores en tiempo real
         database.ref(`seguidores/${n}`).on('value', (s) => {
             const c = document.getElementById('misSeguidoresCount');
             if (c) c.textContent = `${s.numChildren()} seguidores 🌸`;
         });
 
-        // 2. Escuchar Seguidos en tiempo real (consultando dónde figura el usuario)
         database.ref('seguidores').on('value', (snapshot) => {
             let contadorSeguidos = 0;
             snapshot.forEach((nodoUsuarioSeguido) => {
@@ -800,15 +751,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarMasPosts();
 });
 
-// --- CARGAR COSMÉTICOS ACTIVOS EN TODAS LAS PÁGINAS EN TIEMPO REAL ---
 const miNombreActual = localStorage.getItem('kofy_nombre') || "@KofyUser";
-const usuarioKeyLimpia = miNombreActual.replace(/[.#$[\\]]/g, "_");
+const usuarioKeyLimpia = miNombreActual.replace(/[.#$[\]]/g, "_");
 
 database.ref(`usuarios_economia/${usuarioKeyLimpia}`).on('value', (snapshot) => {
     const datosEcon = snapshot.val() || {};
     const marcoActivo = datosEcon.marcoActivo || "";
     
-    // 1. Controlar marco grande (si existe en la página actual)
     const elemMarcoGrande = document.getElementById('marcoPerfil');
     if (elemMarcoGrande) {
         if (marcoActivo) {
@@ -819,7 +768,6 @@ database.ref(`usuarios_economia/${usuarioKeyLimpia}`).on('value', (snapshot) => 
         }
     }
 
-    // 2. Controlar marco pequeño del menú superior (si existe en la página actual)
     const elemMarcoNav = document.getElementById('marcoNav');
     if (elemMarcoNav) {
         if (marcoActivo) {
@@ -831,22 +779,15 @@ database.ref(`usuarios_economia/${usuarioKeyLimpia}`).on('value', (snapshot) => 
     }
 });
 
-// --- ESCUCHAR SI LLEGAN MENSAJES PRIVADOS NUEVOS PARA MÍ ---
 database.ref('mensajes_privados/').on('child_changed', (snapshot) => {
     const roomId = snapshot.key;
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
 
-    // Verificamos si esta sala de chat me pertenece (si mi nombre está en el ID de la sala)
     if (roomId.includes(miNombre.replace(/[.#$[\]]/g, "_"))) {
-        
-        // Obtenemos el último mensaje que llegó a esa sala
         database.ref(`mensajes_privados/${roomId}`).limitToLast(1).once('value', (msgSnapshot) => {
             msgSnapshot.forEach((child) => {
                 const datos = child.val();
-                
-                // Si el mensaje NO lo envié yo, significa que me lo enviaron a mí
                 if (datos.remitente !== miNombre) {
-                    // Usamos tu función nativa para avisarle en pantalla
                     mostrarNotificacion(`${datos.remitente} (Privado)`, datos.texto);
                 }
             });
@@ -854,12 +795,11 @@ database.ref('mensajes_privados/').on('child_changed', (snapshot) => {
     }
 });
 
-// --- LÓGICA DEL BUSCADOR DE USUARIOS ---
 function buscarUsuarios(texto) {
     const dropdown = document.getElementById('search-results');
     if (!dropdown) return;
 
-    const queryText = texto.trim(); // Mantenemos el texto original para Firebase
+    const queryText = texto.trim(); 
 
     if (!queryText) {
         dropdown.innerHTML = "";
@@ -867,12 +807,11 @@ function buscarUsuarios(texto) {
         return;
     }
 
-    // Filtramos directamente desde el servidor de Firebase usando el índice de usuario
     database.ref('posts/')
         .orderByChild('usuario')
         .startAt(queryText)
-        .endAt(queryText + "\uf8ff") // Truco de Firebase para buscar usuarios que "empiecen por..."
-        .limitToFirst(10) // Evitamos sobrecargar la interfaz
+        .endAt(queryText + "\uf8ff") 
+        .limitToFirst(10) 
         .once('value').then((snapshot) => {
             const usuariosEncontrados = {};
 
@@ -922,8 +861,6 @@ function buscarUsuarios(texto) {
         });
 }
 
-// --- LÓGICA DE LISTADO DE SEGUIDORES Y SEGUIDOS ---
-
 function abrirModalRelaciones(tipo) {
     const modal = document.getElementById('modalRelaciones');
     const titulo = document.getElementById('tituloRelaciones');
@@ -972,9 +909,7 @@ function abrirModalRelaciones(tipo) {
     }
 }
 
-// Auxiliar para buscar la última foto/bio guardada de un usuario en los posts y armar la fila
 function obtenerYRenderizarItemUsuario(nombreUsuario, contenedorLista) {
-    // Le pedimos a Firebase solo el registro más reciente de este usuario en específico
     database.ref('posts/')
         .orderByChild('usuario')
         .equalTo(nombreUsuario)
@@ -1016,4 +951,3 @@ function cerrarModalRelaciones() {
     const modal = document.getElementById('modalRelaciones');
     if (modal) modal.style.display = 'none';
 }
-
