@@ -5,11 +5,12 @@ let ultimoPostFecha = null;
 let cargandoMas = false;
 let estadoPerfilRef = null;
 
-// --- NUEVA LÓGICA DE ROLES PARA MODERADORES ---
-function esModerador(nombreUsuario, callback) {
+// --- NUEVA LÓGICA DE ROLES GENÉRICA ---
+function obtenerRol(nombreUsuario, callback) {
     const usuarioKey = nombreUsuario.replace(/[.#$[\]]/g, "_");
     database.ref(`usuarios_roles/${usuarioKey}`).once('value').then((snapshot) => {
-        callback(snapshot.val() === 'moderador');
+        // snapshot.val() puede ser 'moderador', 'admin', 'vip', etc.
+        callback(snapshot.val()); 
     });
 }
 
@@ -311,13 +312,38 @@ function crearElementoPost(id, datos) {
     };
     
     // Verificamos de forma dinámica el rol del usuario en la base de datos
-    esModerador(datos.usuario, (esMod) => {
-        const badgeHTML = esMod ? `<span class="badge-moderador" style="background: gold; color: #36454F; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e6b800; display: inline-flex; align-items: center;">⭐ Moderador</span>` : "";
-        
-        // Buscamos el contenedor del header dentro de este post para insertar el badge sin romper el flujo asíncrono
-        const headerBadgeContainer = postDiv.querySelector(`.moderador-container-${id}`);
-        if (headerBadgeContainer) {
-            headerBadgeContainer.innerHTML = badgeHTML;
+        // Verificamos de forma dinámica el rol del usuario en la base de datos
+    obtenerRol(datos.usuario, (rol) => {
+        if (rol) {
+            // Capitalizamos la primera letra para que quede bonito (ej: "vip" -> "Vip")
+            const rolFormateado = rol.charAt(0).toUpperCase() + rol.slice(1);
+            
+            // Definimos colores dinámicos según el tipo de rol
+            let background = "#e6b800"; // Default dorado
+            let color = "#36454F";
+            let icono = "⭐";
+
+            if (rol.toLowerCase() === 'admin') {
+                background = "#e74c3c"; // Rojo para admins
+                color = "#fff";
+                icono = "🛡️";
+            } else if (rol.toLowerCase() === 'vip') {
+                background = "#9b59b6"; // Morado para VIPs
+                color = "#fff";
+                icono = "👑";
+            } else if (rol.toLowerCase() === 'team') {
+                background = "gold";
+                color = "#36454F";
+                icono = "⭐";
+            }
+
+            const badgeHTML = `<span class="badge-rol" style="background: ${background}; color: ${color}; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 3px;">${icono} ${rolFormateado}</span>`;
+            
+            // Insertamos el badge dinámicamente en el contenedor correspondiente
+            const headerBadgeContainer = postDiv.querySelector(`.rol-container-${id}`);
+            if (headerBadgeContainer) {
+                headerBadgeContainer.innerHTML = badgeHTML;
+            }
         }
     });
 
@@ -610,14 +636,22 @@ function verPerfil(nombre, avatar, bio) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     if (!modal) return;
 
-    // Limpiamos cualquier estrella previa para que no se duplique o se quede guardada al cambiar de perfil
+    // Limpiamos cualquier badge previo
     const contenedorNombre = document.getElementById('vistaNombre');
     contenedorNombre.innerHTML = nombre; 
 
-    // Verificamos si el perfil que estamos viendo es moderador
-    esModerador(nombre, (esMod) => {
-        if (esMod) {
-            contenedorNombre.innerHTML = `${nombre} <span style="background: gold; color: #36454F; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; margin-left: 6px; border: 1px solid #e6b800; display: inline-block; vertical-align: middle;">⭐ Moderador</span>`;
+    // Verificamos el rol e inyectamos el badge si existe
+    obtenerRol(nombre, (rol) => {
+        if (rol) {
+            const rolFormateado = rol.charAt(0).toUpperCase() + rol.slice(1);
+            let background = "gold";
+            let color = "#36454F";
+            let icono = "⭐";
+
+            if (rol.toLowerCase() === 'admin') { background = "#e74c3c"; color = "#fff"; icono = "🛡️"; }
+            else if (rol.toLowerCase() === 'vip') { background = "#9b59b6"; color = "#fff"; icono = "👑"; }
+
+            contenedorNombre.innerHTML = `${nombre} <span style="background: ${background}; color: ${color}; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; margin-left: 6px; display: inline-block; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1);">${icono} ${rolFormateado}</span>`;
         }
     });
 
