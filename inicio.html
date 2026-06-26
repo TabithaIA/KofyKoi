@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zerv0 Splash Screen</title>
+    <style>
+        /* Reset básico y configuración de la pantalla */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0711;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Contenedor móvil para simular la app */
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            background: radial-gradient(circle at 20% 20%, #2a113b 0%, #0b0711 60%),
+                        radial-gradient(circle at 90% 50%, #200d2b 0%, #0b0711 50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        /* Contenedor central (Avatar + Logo) */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* Estilo del Avatar Circular */
+        .avatar-container {
+            position: relative;
+            width: 130px;
+            height: 130px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+        }
+
+        /* Destellos mágicos junto al avatar */
+        .sparkles {
+            position: absolute;
+            top: 10px;
+            right: -15px;
+            font-size: 24px;
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.8);
+            user-select: none;
+        }
+
+        /* Logo de Zerv0 */
+        .logo {
+            width: 140px;
+            height: auto;
+            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5));
+        }
+
+        /* Texto del pie de página */
+        .footer-text {
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .footer-text h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            opacity: 0.95;
+        }
+
+        .footer-text p {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .preloader-frame {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="main-content">
+            <div class="avatar-container">
+                <img src="favicon.png" alt="Avatar" class="avatar">
+                <div class="sparkles">✦</div>
+            </div>
+            
+            <img src="favicon-2.png" alt="Zerv0 Logo" class="logo">
+        </div>
+
+        <div class="footer-text">
+            <h2>Chat y Amigos</h2>
+            <p>Crea y Comparte</p>
+        </div>
+
+    </div>
+
+    <iframe src="index.html" class="preloader-frame"></iframe>
+
+    <script>
+        setTimeout(function() {
+            window.location.href = "index.html";
+        }, 5000);
+    </script>
+
+</body>
+</html>
+
