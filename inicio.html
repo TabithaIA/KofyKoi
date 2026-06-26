@@ -3,146 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zerv0 Splash Screen</title>
-    <style>
-        /* Reset básico y configuración de la pantalla */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <title>KofyKoi - Chat y Amigos</title>
+    <link rel="icon" type="image/png" href="favicon.png">
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0b0711;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+<!-- Vincular el Manifest -->
+<link rel="manifest" href="/manifest.json">
 
-        /* Contenedor móvil para simular la app */
-        .container {
-            position: relative;
-            width: 100%;
-            max-width: 450px;
-            height: 100vh;
-            background: radial-gradient(circle at 20% 20%, #2a113b 0%, #0b0711 60%),
-                        radial-gradient(circle at 90% 50%, #200d2b 0%, #0b0711 50%);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 60px 20px;
-            text-align: center;
-        }
+<!-- Script para registrar el Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('¡Service Worker registrado con éxito!', reg))
+        .catch(err => console.warn('Error al registrar el Service Worker', err));
+    });
+  }
+</script>
 
-        /* Contenedor central (Avatar + Logo) */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 24px;
-        }
-
-        /* Estilo del Avatar Circular */
-        .avatar-container {
-            position: relative;
-            width: 130px;
-            height: 130px;
-        }
-
-        .avatar {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 3px solid #ffffff;
-            object-fit: cover;
-            box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
-        }
-
-        /* Destellos mágicos junto al avatar */
-        .sparkles {
-            position: absolute;
-            top: 10px;
-            right: -15px;
-            font-size: 24px;
-            color: #ffffff;
-            text-shadow: 0 0 8px rgba(255,255,255,0.8);
-            user-select: none;
-        }
-
-        /* Logo de Zerv0 */
-        .logo {
-            width: 140px;
-            height: auto;
-            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5));
-        }
-
-        /* Texto del pie de página */
-        .footer-text {
-            color: #ffffff;
-            margin-bottom: 20px;
-        }
-
-        .footer-text h2 {
-            font-size: 1.1rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-            opacity: 0.95;
-        }
-
-        .footer-text p {
-            font-size: 1.3rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .preloader-frame {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
-        
-        <div class="main-content">
-            <div class="avatar-container">
-                <img src="favicon.png" alt="Avatar" class="avatar">
-                <div class="sparkles">✦</div>
-            </div>
-            
-            <img src="favicon-2.png" alt="Zerv0 Logo" class="logo">
+    <header>
+    <a href="notificaciones.html">
+        <p style="object-fit: cover;">🔔</p>
+    </a>
+    <div class="logo">KofyKoi</div>
+    
+    <div class="header-user">
+        <span id="nav-username">@KofyUser</span>
+        <div style="position: relative; width: 40px; height: 40px;">
+            <a href="perfil.html">
+            <img src="https://i.pravatar.cc/150?u=kofy" class="avatar-sm" id="imgNav" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            <img id="marcoNav" src="" style="display: none; position: absolute; top: -2px; left: -2px; width: 44px; height: 44px; pointer-events: none; z-index: 10;">
         </div>
-
-        <div class="footer-text">
-            <h2>Chat y Amigos</h2>
-            <p>Crea y Comparte</p>
-        </div>
+            </a>
 
     </div>
+</header>
 
-    <iframe src="index.html" class="preloader-frame"></iframe>
+<div class="container">
+        <aside>
+            <div class="card">
+                <h4>Para mantener el orden:</h4>
+                <ul style="list-style: none; margin-top: 10px; font-size: 0.85rem;">
+                    <li>• Se respetuoso con los demás miembros.</li>
+                    <li>• Recuerda tomar mucha agua.</li>
+                    <li>• No brindes información delicada.</li>
+                    <li>• No hagas spam.</li>
+                    <li>• Reporta usuarios inadecuados para la plataforma.</li>
+                    <li>• Vuelve cada dia para recibir recompensas.</li>
+                    <li>• Revisa constantemente la "🔔".</li>
+                </ul>
+            </div>
+        </aside>
 
-    <script>
-        setTimeout(function() {
-            window.location.href = "index.html";
-        }, 5000);
-    </script>
+                <div class="search-container" style="position: relative; width: 40%; max-width: 300px;">
+        <input type="text" id="searchUser" placeholder="🔍 Buscar usuario" oninput="buscarUsuarios(this.value)" style="width: 100%; padding: 6px 12px; border-radius: 15px; border: none; font-size: 0.85rem; font-family: inherit;">
+        <div id="search-results" class="search-results-dropdown"></div>
+    </div>
 
+                <main>
+            <div class="card" style="padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h5 style="font-family: 'Quicksand', sans-serif; font-weight: 600; color: var(--morado-deep); margin: 0;">Salas Públicas 🗺️</h5>
+                    <button class="btn-main" onclick="crearSalaPublica()" style="padding: 5px 12px; font-size: 0.75rem; border-radius: 12px;">+ Publicar mi Sala</button>
+                </div>
+                <div id="rooms-container" class="slider-horizontal">
+                    </div>
+            </div>
+
+            <div class="card" style="display: flex; gap: 15px; overflow-x: auto; padding: 15px; align-items: center;">
+                <div id="add-story" onclick="document.getElementById('storyInput').click()" style="cursor: pointer; text-align: center;">
+                    <div class="avatar-sm" style="background: var(--rosa); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--morado-deep);">
+                        <span>+</span>
+                    </div>
+                    <small>Tu Story</small>
+                    <input type="file" id="storyInput" accept="image/*" style="display: none;" onchange="subirStory(this)">
+                </div>
+                <div id="stories-container" style="display: flex; gap: 15px;"></div>
+            </div>
+
+            <div class="card">
+            <div class="slider-horizontal">
+                <button class="nav-item" onclick="location.href='match.html'">
+        <span>💕</span>
+        <small>Match por Texto</small>
+    </button>
+                <button class="nav-item" onclick="location.href='botellas.html'">
+        <span>🍾</span>
+        <small>Botellas Conectadas</small>
+    </button>
+            </div>
+            </div>
+
+            <!-- REEMPLAZA LA CARD DE PUBLICACIÓN CLÁSICA POR ESTA: -->
+<div class="card">
+    <!-- Barra de herramientas para el editor -->
+    <div class="editor-toolbar" style="display: flex; gap: 8px; margin-bottom: 8px; border-bottom: 1px dashed var(--rosa); padding-bottom: 8px;">
+        <button class="btn-tool" onclick="formatear('bold')" title="Negrita" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo); color: var(--morado-deep);"><b>B</b></button>
+        <button class="btn-tool" onclick="formatear('italic')" title="Itálica" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo); color: var(--morado-deep);"><i>I</i></button>
+        <button class="btn-tool" onclick="formatear('insertUnorderedList')" title="Lista" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo); color: var(--morado-deep);">• Lista</button>
+        <button class="btn-tool" onclick="formatear('insertText', '🌸')" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo);">🌸</button>
+        <button class="btn-tool" onclick="formatear('insertText', '✨')" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo);">✨</button>
+    </div>
+    
+    <!-- Este es el nuevo editor enriquecido que permite saltos de línea y estilos -->
+    <div id="postText" contenteditable="true" placeholder="¿Qué hay de nuevo en tu mundo koi?" style="width: 100%; min-height: 80px; max-height: 200px; overflow-y: auto; border: 2px solid var(--azul-claro); border-radius: 15px; padding: 15px; font-family: inherit; outline: none; background: var(--blanco); text-align: left;"></div>
+    
+    <div class="post-options" style="margin-top: 10px;">
+    <!-- Inputs ocultos para archivos -->
+    <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
+    <input type="file" id="postVideo" accept="video/*" style="display: none;" onchange="console.log('Video seleccionado')">
+    
+    <div style="display: flex; gap: 8px;">
+        <button class="btn-img" onclick="document.getElementById('postImage').click()">Añadir Foto 📸</button>
+        <button class="btn-img" style="background: var(--azul-claro);" onclick="document.getElementById('postVideo').click()">Añadir Video 🎥</button>
+    </div>
+    <button class="btn-main" onclick="publicar()">Publicar</button>
+</div>
+</div>
+
+<!-- ========================================================== -->
+<!-- AGREGA ESTE NUEVO MODAL AL FINAL DEL ARCHIVO (Antes de </body>) -->
+<!-- ========================================================== -->
+<div id="modalPostDetalle" class="modal" onclick="if(event.target === this) cerrarModalPost()">
+    <div class="modal-content" style="width: 90%; max-width: 550px; text-align: left; max-height: 85vh; overflow-y: auto; padding: 20px;">
+        <span onclick="cerrarModalPost()" style="float: right; font-size: 1.8rem; cursor: pointer; color: var(--morado-deep); font-weight: bold; line-height: 1;">&times;</span>
+        <div id="modalPostContenido"></div>
+    </div>
+</div>
+            <div class="kofy-post" id="feed-container">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+</div>
+            
+            <div id="sentinel" style="height: 20px;"></div>
+        </main>
+
+        <!-- ========================================================== -->
+<!-- MODAL DE RELACIONES (SEGUIDORES / SEGUIDOS) -->
+<!-- ========================================================== -->
+<div id="modalRelaciones" class="modal" onclick="if(event.target === this) cerrarModalRelaciones()">
+    <div class="modal-content" style="width: 90%; max-width: 400px; text-align: left; max-height: 80vh; overflow-y: auto; padding: 20px;">
+        <span onclick="cerrarModalRelaciones()" style="float: right; font-size: 1.8rem; cursor: pointer; color: var(--morado-deep); font-weight: bold; line-height: 1;">&times;</span>
+        <h3 id="tituloRelaciones" style="color: var(--morado-deep); margin-bottom: 15px; font-family: 'Quicksand', sans-serif;">🌸</h3>
+        <div id="listaRelaciones" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Los usuarios se cargarán dinámicamente aquí desde script.js -->
+        </div>
+    </div>
+</div>
+
+
+    <div id="modalPerfil" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--morado-deep)">Configurar Perfil 🌸</h3>
+            <br>
+            <img src="https://i.pravatar.cc/150?u=kofy" id="previewPerfil" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+            <br>
+            <input type="file" id="editAvatar" accept="image/*" style="display: none;" onchange="previewImagen(this)">
+            <button class="btn-img" style="margin: 10px 0;" onclick="document.getElementById('editAvatar').click()">Cambiar Foto de Perfil</button>
+            
+            <input type="text" id="editNombre" placeholder="Nombre de usuario">
+            <textarea id="editBio" placeholder="Tu bio..." rows="3" style="border: 1px solid #ddd;"></textarea>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-img" onclick="cerrarModal()" style="background: #eee;">Cancelar</button>
+                <button class="btn-main" onclick="guardarPerfil()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+    <button class="nav-item" onclick="location.href='chats.html'">
+        <span>💬</span>
+        <small>Chats</small>
+    </button>
+
+    <button class="nav-item main-btn" onclick="location.href='inicio.html'">
+        <span>🏠</span>
+        <small>Inicio</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='tienda.html'">
+        <span>🏪</span>
+        <small>Tienda</small>
+    </button>
+
+    <button class="nav-item" onclick="location.href='datos.html'">
+        <span>❕</span>
+        <small>Info</small>
+    </button>
+</nav>
+
+        <div id="modalVistaPerfil" class="modal">
+    <div class="modal-content">
+        <img src="" id="vistaImg" class="avatar-lg">
+        <h2 id="vistaNombre" style="margin-top:10px;"></h2>
+        
+        <p id="vistaEstado" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; color: gray;">Desconectado 💤</p>
+        
+        <p id="countSeguidores" style="font-weight: bold; color: var(--morado-deep); margin-bottom: 10px;">0 seguidores</p>
+        
+        <p id="vistaBio" style="font-style: italic; color: gray; margin: 15px 0;"></p>
+        
+        <button id="btnSeguir" class="btn-main" onclick="seguirUsuario(document.getElementById('vistaNombre').textContent)">
+            Seguir 🌸
+        </button>
+
+        <button id="btnChatear" class="btn-main" style="margin-top: 10px; background: var(--azul-claro); color: var(--oscuro-suave);">
+            Enviar Mensaje 💬
+        </button>
+        
+        <button class="btn-img" onclick="cerrarVista()" style="margin-top: 10px;">Cerrar</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
+<script>
+  // Tu configuración de KofyKoi
+    const firebaseConfig = {
+    apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
+    authDomain: "kofikoi.firebaseapp.com",
+    databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/", // <--- AGREGA ESTA LÍNEA AQUÍ
+    projectId: "kofikoi",
+    storageBucket: "kofikoi.firebasestorage.app",
+    messagingSenderId: "27280210890",
+    appId: "1:27280210890:web:354c9bf51bfcb6b438ad33",
+    measurementId: "G-P7KFPMFHHW"
+  };
+
+
+  // Inicializamos Firebase
+  firebase.initializeApp(firebaseConfig);
+  
+  // Esta es la variable mágica que usaremos en script.js
+  const database = firebase.database();
+</script>
+
+    <script src="script.js"></script>
 </body>
 </html>
-

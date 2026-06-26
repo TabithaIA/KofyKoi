@@ -6,10 +6,8 @@
     <title>KofyKoi - Chat y Amigos</title>
     <link rel="icon" type="image/png" href="favicon.png">
 
-<!-- Vincular el Manifest -->
 <link rel="manifest" href="/manifest.json">
 
-<!-- Script para registrar el Service Worker -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -22,9 +20,122 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        .splash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: #0b0711;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999; /* Por encima de cualquier modal o nav */
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .splash-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            background: radial-gradient(circle at 20% 20%, #2a113b 0%, #0b0711 60%),
+                        radial-gradient(circle at 90% 50%, #200d2b 0%, #0b0711 50%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 20px;
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .splash-main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .splash-avatar-container {
+            position: relative;
+            width: 130px;
+            height: 130px;
+        }
+
+        .splash-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+        }
+
+        .splash-sparkles {
+            position: absolute;
+            top: 10px;
+            right: -15px;
+            font-size: 24px;
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.8);
+            user-select: none;
+        }
+
+        .splash-logo {
+            width: 140px;
+            height: auto;
+            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5));
+        }
+
+        .splash-footer-text {
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .splash-footer-text h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            opacity: 0.95;
+        }
+
+        .splash-footer-text p {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Ocultar la pantalla deslizándola hacia arriba */
+        .splash-hidden {
+            opacity: 0;
+            transform: translateY(-100vh);
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 
+    <div id="splash-screen" class="splash-overlay">
+        <div class="splash-container">
+            <div class="splash-main-content">
+                <div class="splash-avatar-container">
+                    <img src="favicon.png" alt="Avatar" class="splash-avatar">
+                    <div class="splash-sparkles">✦</div>
+                </div>
+                <img src="favicon-2.png" alt="KofyKoi Logo" class="splash-logo">
+            </div>
+            <div class="splash-footer-text">
+                <h2>Chat y Amigos</h2>
+                <p>Crea y Comparte</p>
+            </div>
+        </div>
+    </div>
     <header>
     <a href="notificaciones.html">
         <p style="object-fit: cover;">🔔</p>
@@ -98,9 +209,7 @@
             </div>
             </div>
 
-            <!-- REEMPLAZA LA CARD DE PUBLICACIÓN CLÁSICA POR ESTA: -->
 <div class="card">
-    <!-- Barra de herramientas para el editor -->
     <div class="editor-toolbar" style="display: flex; gap: 8px; margin-bottom: 8px; border-bottom: 1px dashed var(--rosa); padding-bottom: 8px;">
         <button class="btn-tool" onclick="formatear('bold')" title="Negrita" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo); color: var(--morado-deep);"><b>B</b></button>
         <button class="btn-tool" onclick="formatear('italic')" title="Itálica" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo); color: var(--morado-deep);"><i>I</i></button>
@@ -109,11 +218,9 @@
         <button class="btn-tool" onclick="formatear('insertText', '✨')" style="padding: 4px 8px; font-size: 0.85rem; background: var(--fondo);">✨</button>
     </div>
     
-    <!-- Este es el nuevo editor enriquecido que permite saltos de línea y estilos -->
     <div id="postText" contenteditable="true" placeholder="¿Qué hay de nuevo en tu mundo koi?" style="width: 100%; min-height: 80px; max-height: 200px; overflow-y: auto; border: 2px solid var(--azul-claro); border-radius: 15px; padding: 15px; font-family: inherit; outline: none; background: var(--blanco); text-align: left;"></div>
     
     <div class="post-options" style="margin-top: 10px;">
-    <!-- Inputs ocultos para archivos -->
     <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="console.log('Imagen seleccionada')">
     <input type="file" id="postVideo" accept="video/*" style="display: none;" onchange="console.log('Video seleccionado')">
     
@@ -125,9 +232,6 @@
 </div>
 </div>
 
-<!-- ========================================================== -->
-<!-- AGREGA ESTE NUEVO MODAL AL FINAL DEL ARCHIVO (Antes de </body>) -->
-<!-- ========================================================== -->
 <div id="modalPostDetalle" class="modal" onclick="if(event.target === this) cerrarModalPost()">
     <div class="modal-content" style="width: 90%; max-width: 550px; text-align: left; max-height: 85vh; overflow-y: auto; padding: 20px;">
         <span onclick="cerrarModalPost()" style="float: right; font-size: 1.8rem; cursor: pointer; color: var(--morado-deep); font-weight: bold; line-height: 1;">&times;</span>
@@ -143,15 +247,11 @@
             <div id="sentinel" style="height: 20px;"></div>
         </main>
 
-        <!-- ========================================================== -->
-<!-- MODAL DE RELACIONES (SEGUIDORES / SEGUIDOS) -->
-<!-- ========================================================== -->
 <div id="modalRelaciones" class="modal" onclick="if(event.target === this) cerrarModalRelaciones()">
     <div class="modal-content" style="width: 90%; max-width: 400px; text-align: left; max-height: 80vh; overflow-y: auto; padding: 20px;">
         <span onclick="cerrarModalRelaciones()" style="float: right; font-size: 1.8rem; cursor: pointer; color: var(--morado-deep); font-weight: bold; line-height: 1;">&times;</span>
         <h3 id="tituloRelaciones" style="color: var(--morado-deep); margin-bottom: 15px; font-family: 'Quicksand', sans-serif;">🌸</h3>
         <div id="listaRelaciones" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Los usuarios se cargarán dinámicamente aquí desde script.js -->
         </div>
     </div>
 </div>
@@ -182,7 +282,7 @@
         <small>Chats</small>
     </button>
 
-    <button class="nav-item main-btn" onclick="location.href='index.html'">
+    <button class="nav-item main-btn" onclick="location.href='inicio.html'">
         <span>🏠</span>
         <small>Inicio</small>
     </button>
@@ -225,11 +325,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
 <script>
-  // Tu configuración de KofyKoi
     const firebaseConfig = {
     apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
     authDomain: "kofikoi.firebaseapp.com",
-    databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/", // <--- AGREGA ESTA LÍNEA AQUÍ
+    databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
     projectId: "kofikoi",
     storageBucket: "kofikoi.firebasestorage.app",
     messagingSenderId: "27280210890",
@@ -237,14 +336,22 @@
     measurementId: "G-P7KFPMFHHW"
   };
 
-
-  // Inicializamos Firebase
   firebase.initializeApp(firebaseConfig);
-  
-  // Esta es la variable mágica que usaremos en script.js
   const database = firebase.database();
 </script>
+
+    <script>
+        setTimeout(function() {
+            const splash = document.getElementById('splash-screen');
+            if(splash) {
+                splash.classList.add('splash-hidden');
+                // Opcional: Eliminarlo por completo del HTML tras la animación para ahorrar memoria
+                setTimeout(() => splash.remove(), 800);
+            }
+        }, 10000); // 3.5 segundos de espera
+    </script>
 
     <script src="script.js"></script>
 </body>
 </html>
+
