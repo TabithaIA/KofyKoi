@@ -1,41 +1,20 @@
-// ==========================================
-// 1. INICIALIZACIÓN Y PERSISTENCIA OFFLINE
-// ==========================================
-
-// Activar la persistencia local inmediatamente para que cargue al instante
-firebase.database().enablePersistence()
-    .then(() => {
-        console.log("¡Persistencia local activada correctamente en KofyKoi! 🌸");
-    })
-    .catch((err) => {
-        if (err.code == 'failed-precondition') {
-            console.warn("La persistencia falló: múltiples pestañas abiertas simultáneamente.");
-        } else if (err.code == 'unimplemented') {
-            console.warn("El navegador actual no soporta persistencia local.");
-        } else {
-            console.warn("No se pudo activar la persistencia local:", err.code);
-        }
-    });
-
-// ==========================================
-// 2. VARIABLES GLOBALES Y ESTADO
-// ==========================================
+// --- VARIABLES GLOBALES Y ESTADO ---
 let currentAvatarUrl = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
 let cargaInicialCompletada = false;
 let ultimoPostFecha = null;
 let cargandoMas = false;
 let estadoPerfilRef = null;
 
-// ==========================================
-// 3. LÓGICA DE ROLES Y NOTIFICACIONES
-// ==========================================
+// --- NUEVA LÓGICA DE ROLES GENÉRICA ---
 function obtenerRol(nombreUsuario, callback) {
     const usuarioKey = nombreUsuario.replace(/[.#$[\]]/g, "_");
     database.ref(`usuarios_roles/${usuarioKey}`).once('value').then((snapshot) => {
-        callback(snapshot.val()); // Retorna 'moderador', 'admin', 'vip', etc.
+        // snapshot.val() puede ser 'moderador', 'admin', 'vip', etc.
+        callback(snapshot.val()); 
     });
 }
 
+// --- CONFIGURACIÓN DE NOTIFICACIONES ---
 if ('Notification' in window && 'serviceWorker' in navigator) {
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
@@ -45,9 +24,7 @@ if ('Notification' in window && 'serviceWorker' in navigator) {
     });
 }
 
-// ==========================================
-// 4. GESTIÓN DEL PERFIL DE USUARIO
-// ==========================================
+// --- LÓGICA DE PERFIL ---
 function previewImagen(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -55,7 +32,6 @@ function previewImagen(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-window.previewImagen = previewImagen;
 
 function abrirModal() {
     const modal = document.getElementById('modalPerfil');
@@ -66,13 +42,11 @@ function abrirModal() {
         document.getElementById('previewPerfil').src = currentAvatarUrl;
     }
 }
-window.abrirModal = abrirModal;
 
 function cerrarModal() {
     const modal = document.getElementById('modalPerfil');
     if (modal) modal.style.display = 'none';
 }
-window.cerrarModal = cerrarModal;
 
 function guardarPerfil() {
     currentAvatarUrl = document.getElementById('previewPerfil').src;
@@ -92,11 +66,8 @@ function guardarPerfil() {
 
     cerrarModal();
 }
-window.guardarPerfil = guardarPerfil;
 
-// ==========================================
-// 5. LÓGICA DE SALAS PÚBLICAS RECURRENTES
-// ==========================================
+// --- LÓGICA DE SALAS PÚBLICAS (DURAN PARA SIEMPRE) ---
 function crearSalaPublica() {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const nombreSala = prompt("¿Qué nombre o temática tendrá tu sala pública? 💬");
@@ -112,14 +83,12 @@ function crearSalaPublica() {
         alert("¡Tu sala ya es pública para toda la comunidad! ✨");
     }).catch(err => console.error("Error al crear sala:", err));
 }
-window.crearSalaPublica = crearSalaPublica;
 
 function irASalaPublicaPorCodigo(codigoSala) {
     if (!codigoSala) return;
     localStorage.setItem('codigo_sala_autostart', codigoSala.trim());
     location.href = 'chats.html';
 }
-window.irASalaPublicaPorCodigo = irASalaPublicaPorCodigo;
 
 database.ref('salas_publicas/').on('value', (snapshot) => {
     const container = document.getElementById('rooms-container');
@@ -165,11 +134,8 @@ function eliminarSalaPublica(idSala) {
             .catch(err => console.error("Error al retirar sala:", err));
     }
 }
-window.eliminarSalaPublica = eliminarSalaPublica;
 
-// ==========================================
-// 6. LÓGICA DE STORIES (DURACIÓN DE 24 HORAS)
-// ==========================================
+// --- LÓGICA DE STORIES (24 HORAS) ---
 function subirStory(input) {
     const archivo = input.files[0];
     if (!archivo) return;
@@ -203,7 +169,6 @@ function subirStory(input) {
     };
     reader.readAsDataURL(archivo);
 }
-window.sububirStory = subirStory;
 
 database.ref('stories/').on('value', (snapshot) => {
     const container = document.getElementById('stories-container');
@@ -258,7 +223,6 @@ function verStory(imgUrl, usuario, idStory) {
     `;
     document.body.appendChild(modalStory);
 }
-window.verStory = verStory;
 
 function borrarStory(id, btn) {
     if (confirm("¿Quieres eliminar tu story antes de tiempo?")) {
@@ -266,11 +230,9 @@ function borrarStory(id, btn) {
         btn.parentElement.parentElement.remove(); 
     }
 }
-window.borrarStory = borrarStory;
 
-// ==========================================
-// 7. LÓGICA DE POSTS Y SINCRONIZACIÓN EN TIEMPO REAL
-// ==========================================
+// --- LÓGICA DE POSTS (FEED) ---
+
 database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     if (!cargaInicialCompletada) return; 
     
@@ -285,65 +247,12 @@ database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     }
 });
 
-// Listener fundamental ANTIFANTASMA: detecta cambios locales/remotos inmediatamente
-database.ref('posts/').on('child_changed', (snapshot) => {
-    const idPost = snapshot.key;
-    const datos = snapshot.val();
-    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
-    
-    const postDivExistente = document.querySelector(`[data-id="${idPost}"]`);
-    if (postDivExistente && (datos.eliminado || datos.status === "deleted")) {
-        postDivExistente.remove();
-        return;
-    }
-
-    const likesSpan = document.getElementById(`likes-${idPost}`);
-    if (likesSpan) likesSpan.innerText = datos.likes || 0;
-
-    const listaComentarios = document.getElementById(`comments-list-${idPost}`);
-    if (listaComentarios) {
-        listaComentarios.innerHTML = ""; 
-        
-        if (datos.comentarios) {
-            Object.keys(datos.comentarios).forEach(comentarioId => {
-                const c = datos.comentarios[comentarioId];
-                const puedeBorrar = (c.usuario === miNombre || datos.usuario === miNombre);
-                const botonBorrarC = puedeBorrar 
-                    ? `<button onclick="borrarComentario('${idPost}', '${comentarioId}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem; margin-left:auto;">🗑️</button>` 
-                    : '';
-
-                const item = document.createElement('div');
-                item.className = 'comment-item';
-                item.style.display = 'flex';
-                item.style.alignItems = 'center';
-                item.style.justifyContent = 'space-between';
-                item.style.gap = '10px';
-                
-                item.innerHTML = `
-                    <div>
-                        <strong onclick="verPerfil('${c.usuario}', '', '')" style="cursor:pointer; color:var(--morado-deep)">
-                            ${c.usuario}
-                        </strong>: ${c.mensaje}
-                    </div>
-                    ${botonBorrarC}
-                `;
-                listaComentarios.appendChild(item);
-            });
-            listaComentarios.scrollTop = listaComentarios.scrollHeight;
-        }
-    }
-});
-
-database.ref('posts/').on('child_removed', (snapshot) => {
-    const el = document.querySelector(`[data-id="${snapshot.key}"]`);
-    if (el) el.remove();
-});
-
 function cargarMasPosts() {
     if (cargandoMas) return;
     cargandoMas = true;
 
     let consulta = database.ref('posts/').orderByChild('fecha');
+    
     if (ultimoPostFecha) {
         consulta = consulta.endAt(ultimoPostFecha - 1);
     }
@@ -353,14 +262,14 @@ function cargarMasPosts() {
         const posts = [];
 
         snapshot.forEach(child => {
-            const datosPost = child.val();
-            if (!document.querySelector(`[data-id="${child.key}"]`) && !datosPost.eliminado && datosPost.status !== "deleted") {
-                posts.push({ id: child.key, ...datosPost });
+            if (!document.querySelector(`[data-id="${child.key}"]`)) {
+                posts.push({ id: child.key, ...child.val() });
             }
         });
 
         if (posts.length > 0) {
             if (!ultimoPostFecha) feed.innerHTML = ""; 
+            
             posts.reverse(); 
             const fragmento = document.createDocumentFragment();
             
@@ -377,17 +286,13 @@ function cargarMasPosts() {
         cargaInicialCompletada = true;
     });
 }
-window.cargarMasPosts = cargarMasPosts;
 
 function formatear(comando, valor = null) {
     document.execCommand(comando, false, valor);
     document.getElementById('postText').focus();
 }
-window.formatear = formatear;
 
-// ==========================================
-// 8. RENDERIZADOR DE ESTRUCTURA DE POSTS (CON ROLES)
-// ==========================================
+// --- GENERADOR DE HTML DE POST ACTUALIZADO CON BADGE DE MODERADOR ---
 function crearElementoPost(id, datos) {
     const fecha = new Date(datos.fecha);
     const fechaFormateada = fecha.toLocaleDateString('es-AR');
@@ -406,20 +311,39 @@ function crearElementoPost(id, datos) {
         }
     };
     
+    // Verificamos de forma dinámica el rol del usuario en la base de datos
+        // Verificamos de forma dinámica el rol del usuario en la base de datos
     obtenerRol(datos.usuario, (rol) => {
         if (rol) {
+            // Capitalizamos la primera letra para que quede bonito (ej: "vip" -> "Vip")
             const rolFormateado = rol.charAt(0).toUpperCase() + rol.slice(1);
-            let background = "#e6b800"; 
+            
+            // Definimos colores dinámicos según el tipo de rol
+            let background = "#e6b800"; // Default dorado
             let color = "#36454F";
             let icono = "⭐";
 
-            if (rol.toLowerCase() === 'admin') { background = "#e74c3c"; color = "#fff"; icono = "🛡️"; }
-            else if (rol.toLowerCase() === 'vip') { background = "gold"; color = "#fff"; icono = "👑"; }
-            else if (rol.toLowerCase() === 'team') { background = "#9b59b6"; color = "#fff"; icono = "⭐"; }
+            if (rol.toLowerCase() === 'admin') {
+                background = "#e74c3c"; // Rojo para admins
+                color = "#fff";
+                icono = "🛡️";
+            } else if (rol.toLowerCase() === 'vip') {
+                background = "gold"; // Dorado para VIPs
+                color = "#fff";
+                icono = "👑";
+            } else if (rol.toLowerCase() === 'team') {
+                background = "#9b59b6";
+                color = "#36454F";
+                icono = "⭐";
+            }
 
-            const badgeHTML = `<span class="badge-rol" style="background: ${background}; color: ${color}; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; display: inline-flex; align-items: center; gap: 3px;">${icono} ${rolFormateado}</span>`;
-            const headerBadgeContainer = postDiv.querySelector(`.moderador-container-${id}`);
-            if (headerBadgeContainer) headerBadgeContainer.innerHTML = badgeHTML;
+            const badgeHTML = `<span class="badge-rol" style="background: ${background}; color: ${color}; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 3px;">${icono} ${rolFormateado}</span>`;
+            
+            // Insertamos el badge dinámicamente en el contenedor correspondiente
+            const headerBadgeContainer = postDiv.querySelector(`.rol-container-${id}`);
+            if (headerBadgeContainer) {
+                headerBadgeContainer.innerHTML = badgeHTML;
+            }
         }
     });
 
@@ -452,13 +376,14 @@ function crearElementoPost(id, datos) {
                 <strong onclick="event.stopPropagation(); verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
                     ${datos.usuario}
                 </strong>
-                <div class="moderador-container-${id}" style="display: inline-block;"></div>
+                <div class="moderador-container-${id}" style="display: inline-block;"></div> <!-- Aquí caerá la estrella de moderación -->
             </div>
             <button onclick="event.stopPropagation(); borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
         </div>
         <div class="post-body-text" style="margin-top: 10px; word-break: break-word; line-height: 1.5;">${datos.mensaje}</div>
         
         ${datos.imagen ? `<img src="${datos.imagen}" loading="lazy" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
+        
         ${datos.video ? `
             <video src="${datos.video}" loop muted autoplay playsinline controls 
                    style="width: 100%; border-radius: 10px; margin-top: 10px; background: #000;"
@@ -466,11 +391,15 @@ function crearElementoPost(id, datos) {
             </video>
         ` : ''}
         
-        <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">Publicado el ${fechaFormateada} a las ${horaFormateada}</div>
+        <div style="font-size: 0.7rem; color: #888; margin-top: 8px;">
+            Publicado el ${fechaFormateada} a las ${horaFormateada}
+        </div>
+
         <div class="actions" style="display: flex; align-items: center; width: 100%; margin-top: 10px;">
             <span onclick="event.stopPropagation(); enviarLike('${id}')" style="cursor:pointer">❤️ <span id="likes-${id}">${datos.likes || 0}</span> Me gusta</span>
             <button class="btn-report" onclick="event.stopPropagation(); reportarPost('${id}', '${datos.usuario}', '${datos.mensaje}')">Reportar 🚩</button>
         </div>
+
         <div class="comments-section" onclick="event.stopPropagation();">
             <div class="comments-list" id="comments-list-${id}">
                 ${comentariosHTML}
@@ -490,6 +419,7 @@ function abrirModalPost(id, datos) {
     if (!modal || !contenido) return;
 
     const postClonado = crearElementoPost(id, datos);
+    
     postClonado.onclick = null;
     postClonado.style.cursor = 'default';
     postClonado.style.boxShadow = 'none';
@@ -500,17 +430,12 @@ function abrirModalPost(id, datos) {
     contenido.appendChild(postClonado);
     modal.style.display = 'flex';
 }
-window.openModalPost = abrirModalPost;
 
 function cerrarModalPost() {
     const modal = document.getElementById('modalPostDetalle');
     if (modal) modal.style.display = 'none';
 }
-window.cerrarModalPost = cerrarModalPost;
 
-// ==========================================
-// 9. PUBLICACIÓN DE RECUERDOS (MULTIMEDIA)
-// ==========================================
 function publicar() {
     const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const editor = document.getElementById('postText');
@@ -529,7 +454,7 @@ function publicar() {
     if (archivoVideo) {
         const maxBytes = 50 * 1024 * 1024; 
         if (archivoVideo.size > maxBytes) {
-            return alert("¡El video es demasiado pesado! Sube videos menores a 50MB. 🎥");
+            return alert("¡El video es demasiado pesado! Por seguridad, sube videos menores a 50MB. 🎥");
         }
 
         const reader = new FileReader();
@@ -540,7 +465,7 @@ function publicar() {
             
             videoTemporal.onloadedmetadata = function() {
                 if (videoTemporal.duration > 121) { 
-                    return alert("¡Video muy largo! Córtalo a 120 segundos o menos. ✨");
+                    return alert("¡Video muy largo! Córtalo a 120 segundos o menos para mantener el feed optimizado. ✨");
                 }
                 enviarPost(nombre, texto, "", videoUrl);
             };
@@ -565,11 +490,11 @@ function publicar() {
             };
         };
         reader.readAsDataURL(archivoImagen);
+        
     } else {
         enviarPost(nombre, texto, "", "");
     }
 }
-window.publicar = publicar;
 
 function enviarPost(usuario, mensaje, imagenData, videoData) {
     const bioActual = localStorage.getItem('kofy_bio') || "";
@@ -605,16 +530,15 @@ function publicarComentario(idPost) {
         input.value = ""; 
     }).catch(err => console.error("Error al comentar:", err));
 }
-window.publicarComentario = publicarComentario;
 
-// ==========================================
-// 10. REACCIONES, INTERSECCIÓN Y BORRADOS
-// ==========================================
 const observer = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && !cargandoMas) {
         cargarMasPosts();
     }
-}, { threshold: 0.5, rootMargin: "100px" });
+}, { 
+    threshold: 0.5, 
+    rootMargin: "100px" 
+});
 
 function enviarLike(idPost) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -631,29 +555,68 @@ function enviarLike(idPost) {
         }
     });
 }
-window.enviarLike = enviarLike;
 
-// BORRADO LÓGICO: Envía actualización para evitar renderizados fantasma offline
+database.ref('posts/').on('child_changed', (snapshot) => {
+    const idPost = snapshot.key;
+    const datos = snapshot.val();
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    
+    const likesSpan = document.getElementById(`likes-${idPost}`);
+    if (likesSpan) likesSpan.innerText = datos.likes || 0;
+
+    const listaComentarios = document.getElementById(`comments-list-${idPost}`);
+    if (listaComentarios) {
+        listaComentarios.innerHTML = ""; 
+        
+        if (datos.comentarios) {
+            Object.keys(datos.comentarios).forEach(comentarioId => {
+                const c = datos.comentarios[comentarioId];
+                
+                const puedeBorrar = (c.usuario === miNombre || datos.usuario === miNombre);
+                const botonBorrarC = puedeBorrar 
+                    ? `<button onclick="borrarComentario('${idPost}', '${comentarioId}')" style="background:none; border:none; cursor:pointer; font-size:0.75rem; margin-left:auto;">🗑️</button>` 
+                    : '';
+
+                const item = document.createElement('div');
+                item.className = 'comment-item';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.justifyContent = 'space-between';
+                item.style.gap = '10px';
+                
+                item.innerHTML = `
+                    <div>
+                        <strong onclick="verPerfil('${c.usuario}', '', '')" style="cursor:pointer; color:var(--morado-deep)">
+                            ${c.usuario}
+                        </strong>: ${c.mensaje}
+                    </div>
+                    ${botonBorrarC}
+                `;
+                listaComentarios.appendChild(item);
+            });
+            listaComentarios.scrollTop = listaComentarios.scrollHeight;
+        }
+    }
+});
+
 function borrarPost(id) {
     if (confirm("¿Seguro que quieres borrar este recuerdo? 🌸")) {
-        database.ref(`posts/${id}`).update({
-            eliminado: true,
-            status: "deleted",
-            mensaje: "Este post fue eliminado"
-        }).then(() => {
-            const el = document.querySelector(`[data-id="${id}"]`);
-            if (el) el.remove();
-        });
+        database.ref(`posts/${id}`).remove();
     }
 }
-window.borrarPost = borrarPost;
+
+database.ref('posts/').on('child_removed', (snapshot) => {
+    const el = document.querySelector(`[data-id="${snapshot.key}"]`);
+    if (el) el.remove();
+});
 
 function borrarComentario(idPost, idComentario) {
     if (confirm("¿Seguro que quieres eliminar este comentario? 🌸")) {
-        database.ref(`posts/${idPost}/comentarios/${idComentario}`).remove();
+        database.ref(`posts/${idPost}/comentarios/${idComentario}`).remove()
+            .then(() => console.log("Comentario eliminado con éxito"))
+            .catch(err => console.error("Error al eliminar comentario:", err));
     }
 }
-window.borrarComentario = borrarComentario;
 
 function reportarPost(idPost, usuario, mensaje) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -667,23 +630,24 @@ function reportarPost(idPost, usuario, mensaje) {
         }).then(() => alert("Gracias por cuidar KofyKoi. 🌸"));
     }
 }
-window.reportarPost = reportarPost;
 
-// ==========================================
-// 11. SISTEMA DE PERFILES DE TERCEROS Y ESTADOS
-// ==========================================
 function verPerfil(nombre, avatar, bio) {
     const modal = document.getElementById('modalVistaPerfil');
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     if (!modal) return;
 
+    // Limpiamos cualquier badge previo
     const contenedorNombre = document.getElementById('vistaNombre');
     contenedorNombre.innerHTML = nombre; 
 
+    // Verificamos el rol e inyectamos el badge si existe
     obtenerRol(nombre, (rol) => {
         if (rol) {
             const rolFormateado = rol.charAt(0).toUpperCase() + rol.slice(1);
-            let background = "gold"; let color = "#36454F"; let icono = "⭐";
+            let background = "gold";
+            let color = "#36454F";
+            let icono = "⭐";
+
             if (rol.toLowerCase() === 'admin') { background = "#e74c3c"; color = "#fff"; icono = "🛡️"; }
             else if (rol.toLowerCase() === 'vip') { background = "gold"; color = "#fff"; icono = "👑"; }
             else if (rol.toLowerCase() === 'team') { background = "#9b59b6"; color = "#fff"; icono = "⭐"; }
@@ -705,14 +669,20 @@ function verPerfil(nombre, avatar, bio) {
             if (snapshot.exists()) {
                 const datosConexion = snapshot.val();
                 if (datosConexion.status === 'online') {
-                    txtEstado.textContent = "🟢 En línea"; txtEstado.style.color = "#2ecc71"; 
+                    txtEstado.textContent = "🟢 En línea";
+                    txtEstado.style.color = "#2ecc71"; 
                 } else if (datosConexion.ultimaConexion) {
                     const fecha = new Date(datosConexion.ultimaConexion);
                     const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                    txtEstado.textContent = `🌙 Últ. vez hoy a las ${horaFormateada}`; txtEstado.style.color = "#7f8c8d";
+                    txtEstado.textContent = `🌙 Últ. vez hoy a las ${horaFormateada}`;
+                    txtEstado.style.color = "#7f8c8d";
+                } else {
+                    txtEstado.textContent = "💤 Desconectado";
+                    txtEstado.style.color = "gray";
                 }
             } else {
-                txtEstado.textContent = "💤 Desconectado"; txtEstado.style.color = "gray";
+                txtEstado.textContent = "💤 Desconectado";
+                txtEstado.style.color = "gray";
             }
         });
     }
@@ -740,14 +710,16 @@ function verPerfil(nombre, avatar, bio) {
     });
     modal.style.display = 'flex';
 }
-window.verPerfil = verPerfil;
 
 function cerrarVista() {
     const modal = document.getElementById('modalVistaPerfil');
     if (modal) modal.style.display = 'none';
-    if (estadoPerfilRef) { estadoPerfilRef.off(); estadoPerfilRef = null; }
+    
+    if (estadoPerfilRef) {
+        estadoPerfilRef.off();
+        estadoPerfilRef = null;
+    }
 }
-window.cerrarVista = cerrarVista;
 
 function abrirChatPrivado(usuarioDestino) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -756,9 +728,9 @@ function abrirChatPrivado(usuarioDestino) {
 
     localStorage.setItem('chat_actual_id', chatRoomId);
     localStorage.setItem('chat_actual_destino', usuarioDestino);
+
     location.href = 'privchat.html';
 }
-window.abrirChatPrivado = abrirChatPrivado;
 
 function seguirUsuario(nombreSeguido) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -769,16 +741,23 @@ function seguirUsuario(nombreSeguido) {
         actualizarBotonSeguir(!s.exists());
     });
 }
-window.seguirUsuario = seguirUsuario;
 
 function actualizarBotonSeguir(siguiendo) {
     const btn = document.getElementById('btnSeguir');
     if (btn) btn.textContent = siguiendo ? "Siguiendo ✨" : "Seguir 🌸";
 }
 
-// ==========================================
-// 12. INICIALIZACIÓN DOM Y COMPRA DE TIENDA
-// ==========================================
+function mostrarNotificacion(usuario, mensaje) {
+    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
+    if (usuario === miNombre) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `<strong>${usuario}:</strong> ${mensaje.substring(0, 25)}...`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const n = localStorage.getItem('kofy_nombre');
     const b = localStorage.getItem('kofy_bio');
@@ -796,7 +775,9 @@ document.addEventListener('DOMContentLoaded', () => {
         database.ref('seguidores').on('value', (snapshot) => {
             let contadorSeguidos = 0;
             snapshot.forEach((nodoUsuarioSeguido) => {
-                if (nodoUsuarioSeguido.hasChild(n)) contadorSeguidos++;
+                if (nodoUsuarioSeguido.hasChild(n)) {
+                    contadorSeguidos++;
+                }
             });
             const cSeguidos = document.getElementById('misSeguidosCount');
             if (cSeguidos) cSeguidos.textContent = `${contadorSeguidos} seguidos ✨`;
@@ -815,7 +796,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarMasPosts();
 });
 
-// Sincronización en tiempo real de Marcos comprados en la Tienda
 const miNombreActual = localStorage.getItem('kofy_nombre') || "@KofyUser";
 const usuarioKeyLimpia = miNombreActual.replace(/[.#$[\]]/g, "_");
 
@@ -825,30 +805,24 @@ database.ref(`usuarios_economia/${usuarioKeyLimpia}`).on('value', (snapshot) => 
     
     const elemMarcoGrande = document.getElementById('marcoPerfil');
     if (elemMarcoGrande) {
-        elemMarcoGrande.src = marcoActivo;
-        elemMarcoGrande.style.display = marcoActivo ? 'block' : 'none';
+        if (marcoActivo) {
+            elemMarcoGrande.src = marcoActivo;
+            elemMarcoGrande.style.display = 'block';
+        } else {
+            elemMarcoGrande.style.display = 'none';
+        }
     }
 
     const elemMarcoNav = document.getElementById('marcoNav');
     if (elemMarcoNav) {
-        elemMarcoNav.src = marcoActivo;
-        elemMarcoNav.style.display = marcoActivo ? 'block' : 'none';
+        if (marcoActivo) {
+            elemMarcoNav.src = marcoActivo;
+            elemMarcoNav.style.display = 'block';
+        } else {
+            elemMarcoNav.style.display = 'none';
+        }
     }
 });
-
-// ==========================================
-// 13. TOASTS Y BUSCADOR DE USUARIOS
-// ==========================================
-function mostrarNotificacion(usuario, mensaje) {
-    const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
-    if (usuario === miNombre) return;
-
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.innerHTML = `<strong>${usuario}:</strong> ${mensaje.substring(0, 25)}...`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
-}
 
 database.ref('mensajes_privados/').on('child_changed', (snapshot) => {
     const roomId = snapshot.key;
@@ -871,18 +845,25 @@ function buscarUsuarios(texto) {
     if (!dropdown) return;
 
     const queryText = texto.trim(); 
-    if (!queryText) { dropdown.innerHTML = ""; dropdown.style.display = "none"; return; }
+
+    if (!queryText) {
+        dropdown.innerHTML = "";
+        dropdown.style.display = "none";
+        return;
+    }
 
     database.ref('posts/')
         .orderByChild('usuario')
         .startAt(queryText)
-        .endAt(queryText + "\\uf8ff") 
+        .endAt(queryText + "\uf8ff") 
         .limitToFirst(10) 
         .once('value').then((snapshot) => {
             const usuariosEncontrados = {};
+
             snapshot.forEach((child) => {
                 const datos = child.val();
                 const nombreUsuario = datos.usuario || "";
+                
                 if (!usuariosEncontrados[nombreUsuario]) {
                     usuariosEncontrados[nombreUsuario] = {
                         nombre: nombreUsuario,
@@ -896,18 +877,27 @@ function buscarUsuarios(texto) {
             const listaUsuarios = Object.values(usuariosEncontrados);
 
             if (listaUsuarios.length === 0) {
-                dropdown.innerHTML = `<div style="padding: 10px; font-size: 0.8rem; color: #888;">No se encontraron usuarios</div>`;
+                dropdown.innerHTML = `<div style="padding: 10px; font-size: 0.8rem; color: #888; font-style: italic;">No se encontraron usuarios</div>`;
             } else {
                 listaUsuarios.forEach(u => {
                     const item = document.createElement('div');
                     item.className = 'search-result-item';
-                    item.style.display = 'flex'; item.style.alignItems = 'center'; item.style.gap = '10px'; item.style.padding = '8px 12px'; item.style.cursor = 'pointer';
-                    item.innerHTML = `<img src="${u.avatar}" class="avatar-sm" style="width: 25px; height: 25px;"><span>${u.nombre}</span>`;
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.gap = '10px';
+                    item.style.padding = '8px 12px';
+                    item.style.cursor = 'pointer';
+                    
+                    item.innerHTML = `
+                        <img src="${u.avatar}" class="avatar-sm" style="width: 25px; height: 25px;">
+                        <span style="font-size: 0.85rem; font-weight: 600;">${u.nombre}</span>
+                    `;
 
                     item.onclick = () => {
                         verPerfil(u.nombre, u.avatar, u.bio);
                         document.getElementById('searchUser').value = "";
-                        dropdown.innerHTML = ""; dropdown.style.display = "none";
+                        dropdown.innerHTML = "";
+                        dropdown.style.display = "none";
                     };
                     dropdown.appendChild(item);
                 });
@@ -915,11 +905,7 @@ function buscarUsuarios(texto) {
             dropdown.style.display = "block";
         });
 }
-window.buscarUsuarios = buscarUsuarios;
 
-// ==========================================
-// 14. MODAL DE SEGUIDORES / SEGUIDOS
-// ==========================================
 function abrirModalRelaciones(tipo) {
     const modal = document.getElementById('modalRelaciones');
     const titulo = document.getElementById('tituloRelaciones');
@@ -933,47 +919,75 @@ function abrirModalRelaciones(tipo) {
 
     if (tipo === 'seguidores') {
         titulo.textContent = "Mis Seguidores 🌸";
+        
         database.ref(`seguidores/${miNombre}`).once('value').then((snapshot) => {
             lista.innerHTML = "";
             if (!snapshot.exists()) {
-                lista.innerHTML = `<p style="font-size: 0.85rem; color: #888; text-align: center;">No tienes seguidores aún. ✨</p>`;
+                lista.innerHTML = `<p style="font-size: 0.85rem; color: #888; text-align: center;">No tienes seguidores aún. ¡Sigue interactuando! ✨</p>`;
                 return;
             }
-            snapshot.forEach((child) => obtenerYRenderizarItemUsuario(child.key, lista));
+            
+            snapshot.forEach((child) => {
+                const nombreSeguidores = child.key;
+                obtenerYRenderizarItemUsuario(nombreSeguidores, lista);
+            });
         });
+        
     } else if (tipo === 'seguidos') {
         titulo.textContent = "Usuarios que sigo ✨";
+        
         database.ref('seguidores').once('value').then((snapshot) => {
             lista.innerHTML = "";
             let tieneSeguidos = false;
+
             snapshot.forEach((nodoUsuarioSeguido) => {
                 if (nodoUsuarioSeguido.hasChild(miNombre)) {
                     tieneSeguidos = true;
                     obtenerYRenderizarItemUsuario(nodoUsuarioSeguido.key, lista);
                 }
             });
-            if (!tieneSeguidos) lista.innerHTML = `<p style="font-size: 0.85rem; color: #888; text-align: center;">No sigues a nadie todavía. 🌸</p>`;
+
+            if (!tieneSeguidos) {
+                lista.innerHTML = `<p style="font-size: 0.85rem; color: #888; text-align: center;">No sigues a ningún usuario todavía. 🌸</p>`;
+            }
         });
     }
 }
-window.abrirModalRelaciones = abrirModalRelaciones;
 
 function obtenerYRenderizarItemUsuario(nombreUsuario, contenedorLista) {
-    database.ref('posts/').orderByChild('usuario').equalTo(nombreUsuario).limitToLast(1)
+    database.ref('posts/')
+        .orderByChild('usuario')
+        .equalTo(nombreUsuario)
+        .limitToLast(1)
         .once('value').then((snapshot) => {
-            let avatar = 'https://i.pravatar.cc/150?u=default'; let bio = "";
-            snapshot.forEach((child) => { const datos = child.val(); avatar = datos.avatar || avatar; bio = datos.biografia || bio; });
+            let avatar = 'https://i.pravatar.cc/150?u=default';
+            let bio = "";
+
+            snapshot.forEach((child) => {
+                const datos = child.val();
+                avatar = datos.avatar || avatar;
+                bio = datos.biografia || bio;
+            });
 
             const item = document.createElement('div');
-            item.className = 'relationship-item'; item.style.cursor = 'pointer';
+            item.className = 'relationship-item';
+            item.style.cursor = 'pointer';
+            
             item.innerHTML = `
                 <img src="${avatar}" class="avatar-sm" style="width: 35px; height: 35px; border: 2px solid var(--morado-deep);">
                 <div style="display: flex; flex-direction: column;">
                     <span>${nombreUsuario}</span>
-                    <small style="font-size: 0.65rem; color: gray; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${bio || "Sin biografía aún. ✨"}</small>
+                    <small style="font-size: 0.65rem; color: gray; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${bio || "Sin biografía aún. ✨"}
+                    </small>
                 </div>
             `;
-            item.onclick = () => { cerrarModalRelaciones(); verPerfil(nombreUsuario, avatar, bio); };
+
+            item.onclick = () => {
+                cerrarModalRelaciones();
+                verPerfil(nombreUsuario, avatar, bio);
+            };
+
             contenedorLista.appendChild(item);
         });
 }
@@ -982,5 +996,3 @@ function cerrarModalRelaciones() {
     const modal = document.getElementById('modalRelaciones');
     if (modal) modal.style.display = 'none';
 }
-window.cerrarModalRelaciones = cerrarModalRelaciones;
-
