@@ -130,6 +130,16 @@
             <h2>Notificaciones 🔔</h2>
             <button class="btn-clear-all" onclick="vaciarTodasLasNotificaciones()">Limpiar todo ✨</button>
         </div>
+        <div class="noti-container">
+
+    <div style="background: var(--azul-claro); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+        <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--oscuro-suave);">
+            ¿Quieres enterarte de nuevos mensajes aunque no estés en la app? 🌸
+        </p>
+        <button onclick="activarNotificacionesPush()" style="background: #fff; border: 2px solid var(--rosa); padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer;">
+            🔔 Activar alertas del sistema
+        </button>
+    </div>
 
         <div class="noti-list" id="noti-list-container">
             <div class="empty-state">Cargando tus novedades zen... 🌸</div>
@@ -161,20 +171,26 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-messaging-compat.js"></script>
+
 <script>
+    // Tu configuración existente de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBrUmok_QkwEdO2cmMRryu2GmvvSO5DZ1U",
         authDomain: "kofikoi.firebaseapp.com",
         databaseURL: "https://kofikoi-default-rtdb.firebaseio.com/",
         projectId: "kofikoi",
-        storageBucket: "kofikoi.firebasestorage.app",
-        messagingSenderId: "27280210890",
-        appId: "1:27280210890:web:354c9bf51bfcb6b438ad33",
-        measurementId: "G-P7KFPMFHHW"
+        storageBucket: "kofikoi.appspot.com", // Completado automáticamente
     };
-    firebase.initializeApp(firebaseConfig);
+    
+    // Inicializar Firebase
+    const app = firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    
+    // 2. INICIALIZAR EL SÉRVULO DE MENSAJERÍA
+    const messaging = firebase.messaging();
 </script>
+
 <script src="notificaciones.js"></script>
 </body>
 </html>

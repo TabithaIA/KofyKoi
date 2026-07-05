@@ -75,3 +75,51 @@ function vaciarTodasLasNotificaciones() {
             .catch(err => console.error("Error al vaciar notificaciones:", err));
     }
 }
+// Función para activar las notificaciones push del sistema
+function activarNotificacionesPush() {
+    // Verificar si el navegador soporta Service Workers y Notificaciones
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+        console.warn("Este navegador no soporta notificaciones push.");
+        return;
+    }
+
+    // Solicitar permiso al usuario
+    Notification.requestPermission().then((permiso) => {
+        if (permiso === 'granted') {
+            console.log("¡Permiso de notificaciones concedido! 🌸");
+            
+            // Obtener el token del dispositivo desde Firebase
+            // Nota: Debes generar tu clave pública "VAPID" en la consola de Firebase 
+            // (Configuración del proyecto > Mensajería en la nube > Configuración de Web Push)
+            const CLAVE_PUBLICA_VAPID = "aOWdf4i63g2iC0jGRHVTVUIQZE1bxM1sqnxSncQKwCc";
+
+            messaging.getToken({ vapidKey: CLAVE_PUBLICA_VAPID })
+                .then((tokenActual) => {
+                    if (tokenActual) {
+                        console.log("Token obtenido con éxito.");
+                        guardarTokenEnBaseDeDatos(tokenActual);
+                    } else {
+                        console.warn("No se pudo obtener el token. Verifica los permisos.");
+                    }
+                })
+                .catch((err) => {
+                    console.error("Error al obtener el token de Firebase:", err);
+                });
+        } else {
+            console.warn("El usuario rechazó los permisos de notificación.");
+        }
+    });
+}
+
+// Guarda el token en la base de datos asociado al usuario actual
+function guardarTokenEnBaseDeDatos(token) {
+    const usuarioKey = miNombre.replace(/[.#$[\]]/g, "_");
+    
+    // Lo guardamos en una rama llamada 'tokens_push/nombre_usuario'
+    database.ref(`tokens_push/${usuarioKey}`).set({
+        token: token,
+        actualizado: Date.now()
+    })
+    .then(() => console.log("Token push guardado en la base de datos correctamente. ✨"))
+    .catch(err => console.error("Error al guardar el token:", err));
+}
