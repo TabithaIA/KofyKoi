@@ -1219,39 +1219,46 @@
         });
     }
 
-    // --- SISTEMA DE STICKERS ---
+        // --- SISTEMA DE STICKERS ---
     function renderizarMisStickers() {
         const listaContenedor = document.getElementById('listaStickers');
-        const sinStickersTexto = document.getElementById('sinStickersTexto');
-        const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
-        
         listaContenedor.innerHTML = "";
         
-        if (misStickers.length === 0) {
-            if (sinStickersTexto) listaContenedor.appendChild(sinStickersTexto);
-            return;
-        }
+        // Generamos el ID limpio del usuario para Firebase
+        const miID = miNombre.replace(/[.#$[\]]/g, "_");
+        
+        // Leemos los stickers directamente desde Firebase Realtime Database
+        database.ref(`usuarios_stickers/${miID}`).once('value', (snap) => {
+            const stickersData = snap.val();
+            
+            if (!stickersData) {
+                listaContenedor.innerHTML = `<p id="sinStickersTexto" style="font-size: 0.75rem; color: gray; grid-column: span 4; text-align: center; margin: 10px 0;">No tienes stickers guardados. ¡Crea el primero!</p>`;
+                return;
+            }
 
-        misStickers.forEach((stickerBase64, index) => {
-            const divWrap = document.createElement('div');
-            divWrap.style = "position: relative; display: inline-block;";
+            // Recorremos las llaves únicas que Firebase generó para cada sticker
+            Object.keys(stickersData).forEach((key) => {
+                const stickerBase64 = stickersData[key];
+                const divWrap = document.createElement('div');
+                divWrap.style = "position: relative; display: inline-block;";
 
-            const img = document.createElement('img');
-            img.src = stickerBase64;
-            img.className = "sticker-opcion";
-            img.onclick = () => enviarSticker(stickerBase64);
+                const img = document.createElement('img');
+                img.src = stickerBase64;
+                img.className = "sticker-opcion";
+                img.onclick = () => enviarSticker(stickerBase64);
 
-            const btnBorrar = document.createElement('button');
-            btnBorrar.innerHTML = "✕";
-            btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;";
-            btnBorrar.onclick = (e) => {
-                e.stopPropagation(); 
-                eliminarStickerDeGaleria(index);
-            };
+                const btnBorrar = document.createElement('button');
+                btnBorrar.innerHTML = "✕";
+                btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;";
+                btnBorrar.onclick = (e) => {
+                    e.stopPropagation(); 
+                    eliminarStickerDeGaleria(key); // Pasamos la clave para borrarlo de la BD
+                };
 
-            divWrap.appendChild(img);
-            divWrap.appendChild(btnBorrar);
-            listaContenedor.appendChild(divWrap);
+                divWrap.appendChild(img);
+                divWrap.appendChild(btnBorrar);
+                listaContenedor.appendChild(divWrap);
+            });
         });
     }
 
@@ -1363,22 +1370,27 @@
                     ctx.drawImage(imgPrevia, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
                     const stickerFinal = canvas.toDataURL('image/png');
                     
-                    const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
-                    misStickers.push(stickerFinal);
-                    localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
-                    
-                    overlayCorte.remove(); input.value = ""; renderizarMisStickers();
+                    // Guardamos directo en la base de datos de Firebase
+                    const miID = miNombre.replace(/[.#$[\]]/g, "_");
+                    database.ref(`usuarios_stickers/${miID}`).push(stickerFinal)
+                        .then(() => {
+                            overlayCorte.remove(); 
+                            input.value = ""; 
+                            renderizarMisStickers();
+                        });
                 };
             };
             lector.readAsDataURL(input.files[0]);
         }
     }
 
-    function eliminarStickerDeGaleria(index) {
-        const misStickers = JSON.parse(localStorage.getItem('kofy_mis_stickers')) || [];
-        misStickers.splice(index, 1);
-        localStorage.setItem('kofy_mis_stickers', JSON.stringify(misStickers));
-        renderizarMisStickers();
+    function eliminarStickerDeGaleria(key) {
+        if (confirm("¿Quieres eliminar permanentemente este sticker? 🌸")) {
+            const miID = miNombre.replace(/[.#$[\]]/g, "_");
+            database.ref(`usuarios_stickers/${miID}/${key}`).remove().then(() => {
+                renderizarMisStickers();
+            });
+        }
     }
 
     function enviarSticker(urlSticker) {
