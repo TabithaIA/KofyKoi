@@ -21,6 +21,21 @@
             gap: 10px;
             background-size: cover;
             background-position: center;
+            position: relative; /* Necesario para posicionar el video de fondo */
+            z-index: 1;
+        }
+
+        /* Video de fondo para el chat */
+        .chat-bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1; /* Queda detrás de los mensajes */
+            pointer-events: none;
+            border-radius: 13px; /* Se acopla a las esquinas del contenedor */
         }
 
         .bubble {
@@ -34,6 +49,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            z-index: 2; /* Por encima del video de fondo */
         }
 
         .bubble.mine {
@@ -233,7 +249,8 @@
                     <button class="btn-img" onclick="abrirModalFijados()" style="font-size: 0.6rem; padding: 4px 8px; background: #ffe4b5; color: #36454F;">📌 Fijados</button>
                     <button class="btn-img" onclick="location.reload()" style="font-size: 0.6rem; padding: 4px 8px;">Salir</button>
                     
-                    <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
+                    <!-- Modificado: acepta imágenes (JPG, PNG, GIF) y también videos (MP4) -->
+                    <input type="file" id="fondoInput" accept="image/*,video/*" style="display: none;" onchange="ajustarFondoSala(this)">
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
                     <input type="file" id="videoChatInput" accept="video/*" style="display: none;" onchange="prepararVideoChat(this)">
                     <input type="file" id="audioChatInput" accept="audio/*" style="display: none;" onchange="prepararAudioArchivo(this)">
@@ -820,24 +837,54 @@
             });
         }
 
+        // --- AJUSTAR FONDO SALA (IMAGEN, GIF O VIDEO MP4) ---
         function ajustarFondoSala(input) {
             if (input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = 1280; canvas.height = 720;
-                        const ratio = Math.max(canvas.width / img.width, canvas.height / img.height);
-                        const x = (canvas.width - img.width * ratio) / 2;
-                        const y = (canvas.height - img.height * ratio) / 2;
-                        ctx.drawImage(img, x, y, img.width * ratio, img.height * ratio);
-                        database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(canvas.toDataURL('image/jpeg', 0.6));
+                const archivo = input.files[0];
+                const lector = new FileReader();
+
+                // Si es un video, lo subimos directamente como Base64 (límite pequeño en Firebase para rendimiento)
+                if (archivo.type.startsWith('video/')) {
+                    if (archivo.size > 15 * 1024 * 1024) {
+                        alert("❌ El video de fondo no puede superar los 15MB para garantizar el rendimiento.");
+                        input.value = "";
+                        return;
+                    }
+                    lector.onload = (e) => {
+                        database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(e.target.result);
                     };
-                };
-                reader.readAsDataURL(input.files[0]);
+                    lector.readAsDataURL(archivo);
+                } 
+                // Si es un GIF, lo subimos tal cual para que no pierda la animación al pasar por un canvas estático
+                else if (archivo.type === 'image/gif') {
+                    if (archivo.size > 15 * 1024 * 1024) {
+                        alert("❌ El GIF de fondo es muy pesado. Intenta con uno menor a 15MB.");
+                        input.value = "";
+                        return;
+                    }
+                    lector.onload = (e) => {
+                        database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(e.target.result);
+                    };
+                    lector.readAsDataURL(archivo);
+                } 
+                // Si es una imagen normal (PNG/JPG), la procesamos y reducimos de tamaño
+                else {
+                    lector.onload = (e) => {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = 1280; canvas.height = 720;
+                            const ratio = Math.max(canvas.width / img.width, canvas.height / img.height);
+                            const x = (canvas.width - img.width * ratio) / 2;
+                            const y = (canvas.height - img.height * ratio) / 2;
+                            ctx.drawImage(img, x, y, img.width * ratio, img.height * ratio);
+                            database.ref(`chats_privados/${salaActual}/configuracion/fondo`).set(canvas.toDataURL('image/jpeg', 0.6));
+                        };
+                    };
+                    lector.readAsDataURL(archivo);
+                }
             }
         }
 
@@ -855,7 +902,30 @@
             database.ref(`chats_privados/${salaActual}/configuracion`).on('value', snap => {
                 const config = snap.val() || {};
                 document.getElementById('tituloSala').textContent = config.nombrePersonalizado || "Sala: #" + codigo;
-                if (config.fondo) document.getElementById('mensajesPrivados').style.backgroundImage = `url(${config.fondo})`;
+                
+                const contenedorChat = document.getElementById('mensajesPrivados');
+                
+                // Remueve cualquier video de fondo previo
+                const videoPrevio = contenedorChat.querySelector('.chat-bg-video');
+                if (videoPrevio) videoPrevio.remove();
+
+                if (config.fondo) {
+                    // Si el fondo guardado es un video (Base64 mp4)
+                    if (config.fondo.startsWith('data:video/')) {
+                        contenedorChat.style.backgroundImage = 'none';
+                        const videoBg = document.createElement('video');
+                        videoBg.className = 'chat-bg-video';
+                        videoBg.src = config.fondo;
+                        videoBg.autoplay = true;
+                        videoBg.loop = true;
+                        videoBg.muted = true;
+                        videoBg.playsInline = true;
+                        contenedorChat.appendChild(videoBg);
+                    } else {
+                        // Si es imagen o GIF normal
+                        contenedorChat.style.backgroundImage = `url(${config.fondo})`;
+                    }
+                }
             });
 
             const contenedor = document.getElementById('mensajesPrivados');
