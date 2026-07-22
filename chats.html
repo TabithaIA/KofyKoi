@@ -297,7 +297,6 @@
         <div class="modal-content">
             <h3 style="color: var(--morado-deep); margin-bottom: 15px;">Salas Guardadas 🔑</h3>
             <div id="historialSalasContenedor" style="max-height: 45vh; overflow-y: auto; display: flex; flex-direction: column;">
-                <!-- Se inyecta con JS -->
             </div>
             <button class="btn-img" onclick="cerrarModalHistorial()" style="margin-top: 20px; width: 100%;">Cerrar</button>
         </div>
@@ -331,9 +330,8 @@
             <h3 style="color: var(--morado-deep);">Estado de la Racha 🔥</h3>
             <div id="rachaInfo" style="margin: 15px 0;">
                 <p id="rachaDias" style="font-size: 2rem; font-weight: bold;">0 días</p>
-                <p id="rachaEstadoText" style="font-size: 0.85rem; color: gray;">La racha no está activa.</p>
+                <p id="rachaEstadoText" style="font-size: 0.85rem; color: gray;">Envía mensajes junto con tus amigos todos los días para mantener la racha activa.</p>
             </div>
-            <button id="btnSolicitudRacha" class="btn-main" onclick="enviarSolicitudRacha()">Activar Racha 🌸</button>
             <hr style="margin: 20px 0; border: 1px solid var(--rosa);">
             <h4 style="color: var(--morado-deep);">Logros de Racha 🏆</h4>
             <div id="logrosContenedor" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;"></div>
@@ -345,7 +343,7 @@
         <div class="modal-content">
             <h3 style="color: var(--morado-deep); margin-bottom: 15px;">Mensajes Fijados 📌</h3>
             <div id="fijadosContenedor" style="max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                <p style="font-size: 0.85rem; color: gray; text-align: center;">No hay mensajes fijados in esta sala.</p>
+                <p style="font-size: 0.85rem; color: gray; text-align: center;">No hay mensajes fijados en esta sala.</p>
             </div>
             <button class="btn-img" onclick="cerrarModalFijados()" style="margin-top: 20px; width: 100%;">Cerrar</button>
         </div>
@@ -490,7 +488,6 @@
             cerrarModalHistorial();
             unirseASala();
         }
-        // -------------------------------------
 
         function aplicarCosmeticosEnElemento(bubbleEl, msgId, username, esSticker) {
             const userID = username.replace(/[.#$[\]]/g, "_");
@@ -709,6 +706,7 @@
             });
         }
 
+        // --- SISTEMA DE RACHA AUTOMÁTICA CON DOS PERSONAS DISTINTAS ---
         const hitosRacha = [1, 3, 5, 7, 14, 30, 45, 60, 90, 120, 240, 365];
 
         function abrirModalRacha() {
@@ -716,34 +714,65 @@
             actualizarVistaRacha();
         }
 
-        function enviarSolicitudRacha() {
-            const miID = miNombre.replace(/[.#$[\]]/g, "_");
-            database.ref(`chats_privados/${salaActual}/racha/solicitudes/${miID}`).set(true);
-        }
-
         function actualizarVistaRacha() {
             database.ref(`chats_privados/${salaActual}/racha`).on('value', (snap) => {
                 const racha = snap.val() || {};
-                const solicitudes = racha.solicitudes || {};
-                const countAceptados = Object.keys(solicitudes).length;
-                const activa = racha.activa || false;
                 const dias = racha.dias || 0;
-
+                const hoyStr = new Date().toISOString().slice(0, 10);
+                const usuariosHoy = Object.keys(racha.participantesHoy || {});
+                
                 document.getElementById('rachaDias').textContent = `${dias} días 🔥`;
-                const btn = document.getElementById('btnSolicitudRacha');
                 const estadoText = document.getElementById('rachaEstadoText');
 
-                if (activa) {
-                    estadoText.textContent = "¡Racha activa! ✨";
-                    btn.style.display = "none";
+                if (dias === 0) {
+                    estadoText.textContent = `¡Inicien la racha! Dos personas diferentes deben enviar un mensaje hoy (${usuariosHoy.length}/2).`;
+                } else if (racha.ultimaFecha === hoyStr) {
+                    estadoText.textContent = "¡Racha sumada hoy! ✨ Sigan participando mañana.";
                 } else {
-                    estadoText.textContent = `Aceptado por ${countAceptados}/2 personas.`;
-                    btn.style.display = "block";
-                    if (countAceptados >= 2) {
-                        database.ref(`chats_privados/${salaActual}/racha`).update({ activa: true, dias: 1, ultimaFecha: Date.now() });
-                    }
+                    estadoText.textContent = `Racha en proceso para hoy (${usuariosHoy.length}/2 personas han enviado mensaje).`;
                 }
                 dibujarLogros(dias);
+            });
+        }
+
+        function verificarYSumarRachaAutomatico(nombreUsuario) {
+            if (!salaActual) return;
+            
+            const miID = nombreUsuario.replace(/[.#$[\]]/g, "_");
+            const hoy = new Date();
+            const hoyStr = hoy.toISOString().slice(0, 10); // Formato YYYY-MM-DD
+            const rachaRef = database.ref(`chats_privados/${salaActual}/racha`);
+
+            rachaRef.once('value', (snap) => {
+                let racha = snap.val() || { dias: 0, ultimaFecha: "", fechaDia: hoyStr, participantesHoy: {} };
+
+                // Si cambió el día, reiniciamos el listado de participantes para el nuevo día
+                if (racha.fechaDia !== hoyStr) {
+                    // Verificar si se perdió un día completo de diferencia
+                    if (racha.ultimaFecha) {
+                        const ultima = new Date(racha.ultimaFecha);
+                        const diferenciaDias = Math.floor((hoy - ultima) / (1000 * 60 * 60 * 24));
+                        if (diferenciaDias > 1) {
+                            racha.dias = 0; // Reinicio de racha por inactividad
+                        }
+                    }
+                    racha.fechaDia = hoyStr;
+                    racha.participantesHoy = {};
+                }
+
+                // Registrar al participante del mensaje
+                if (!racha.participantesHoy) racha.participantesHoy = {};
+                racha.participantesHoy[miID] = true;
+
+                const listaParticipantes = Object.keys(racha.participantesHoy);
+
+                // Si al menos 2 personas diferentes enviaron un mensaje hoy y no se ha sumado hoy
+                if (listaParticipantes.length >= 2 && racha.ultimaFecha !== hoyStr) {
+                    racha.dias = (racha.dias || 0) + 1;
+                    racha.ultimaFecha = hoyStr;
+                }
+
+                rachaRef.set(racha);
             });
         }
 
@@ -971,6 +1000,7 @@
                 usuario: miNombre, avatar: miAvatar, mensaje: texto, fecha: Date.now(), colorBurbuja: miColorBurbuja, biografia: localStorage.getItem('kofy_bio') || ""
             });
             document.getElementById('textoPrivado').value = "";
+            verificarYSumarRachaAutomatico(miNombre);
         }
 
         function cerrarVista() { document.getElementById('modalVistaPerfil').style.display = 'none'; }
@@ -982,6 +1012,7 @@
             database.ref(`chats_privados/${salaActual}/mensajes`).push({
                 usuario: miNombre, avatar: miAvatar, mensaje: "", imagen: base64, fecha: Date.now(), colorBurbuja: miColorBurbuja
             });
+            verificarYSumarRachaAutomatico(miNombre);
         }
 
         function prepararVideoChat(input) {
@@ -1070,6 +1101,7 @@
                 fecha: Date.now(),
                 colorBurbuja: miColorBurbuja
             });
+            verificarYSumarRachaAutomatico(miNombre);
         }
 
         function restaurarInputChat(textarea, placeholderOriginal, input) {
@@ -1107,6 +1139,7 @@
                     textarea.placeholder = originalPlaceholder;
                     textarea.disabled = false;
                     input.value = "";
+                    verificarYSumarRachaAutomatico(miNombre);
                 };
                 lector.readAsDataURL(archivo);
             }
@@ -1138,12 +1171,10 @@
 
                     Promise.all(promesasBorrado).then(() => {
                         alert(`¡Limpieza completada! Se eliminaron ${cantidadABorrar} mensajes antiguos.`);
-                        // Forzamos un redibujado limpio del contenedor del chat
                         const contenedor = document.getElementById('mensajesPrivados');
                         contenedor.innerHTML = "";
                         primerMensajeFecha = null;
                         
-                        // Recargamos los últimos elementos disponibles
                         mensajesRef.orderByChild('fecha').limitToLast(limiteMensajes).once('value', (snapRecarga) => {
                             const mensajesIniciales = [];
                             snapRecarga.forEach(child => {
@@ -1276,15 +1307,13 @@
         });
     }
 
-        // --- SISTEMA DE STICKERS ---
+    // --- SISTEMA DE STICKERS ---
     function renderizarMisStickers() {
         const listaContenedor = document.getElementById('listaStickers');
         listaContenedor.innerHTML = "";
         
-        // Generamos el ID limpio del usuario para Firebase
         const miID = miNombre.replace(/[.#$[\]]/g, "_");
         
-        // Leemos los stickers directamente desde Firebase Realtime Database
         database.ref(`usuarios_stickers/${miID}`).once('value', (snap) => {
             const stickersData = snap.val();
             
@@ -1293,7 +1322,6 @@
                 return;
             }
 
-            // Recorremos las llaves únicas que Firebase generó para cada sticker
             Object.keys(stickersData).forEach((key) => {
                 const stickerBase64 = stickersData[key];
                 const divWrap = document.createElement('div');
@@ -1309,7 +1337,7 @@
                 btnBorrar.style = "position: absolute; top: -2px; right: -2px; background: rgba(255,77,77,0.9); color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;";
                 btnBorrar.onclick = (e) => {
                     e.stopPropagation(); 
-                    eliminarStickerDeGaleria(key); // Pasamos la clave para borrarlo de la BD
+                    eliminarStickerDeGaleria(key);
                 };
 
                 divWrap.appendChild(img);
@@ -1427,7 +1455,6 @@
                     ctx.drawImage(imgPrevia, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
                     const stickerFinal = canvas.toDataURL('image/png');
                     
-                    // Guardamos directo en la base de datos de Firebase
                     const miID = miNombre.replace(/[.#$[\]]/g, "_");
                     database.ref(`usuarios_stickers/${miID}`).push(stickerFinal)
                         .then(() => {
@@ -1461,6 +1488,7 @@
             colorBurbuja: miColorBurbuja
         });
         document.getElementById('panelStickers').style.display = 'none';
+        verificarYSumarRachaAutomatico(miNombre);
     }
     </script>
 </body>
