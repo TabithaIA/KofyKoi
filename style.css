@@ -352,3 +352,27 @@ body, header, .card, textarea, .bottom-nav, .comment-item, .room-card, .input-co
     }
 }
 
+/* Limita y acorta nombres o textos largos con puntos suspensivos */
+.post-username {
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* En el modal (vista completa), permitimos que el nombre se vea completo */
+#modalPostContenido .post-username {
+    max-width: none;
+    white-space: normal;
+}
+
+/* Ajuste del header para que todo se ordene hacia abajo si no entra */
+.post-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Pasa elementos abajo si no entran */
+    gap: 8px;
+}

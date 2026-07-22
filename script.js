@@ -1,15 +1,15 @@
 // --- VARIABLES GLOBALES Y ESTADO ---
 let currentAvatarUrl = localStorage.getItem('kofy_avatar') || "https://i.pravatar.cc/150?u=kofy";
 let cargaInicialCompletada = false;
-let ultimoPostFecha = null;
+let ultimoPostKey = null; // Guardará la clave de Firebase para la paginación
 let cargandoMas = false;
+let hayMasPosts = true;
 let estadoPerfilRef = null;
 
 // --- NUEVA LÓGICA DE ROLES GENÉRICA ---
 function obtenerRol(nombreUsuario, callback) {
     const usuarioKey = nombreUsuario.replace(/[.#$[\]]/g, "_");
     database.ref(`usuarios_roles/${usuarioKey}`).once('value').then((snapshot) => {
-        // snapshot.val() puede ser 'moderador', 'admin', 'vip', etc.
         callback(snapshot.val()); 
     });
 }
@@ -67,7 +67,7 @@ function guardarPerfil() {
     cerrarModal();
 }
 
-// --- LÓGICA DE SALAS PÚBLICAS (DURAN PARA SIEMPRE) ---
+// --- LÓGICA DE SALAS PÚBLICAS ---
 function crearSalaPublica() {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const nombreSala = prompt("¿Qué nombre o temática tendrá tu sala pública? 💬");
@@ -231,8 +231,9 @@ function borrarStory(id, btn) {
     }
 }
 
-// --- LÓGICA DE POSTS (FEED) ---
+// --- LÓGICA DE POSTS (FEED CON SCROLL INFINITO Y RÁPIDO) ---
 
+// Escucha en tiempo real solo cuando alguien crea una publicación nueva en directo
 database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     if (!cargaInicialCompletada) return; 
     
@@ -240,50 +241,79 @@ database.ref('posts/').limitToLast(1).on('child_added', (snapshot) => {
     const idS = snapshot.key;
     const feed = document.getElementById('feed-container');
 
-    if (feed) {
+    if (feed && !document.querySelector(`[data-id="${idS}"]`)) {
         const postDiv = crearElementoPost(idS, datos);
         feed.prepend(postDiv);
         mostrarNotificacion(datos.usuario, datos.mensaje);
     }
 });
 
+// Carga optimizada por lotes de 6 en 6
 function cargarMasPosts() {
-    if (cargandoMas) return;
+    if (cargandoMas || !hayMasPosts) return;
     cargandoMas = true;
 
-    let consulta = database.ref('posts/').orderByChild('fecha');
-    
-    if (ultimoPostFecha) {
-        consulta = consulta.endAt(ultimoPostFecha - 1);
+    let consulta = database.ref('posts/').orderByKey();
+
+    if (ultimoPostKey) {
+        consulta = consulta.endAt(ultimoPostKey).limitToLast(7); // +1 para compensar duplicado
+    } else {
+        consulta = consulta.limitToLast(6);
     }
 
-    consulta.limitToLast(6).once('value', (snapshot) => {
+    consulta.once('value', (snapshot) => {
         const feed = document.getElementById('feed-container');
-        const posts = [];
+        
+        // Eliminar esqueletos de carga si existen
+        if (feed) {
+            const skeletons = feed.querySelectorAll('.skeleton');
+            skeletons.forEach(s => s.remove());
+        }
 
-        snapshot.forEach(child => {
-            if (!document.querySelector(`[data-id="${child.key}"]`)) {
-                posts.push({ id: child.key, ...child.val() });
+        if (!snapshot.exists()) {
+            hayMasPosts = false;
+            cargandoMas = false;
+            if (!ultimoPostKey && feed) {
+                feed.innerHTML = `<p style="text-align:center; color:gray; padding:20px;">No hay publicaciones aún 🌸</p>`;
             }
+            return;
+        }
+
+        const posts = [];
+        snapshot.forEach(child => {
+            posts.push({ id: child.key, ...child.val() });
         });
 
+        posts.reverse(); // Los más nuevos arriba
+
+        // Si ya tenías posts cargados, eliminamos el duplicado generado por .endAt()
+        if (ultimoPostKey) {
+            posts.shift();
+        }
+
+        if (posts.length < 6) {
+            hayMasPosts = false;
+        }
+
         if (posts.length > 0) {
-            if (!ultimoPostFecha) feed.innerHTML = ""; 
-            
-            posts.reverse(); 
             const fragmento = document.createDocumentFragment();
             
             posts.forEach(p => {
-                const postDiv = crearElementoPost(p.id, p);
-                fragmento.appendChild(postDiv);
+                if (!document.querySelector(`[data-id="${p.id}"]`)) {
+                    const postDiv = crearElementoPost(p.id, p);
+                    fragmento.appendChild(postDiv);
+                }
             });
             
-            feed.appendChild(fragmento);
-            ultimoPostFecha = posts[posts.length - 1].fecha;
+            if (feed) feed.appendChild(fragmento);
+            ultimoPostKey = posts[posts.length - 1].id;
         }
         
         cargandoMas = false;
         cargaInicialCompletada = true;
+    }).catch(err => {
+        console.error("Error al cargar publicaciones:", err);
+        cargandoMas = false;
     });
 }
 
@@ -292,9 +322,9 @@ function formatear(comando, valor = null) {
     document.getElementById('postText').focus();
 }
 
-// --- GENERADOR DE HTML DE POST ACTUALIZADO CON BADGE DE MODERADOR ---
+// --- GENERADOR DE HTML DE POST CON BADGES Y ROLES ADAPTATIVO ---
 function crearElementoPost(id, datos) {
-    const fecha = new Date(datos.fecha);
+    const fecha = new Date(datos.fecha || Date.now());
     const fechaFormateada = fecha.toLocaleDateString('es-AR');
     const horaFormateada = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
@@ -311,35 +341,30 @@ function crearElementoPost(id, datos) {
         }
     };
     
-    // Verificamos de forma dinámica el rol del usuario en la base de datos
-        // Verificamos de forma dinámica el rol del usuario en la base de datos
+    // Verificamos de forma dinámica el rol del usuario
     obtenerRol(datos.usuario, (rol) => {
         if (rol) {
-            // Capitalizamos la primera letra para que quede bonito (ej: "vip" -> "Vip")
             const rolFormateado = rol.charAt(0).toUpperCase() + rol.slice(1);
-            
-            // Definimos colores dinámicos según el tipo de rol
-            let background = "#e6b800"; // Default dorado
+            let background = "#e6b800";
             let color = "#36454F";
             let icono = "⭐";
 
             if (rol.toLowerCase() === 'admin') {
-                background = "#e74c3c"; // Rojo para admins
+                background = "#e74c3c";
                 color = "#fff";
                 icono = "🛡️";
             } else if (rol.toLowerCase() === 'vip') {
-                background = "gold"; // Dorado para VIPs
+                background = "gold";
                 color = "#fff";
                 icono = "👑";
             } else if (rol.toLowerCase() === 'team') {
                 background = "#9b59b6";
-                color = "#36454F";
+                color = "#fff";
                 icono = "⭐";
             }
 
-            const badgeHTML = `<span class="badge-rol" style="background: ${background}; color: ${color}; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 3px;">${icono} ${rolFormateado}</span>`;
+            const badgeHTML = `<span class="badge-rol" style="background: ${background}; color: ${color}; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 3px;">${icono} ${rolFormateado}</span>`;
             
-            // Insertamos el badge dinámicamente en el contenedor correspondiente
             const headerBadgeContainer = postDiv.querySelector(`.rol-container-${id}`);
             if (headerBadgeContainer) {
                 headerBadgeContainer.innerHTML = badgeHTML;
@@ -370,16 +395,20 @@ function crearElementoPost(id, datos) {
     }
 
     postDiv.innerHTML = `
-        <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm">
-                <strong onclick="event.stopPropagation(); verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" style="cursor:pointer; color:var(--morado-deep)">
+        <div class="post-header-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;">
+                <img src="${datos.avatar || 'https://i.pravatar.cc/150?u=default'}" class="avatar-sm" style="flex-shrink: 0;">
+                <strong class="post-username" 
+                        onclick="event.stopPropagation(); verPerfil('${datos.usuario}', '${datos.avatar}', '${datos.biografia || ''}')" 
+                        style="cursor:pointer; color:var(--morado-deep); max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle;" 
+                        title="${datos.usuario}">
                     ${datos.usuario}
                 </strong>
-                <div class="moderador-container-${id}" style="display: inline-block;"></div> <!-- Aquí caerá la estrella de moderación -->
+                <div class="rol-container-${id}" style="display: inline-block;"></div>
             </div>
-            <button onclick="event.stopPropagation(); borrarPost('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
+            <button onclick="event.stopPropagation(); borrarPost('${id}')" style="background:none; border:none; cursor:pointer; font-size: 0.9rem; margin-left: auto;">🗑️</button>
         </div>
+        
         <div class="post-body-text" style="margin-top: 10px; word-break: break-word; line-height: 1.5;">${datos.mensaje}</div>
         
         ${datos.imagen ? `<img src="${datos.imagen}" loading="lazy" style="width: 100%; border-radius: 10px; margin-top: 10px;">` : ''}
@@ -426,6 +455,13 @@ function abrirModalPost(id, datos) {
     postClonado.style.padding = '0';
     postClonado.style.background = 'transparent';
 
+    // Permite ver el nombre completo dentro del modal
+    const usernameElement = postClonado.querySelector('.post-username');
+    if (usernameElement) {
+        usernameElement.style.maxWidth = 'none';
+        usernameElement.style.whiteSpace = 'normal';
+    }
+
     contenido.innerHTML = "";
     contenido.appendChild(postClonado);
     modal.style.display = 'flex';
@@ -439,7 +475,7 @@ function cerrarModalPost() {
 function publicar() {
     const nombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     const editor = document.getElementById('postText');
-    const texto = editor.innerHTML.trim(); 
+    const texto = editor ? editor.innerHTML.trim() : ""; 
     
     const inputImagen = document.getElementById('postImage');
     const inputVideo = document.getElementById('postVideo');
@@ -480,7 +516,7 @@ function publicar() {
             img.onload = function () {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const maxAncho = 600;
+                const maxAncho = 400; // Reducido para acelerar la carga en Firebase
                 const escala = maxAncho / img.width;
                 canvas.width = maxAncho;
                 canvas.height = img.height * escala;
@@ -509,7 +545,7 @@ function enviarPost(usuario, mensaje, imagenData, videoData) {
         likes: 0
     });
     
-    document.getElementById('postText').innerHTML = "";
+    if (document.getElementById('postText')) document.getElementById('postText').innerHTML = "";
     if (document.getElementById('postImage')) document.getElementById('postImage').value = "";
     if (document.getElementById('postVideo')) document.getElementById('postVideo').value = "";
 }
@@ -531,13 +567,14 @@ function publicarComentario(idPost) {
     }).catch(err => console.error("Error al comentar:", err));
 }
 
+// Interceptor automático para detectar cuándo hacer scroll infinito
 const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && !cargandoMas) {
+    if (entries[0].isIntersecting && !cargandoMas && hayMasPosts) {
         cargarMasPosts();
     }
 }, { 
-    threshold: 0.5, 
-    rootMargin: "100px" 
+    threshold: 0.1, 
+    rootMargin: "150px" 
 });
 
 function enviarLike(idPost) {
@@ -636,11 +673,9 @@ function verPerfil(nombre, avatar, bio) {
     const miNombre = localStorage.getItem('kofy_nombre') || "@KofyUser";
     if (!modal) return;
 
-    // Limpiamos cualquier badge previo
     const contenedorNombre = document.getElementById('vistaNombre');
     contenedorNombre.innerHTML = nombre; 
 
-    // Verificamos el rol e inyectamos el badge si existe
     obtenerRol(nombre, (rol) => {
         if (rol) {
             const rolFormateado = rol.charAt(0).toUpperCase() + rol.slice(1);
@@ -791,7 +826,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const sentinel = document.getElementById('sentinel');
-    if (sentinel) observer.observe(sentinel);
+    if (sentinel) {
+        observer.observe(sentinel);
+    }
     
     cargarMasPosts();
 });
@@ -805,22 +842,14 @@ database.ref(`usuarios_economia/${usuarioKeyLimpia}`).on('value', (snapshot) => 
     
     const elemMarcoGrande = document.getElementById('marcoPerfil');
     if (elemMarcoGrande) {
-        if (marcoActivo) {
-            elemMarcoGrande.src = marcoActivo;
-            elemMarcoGrande.style.display = 'block';
-        } else {
-            elemMarcoGrande.style.display = 'none';
-        }
+        elemMarcoGrande.src = marcoActivo;
+        elemMarcoGrande.style.display = marcoActivo ? 'block' : 'none';
     }
 
     const elemMarcoNav = document.getElementById('marcoNav');
     if (elemMarcoNav) {
-        if (marcoActivo) {
-            elemMarcoNav.src = marcoActivo;
-            elemMarcoNav.style.display = 'block';
-        } else {
-            elemMarcoNav.style.display = 'none';
-        }
+        elemMarcoNav.src = marcoActivo;
+        elemMarcoNav.style.display = marcoActivo ? 'block' : 'none';
     }
 });
 
