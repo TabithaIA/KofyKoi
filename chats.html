@@ -221,18 +221,27 @@
             </div>
 
             <div id="sala-info" class="card">
-                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <h4 id="tituloSala" style="color: var(--morado-deep)">Sala: ---</h4>
-                    <button class="btn-img" onclick="cambiarNombreSala()" style="font-size: 0.6rem; padding: 4px 8px;">Nombre</button>
-                    <button class="btn-img" onclick="document.getElementById('fondoInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--azul-claro);">Fondo</button>
-                    
-                    <input type="color" id="miColorPersonalInput" style="display: none;" onchange="guardarMiColor(this.value)">
-                    <button class="btn-img" onclick="document.getElementById('miColorPersonalInput').click()" style="font-size: 0.6rem; padding: 4px 8px; background: #FFD1DC; color: #36454F;">Mi Burbuja</button>
-                    
-                    <button class="btn-img" onclick="abrirModalRacha()" style="font-size: 0.6rem; padding: 4px 8px; background: var(--lavanda);">Racha</button>
-                    <button class="btn-img" onclick="abrirModalFijados()" style="font-size: 0.6rem; padding: 4px 8px; background: #ffe4b5; color: #36454F;">📌 Fijados</button>
-                    <button class="btn-img" onclick="limpiarMensajesConservar20()" style="font-size: 0.6rem; padding: 4px 8px; background: #ff4d4d; color: white;">🧹 Limpiar</button>
-                    <button class="btn-img" onclick="location.reload()" style="font-size: 0.6rem; padding: 4px 8px;">Salir</button>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 id="tituloSala" style="color: var(--morado-deep); margin: 0;">Sala: ---</h4>
+                        <!-- Botón desplegable -->
+                        <button class="btn-main" onclick="toggleOpcionesSala()" style="font-size: 0.75rem; padding: 6px 12px; margin: 0;">⚙️ Acciones</button>
+                    </div>
+
+                    <!-- Contenedor oculto con las opciones -->
+                    <div id="opcionesSalaDesplegables" style="display: none; flex-wrap: wrap; gap: 8px; padding: 10px; background: #fff5f7; border-radius: 10px; border: 1px solid var(--rosa); animation: fadeIn 0.2s ease;">
+                        <button class="btn-img" onclick="cambiarNombreSala()" style="font-size: 0.65rem; padding: 5px 10px;">Nombre</button>
+                        <button class="btn-img" onclick="document.getElementById('fondoInput').click()" style="font-size: 0.65rem; padding: 5px 10px; background: var(--azul-claro);">Fondo</button>
+                        
+                        <input type="color" id="miColorPersonalInput" style="display: none;" onchange="guardarMiColor(this.value)">
+                        <button class="btn-img" onclick="document.getElementById('miColorPersonalInput').click()" style="font-size: 0.65rem; padding: 5px 10px; background: #FFD1DC; color: #36454F;">Mi Burbuja</button>
+                        
+                        <button class="btn-img" onclick="abrirModalRacha()" style="font-size: 0.65rem; padding: 5px 10px; background: var(--lavanda);">Racha</button>
+                        <button class="btn-img" onclick="abrirModalFijados()" style="font-size: 0.65rem; padding: 5px 10px; background: #ffe4b5; color: #36454F;">📌 Fijados</button>
+                        
+                        <button class="btn-img" onclick="limpiarMensajesConservar20()" style="font-size: 0.65rem; padding: 5px 10px; background: #ff4d4d; color: white;">🧹 Limpiar</button>
+                        <button class="btn-img" onclick="location.reload()" style="font-size: 0.65rem; padding: 5px 10px;">Salir</button>
+                    </div>
                     
                     <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
@@ -411,6 +420,12 @@
                 }
             });
         });
+
+        // --- MOSTRAR / OCULTAR ACCIONES DE LA SALA ---
+        function toggleOpcionesSala() {
+            const panel = document.getElementById('opcionesSalaDesplegables');
+            panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'flex' : 'none';
+        }
 
         // --- SISTEMA DE HISTORIAL DE SALAS ---
         function obtenerHistorialSalas() {
