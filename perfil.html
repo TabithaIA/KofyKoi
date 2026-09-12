@@ -10,6 +10,8 @@
 </head>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Cropper.js CSS para el recortador de imagen -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 </head>
 <body>
 
@@ -67,6 +69,20 @@
             <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
                 <button class="btn-img" onclick="cerrarModal()" style="background: #eee;">Cancelar</button>
                 <button class="btn-main" onclick="guardarPerfil()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para recortar la imagen -->
+    <div id="modalCrop" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; padding: 20px;">
+            <h3 style="color: var(--morado-deep); margin-bottom: 10px;">Ajustar Imagen ✂️</h3>
+            <div style="max-width: 100%; max-height: 300px; overflow: hidden; margin: 0 auto 15px auto;">
+                <img id="cropperImage" src="" style="max-width: 100%; display: block;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-img" onclick="cancelarRecorte()" style="background: #eee;">Cancelar</button>
+                <button class="btn-main" onclick="aplicarRecorte()">Aplicar Corte</button>
             </div>
         </div>
     </div>
@@ -145,6 +161,66 @@
   const database = firebase.database();
 </script>
 
+    <!-- Cropper.js JS para el recortador de imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script>
+        let cropper = null;
+
+        // Sobrescribe o intercepta previewImagen
+        function previewImagen(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const cropperImage = document.getElementById('cropperImage');
+                    cropperImage.src = e.target.result;
+                    
+                    document.getElementById('modalCrop').style.display = 'flex';
+                    
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 1, // Cuadrado perfecto (1:1) para la foto de perfil circular
+                        viewMode: 1,
+                        autoCropArea: 0.8,
+                    });
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function aplicarRecorte() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300,
+                    height: 300
+                });
+                
+                const croppedImageDataURL = canvas.toDataURL('image/jpeg');
+                
+                // Actualiza la previa en el modal de configuración de perfil
+                const previewPerfil = document.getElementById('previewPerfil');
+                if (previewPerfil) {
+                    previewPerfil.src = croppedImageDataURL;
+                }
+
+                cancelarRecorte();
+            }
+        }
+
+        function cancelarRecorte() {
+            document.getElementById('modalCrop').style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            document.getElementById('editAvatar').value = "";
+        }
+    </script>
+
     <script src="script.js"></script>
 </body>
 </html>
+
