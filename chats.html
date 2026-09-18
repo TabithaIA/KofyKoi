@@ -187,6 +187,45 @@
             width: fit-content;
             font-weight: 600;
         }
+
+        .chat-banner {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    display: none; /* Se activa con JS */
+    align-items: flex-end;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.chat-banner-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+}
+
+.chat-banner-text {
+    position: relative;
+    z-index: 1;
+    padding: 12px;
+    color: #ffffff;
+}
+
+.chat-banner-text h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.chat-banner-text p {
+    margin: 2px 0 0 0;
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
     </style>
 </head>
 <body>
@@ -217,13 +256,20 @@
                     <input type="text" id="roomCode" placeholder="Código de la sala..." style="border: 2px solid var(--rosa);">
                     <button class="btn-main" onclick="unirseASala()">Entrar</button>
                 </div>
+                <!-- Vista previa flotante para el código de entrada -->
+<div id="vistaPreviaSala" style="display: none; margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid #ffb7c5; background: #222; text-align: center;">
+    <div id="bannerVistaPrevia" style="height: 80px; background-size: cover; background-position: center;"></div>
+    <div style="padding: 8px; color: #fff; font-size: 0.85rem;">
+        <span id="nombreVistaPrevia" style="font-weight: bold; color: #ffb7c5;">Sala Encontrada</span>
+    </div>
+</div>
+
                 <button class="btn-img" onclick="abrirModalHistorial()" style="width: 100%; background: var(--lavanda); font-size: 0.8rem; padding: 8px;">🔑 Ver mis salas guardadas</button>
             </div>
 
             <div id="sala-info" class="card">
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 id="tituloSala" style="color: var(--morado-deep); margin: 0;">Sala: ---</h4>
                         <!-- Botón desplegable -->
                         <button class="btn-main" onclick="toggleOpcionesSala()" style="font-size: 0.75rem; padding: 6px 12px; margin: 0;">⚙️ Acciones</button>
                     </div>
@@ -232,6 +278,7 @@
                     <div id="opcionesSalaDesplegables" style="display: none; flex-wrap: wrap; gap: 8px; padding: 10px; background: #fff5f7; border-radius: 10px; border: 1px solid var(--rosa); animation: fadeIn 0.2s ease;">
                         <button class="btn-img" onclick="cambiarNombreSala()" style="font-size: 0.65rem; padding: 5px 10px;">Nombre</button>
                         <button class="btn-img" onclick="document.getElementById('fondoInput').click()" style="font-size: 0.65rem; padding: 5px 10px; background: var(--azul-claro);">Fondo</button>
+                        <button class="btn-img" onclick="document.getElementById('bannerInput').click()" style="font-size: 0.65rem; padding: 5px 10px; background: #ffb7c5; color: #36454F;">Banner</button>
                         
                         <input type="color" id="miColorPersonalInput" style="display: none;" onchange="guardarMiColor(this.value)">
                         <button class="btn-img" onclick="document.getElementById('miColorPersonalInput').click()" style="font-size: 0.65rem; padding: 5px 10px; background: #FFD1DC; color: #36454F;">Mi Burbuja</button>
@@ -244,10 +291,18 @@
                     </div>
                     
                     <input type="file" id="fondoInput" accept="image/*" style="display: none;" onchange="ajustarFondoSala(this)">
+                    <input type="file" id="bannerInput" accept="image/*" style="display: none;" onchange="ajustarBannerSala(this)">
                     <input type="file" id="imagenChatInput" accept="image/*" style="display: none;" onchange="prepararImagenChat(this)">
                     <input type="file" id="videoChatInput" accept="video/*" style="display: none;" onchange="prepararVideoChat(this)">
                     <input type="file" id="audioChatInput" accept="audio/*" style="display: none;" onchange="prepararAudioArchivo(this)">
                 </div>
+
+                <div id="chatBannerContenedor" class="chat-banner" style="display: none;">
+    <div class="chat-banner-overlay"></div>
+    <div class="chat-banner-text">
+        <h3 id="tituloSala">Sala: ---</h3>
+    </div>
+</div>
 
                 <div id="mensajesPrivados" class="chat-container"></div>
 
@@ -391,6 +446,45 @@
             document.getElementById('imgNav').src = miAvatar;
             document.getElementById('imgPerfil').src = miAvatar;
             document.getElementById('bioPerfil').textContent = localStorage.getItem('kofy_bio') || "✨";
+
+// Detecta cuando el usuario escribe en el input del código
+document.getElementById('roomCode').addEventListener('input', function(e) {
+    const codigoIngresado = e.target.value.trim();
+    const contenedorPreview = document.getElementById('vistaPreviaSala');
+    const bannerPreview = document.getElementById('bannerVistaPrevia');
+    const nombrePreview = document.getElementById('nombreVistaPrevia');
+
+    // Si el campo está vacío o el código es muy corto, oculta la vista previa
+    if (codigoIngresado.length < 3) {
+        contenedorPreview.style.display = 'none';
+        return;
+    }
+
+    // Consulta en Firebase si existe la sala con ese código
+    database.ref(`chats_privados/${codigoIngresado}`).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            const datosSala = snapshot.val();
+            const bannerUrl = datosSala.configuracion ? datosSala.configuracion.banner : null;
+
+            // Si la sala existe, cargamos los datos en la vista previa
+            nombrePreview.textContent = datosSala.nombre || `Sala: ${codigoIngresado}`;
+            
+            if (bannerUrl) {
+                bannerPreview.style.backgroundImage = `url('${bannerUrl}')`;
+                bannerPreview.style.display = 'block';
+            } else {
+                // Si la sala no tiene banner personalizado, se oculta solo el banner
+                bannerPreview.style.display = 'none';
+            }
+
+            contenedorPreview.style.display = 'block';
+        } else {
+            // Si el código no coincide con ninguna sala activa, oculta la vista previa
+            contenedorPreview.style.display = 'none';
+        }
+    });
+});
+
             
             database.ref(`seguidores/${miNombre}`).on('value', (s) => {
                 document.getElementById('misSeguidoresCount').textContent = `${s.numChildren()} seguidores`;
@@ -574,6 +668,42 @@
             setInterval(actualizarDatos, 60000); 
             userRef.onDisconnect().update({ online: false, ultimaVez: Date.now() });
         }
+
+        function ajustarBannerSala(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 1000; 
+                canvas.height = 300;
+                
+                const ratio = Math.max(canvas.width / img.width, canvas.height / img.height);
+                const x = (canvas.width - img.width * ratio) / 2;
+                const y = (canvas.height - img.height * ratio) / 2;
+                ctx.drawImage(img, x, y, img.width * ratio, img.height * ratio);
+                
+                const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // 1. Muestra el banner visualmente al instante
+                const contenedor = document.getElementById('chatBannerContenedor');
+                if (contenedor) {
+                    contenedor.style.backgroundImage = `url('${dataURL}')`;
+                    contenedor.style.display = 'flex';
+                }
+
+                // 2. Guarda la imagen en Firebase si hay una sala activa
+                if (typeof salaActual !== 'undefined' && salaActual) {
+                    database.ref(`chats_privados/${salaActual}/configuracion/banner`).set(dataURL);
+                }
+            };
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
         function guardarMiColor(color) {
             miColorBurbuja = color;
@@ -1006,6 +1136,23 @@
                     if (player) player.stopVideo();
                 }
             });
+        // Agregá esto dentro de la función que se ejecuta al entrar a una sala (usando salaActual):
+database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (snapshot) => {
+    const bannerUrl = snapshot.val();
+    const contenedor = document.getElementById('chatBannerContenedor');
+    
+    if (contenedor) {
+        if (bannerUrl) {
+            // Si existe un banner en Firebase, lo muestra
+            contenedor.style.backgroundImage = `url('${bannerUrl}')`;
+            contenedor.style.display = 'flex';
+        } else {
+            // Si la sala no tiene banner, se oculta
+            contenedor.style.display = 'none';
+        }
+    }
+});
+
         }
 
         function enviarMensajeSala() {
