@@ -226,6 +226,50 @@
     opacity: 0.85;
 }
 
+/* Botón de Play semi-transparente para stickers con audio */
+.btn-play-sticker {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.25; /* 25% de opacidad como pediste */
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 5;
+    padding: 0;
+}
+
+.btn-play-sticker:hover,
+.btn-play-sticker.reproduciendo {
+    opacity: 0.9;
+    transform: scale(1.1);
+}
+
+/* Indicador chiquito en la galería de stickers cuando tiene audio */
+.badge-audio-galeria {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    background: rgba(106, 90, 205, 0.85);
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
     </style>
 </head>
 <body>
@@ -319,7 +363,8 @@
                         <button class="btn-main" onclick="document.getElementById('crearStickerInput').click()" style="padding: 4px 10px; font-size: 0.7rem; margin: 0;">+ Crear</button>
                     </div>
                     
-                    <input type="file" id="crearStickerInput" accept="image/*" style="display: none;" onchange="procesarNuevoSticker(this)">
+                    <input type="file" id="crearStickerInput" accept="image/*,image/gif" style="display: none;" onchange="procesarNuevoSticker(this)">
+                    <input type="file" id="audioParaStickerInput" accept="audio/*" style="display: none;">
 
                     <div id="listaStickers" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 180px; overflow-y: auto; padding: 5px;">
                         <p id="sinStickersTexto" style="font-size: 0.75rem; color: gray; grid-column: span 4; text-align: center; margin: 10px 0;">No tienes stickers guardados. ¡Crea el primero!</p>
@@ -749,8 +794,13 @@ document.getElementById('roomCode').addEventListener('input', function(e) {
     <div style="position: relative; display: inline-block; align-self: center;">
         <img src="${datos.sticker}" class="chat-sticker" oncontextmenu="return false;" ondragstart="return false;">
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 2;"></div>
+        ${datos.stickerAudio ? `
+            <button type="button" class="btn-play-sticker" onclick="reproducirAudioSticker(this, 'audio-sticker-${id}')" title="Reproducir sonido">▶</button>
+            <audio id="audio-sticker-${id}" src="${datos.stickerAudio}" preload="none"></audio>
+        ` : ''}
     </div>
 ` : ''}
+
 
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
@@ -1470,6 +1520,17 @@ database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (s
     }
 
     // --- SISTEMA DE STICKERS ---
+    function togglePanelStickers() {
+        const panel = document.getElementById('panelStickers');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            renderizarMisStickers();
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+          // --- SISTEMA DE STICKERS (SOPORTA ESTÁTICOS, GIF Y AUDIO OPCIONAL) ---
     function renderizarMisStickers() {
         const listaContenedor = document.getElementById('listaStickers');
         listaContenedor.innerHTML = "";
@@ -1485,14 +1546,25 @@ database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (s
             }
 
             Object.keys(stickersData).forEach((key) => {
-                const stickerBase64 = stickersData[key];
+                const item = stickersData[key];
+                // Compatibilidad total con stickers antiguos (string) y nuevos (objeto {imagen, audio})
+                const stickerBase64 = typeof item === 'string' ? item : item.imagen;
+                const stickerAudio = typeof item === 'object' && item.audio ? item.audio : null;
+
                 const divWrap = document.createElement('div');
                 divWrap.style = "position: relative; display: inline-block;";
 
                 const img = document.createElement('img');
                 img.src = stickerBase64;
                 img.className = "sticker-opcion";
-                img.onclick = () => enviarSticker(stickerBase64);
+                img.onclick = () => enviarSticker(stickerBase64, stickerAudio);
+
+                if (stickerAudio) {
+                    const badgeAudio = document.createElement('span');
+                    badgeAudio.className = "badge-audio-galeria";
+                    badgeAudio.textContent = "🔊";
+                    divWrap.appendChild(badgeAudio);
+                }
 
                 const btnBorrar = document.createElement('button');
                 btnBorrar.innerHTML = "✕";
@@ -1509,43 +1581,90 @@ database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (s
         });
     }
 
-    function togglePanelStickers() {
-        const panel = document.getElementById('panelStickers');
-        if (panel.style.display === 'none') {
-            panel.style.display = 'block';
-            renderizarMisStickers();
-        } else {
-            panel.style.display = 'none';
-        }
-    }
-
     function procesarNuevoSticker(input) {
-        if (input.files && input.files[0]) {
-            const lector = new FileReader();
-            lector.onload = function(evento) {
-                const overlayCorte = document.createElement('div');
-                overlayCorte.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; color:white; padding:20px;";
-                
-                overlayCorte.innerHTML = `
-                    <h4 style="margin-bottom:10px; font-size:0.9rem;">Ajusta el recuadro para tu sticker 🌸</h4>
-                    <div style="position:relative; max-width:90%; max-height:60vh; overflow:hidden; background:#222; border-radius:8px;">
-                        <img id="img-previa-corte" src="${evento.target.result}" style="max-width:100%; max-height:60vh; display:block; user-select:none;">
+        if (!input.files || !input.files[0]) return;
+        const archivo = input.files[0];
+        const esGif = archivo.type === 'image/gif';
+
+        // Límite de 4MB para GIFs para que Firebase los guarde rápido y sin problemas
+        if (esGif && archivo.size > 4 * 1024 * 1024) {
+            alert("❌ El GIF es muy pesado. Intenta con uno menor a 4 MB.");
+            input.value = "";
+            return;
+        }
+
+        const lector = new FileReader();
+        lector.onload = function(evento) {
+            let audioSeleccionadoBase64 = null;
+
+            const overlayCorte = document.createElement('div');
+            overlayCorte.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; color:white; padding:20px;";
+            
+            overlayCorte.innerHTML = `
+                <h4 style="margin-bottom:10px; font-size:0.9rem;">
+                    ${esGif ? 'Vista previa de tu Sticker GIF ✨' : 'Ajusta el recuadro para tu sticker 🌸'}
+                </h4>
+                <div style="position:relative; max-width:90%; max-height:55vh; overflow:hidden; background:#222; border-radius:8px;">
+                    <img id="img-previa-corte" src="${evento.target.result}" style="max-width:100%; max-height:55vh; display:block; user-select:none;">
+                    ${!esGif ? `
                         <div id="selector-recorte" style="position:absolute; top:10%; left:10%; width:150px; height:150px; border:2px dashed #fff; box-shadow:0 0 0 4000px rgba(0,0,0,0.5); cursor:move; box-sizing:border-box;">
                             <div id="resizer-control" style="position:absolute; bottom:0; right:0; width:15px; height:15px; background:#fff; cursor:se-resize;"></div>
                         </div>
-                    </div>
-                    <div style="margin-top:15px; display:flex; gap:10px;">
-                        <button id="btn-cancelar-corte" class="btn-img" style="background:#ff4d4d; color:white; padding:8px 15px;">Cancelar</button>
-                        <button id="btn-confirmar-corte" class="btn-main" style="margin:0; padding:8px 15px;">¡Cortar Sticker! ✨</button>
-                    </div>
-                `;
-                
-                document.body.appendChild(overlayCorte);
-                
-                const selector = overlayCorte.querySelector('#selector-recorte');
-                const resizer = overlayCorte.querySelector('#resizer-control');
-                const imgPrevia = overlayCorte.querySelector('#img-previa-corte');
-                
+                    ` : ''}
+                </div>
+
+                <!-- Sección de audio opcional tipo WhatsApp -->
+                <div style="margin-top:12px; display:flex; flex-direction:column; align-items:center; gap:6px; background:rgba(255,255,255,0.1); padding:10px 15px; border-radius:10px;">
+                    <button type="button" id="btn-agregar-audio-sticker" class="btn-img" style="background:var(--lavanda); color:#36454F; padding:6px 12px; font-size:0.75rem;">
+                        🎵 Añadir audio opcional (máx. 2 MB)
+                    </button>
+                    <span id="estado-audio-sticker" style="font-size:0.7rem; color:#ddd;">Sin audio</span>
+                </div>
+
+                <div style="margin-top:15px; display:flex; gap:10px;">
+                    <button id="btn-cancelar-corte" class="btn-img" style="background:#ff4d4d; color:white; padding:8px 15px;">Cancelar</button>
+                    <button id="btn-confirmar-corte" class="btn-main" style="margin:0; padding:8px 15px;">
+                        ${esGif ? '¡Guardar GIF! ✨' : '¡Cortar Sticker! ✨'}
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(overlayCorte);
+
+            // Lógica del audio opcional
+            const audioInput = document.getElementById('audioParaStickerInput');
+            const btnAudio = overlayCorte.querySelector('#btn-agregar-audio-sticker');
+            const estadoAudio = overlayCorte.querySelector('#estado-audio-sticker');
+
+            btnAudio.onclick = () => {
+                audioInput.value = "";
+                audioInput.click();
+            };
+
+            audioInput.onchange = (e) => {
+                const fileAudio = e.target.files[0];
+                if (!fileAudio) return;
+                if (fileAudio.size > 2 * 1024 * 1024) {
+                    alert("❌ El audio del sticker debe pesar menos de 2 MB.");
+                    audioInput.value = "";
+                    return;
+                }
+                const readerAudio = new FileReader();
+                readerAudio.onload = (evAudio) => {
+                    audioSeleccionadoBase64 = evAudio.target.result;
+                    estadoAudio.textContent = `🔊 Audio listo: ${fileAudio.name}`;
+                    estadoAudio.style.color = "#90ee90";
+                    btnAudio.textContent = "🔄 Cambiar audio";
+                };
+                readerAudio.readAsDataURL(fileAudio);
+            };
+            
+            // Lógica de recorte solo si NO es GIF (para no perder la animación del GIF)
+            const imgPrevia = overlayCorte.querySelector('#img-previa-corte');
+            const selector = overlayCorte.querySelector('#selector-recorte');
+            const resizer = overlayCorte.querySelector('#resizer-control');
+            
+            if (!esGif && selector && resizer) {
                 let mouseX, mouseY, selectorX, selectorY, selectorW, selectorH;
                 let modoMover = false;
                 let modoRedimensionar = false;
@@ -1597,10 +1716,21 @@ database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (s
                 });
                 
                 window.addEventListener('touchend', () => { modoMover = false; modoRedimensionar = false; });
+            }
 
-                overlayCorte.querySelector('#btn-cancelar-corte').onclick = () => { overlayCorte.remove(); input.value = ""; };
-                
-                overlayCorte.querySelector('#btn-confirmar-corte').onclick = () => {
+            overlayCorte.querySelector('#btn-cancelar-corte').onclick = () => { 
+                overlayCorte.remove(); 
+                input.value = ""; 
+                audioInput.value = "";
+            };
+            
+            overlayCorte.querySelector('#btn-confirmar-corte').onclick = () => {
+                let stickerFinal = "";
+
+                if (esGif) {
+                    // Conserva el GIF original intacto para mantener todos sus fotogramas animados
+                    stickerFinal = evento.target.result;
+                } else {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     const factorEscalaX = imgPrevia.naturalWidth / imgPrevia.offsetWidth;
@@ -1615,40 +1745,41 @@ database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (s
                     canvas.height = 250 * (sh / sw); 
                     
                     ctx.drawImage(imgPrevia, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-                    const stickerFinal = canvas.toDataURL('image/png');
-                    
-                    const miID = miNombre.replace(/[.#$[\]]/g, "_");
-                    database.ref(`usuarios_stickers/${miID}`).push(stickerFinal)
-                        .then(() => {
-                            overlayCorte.remove(); 
-                            input.value = ""; 
-                            renderizarMisStickers();
-                        });
-                };
+                    stickerFinal = canvas.toDataURL('image/png');
+                }
+                
+                const miID = miNombre.replace(/[.#$[\]]/g, "_");
+                // Si tiene audio se guarda como objeto, si no, como string igual que antes
+                const datosAGuardar = audioSeleccionadoBase64 
+                    ? { imagen: stickerFinal, audio: audioSeleccionadoBase64 } 
+                    : stickerFinal;
+
+                database.ref(`usuarios_stickers/${miID}`).push(datosAGuardar)
+                    .then(() => {
+                        overlayCorte.remove(); 
+                        input.value = ""; 
+                        audioInput.value = "";
+                        renderizarMisStickers();
+                    });
             };
-            lector.readAsDataURL(input.files[0]);
-        }
+        };
+        lector.readAsDataURL(archivo);
     }
 
-    function eliminarStickerDeGaleria(key) {
-        if (confirm("¿Quieres eliminar permanentemente este sticker? 🌸")) {
-            const miID = miNombre.replace(/[.#$[\]]/g, "_");
-            database.ref(`usuarios_stickers/${miID}/${key}`).remove().then(() => {
-                renderizarMisStickers();
-            });
-        }
-    }
-
-    function enviarSticker(urlSticker) {
+    function enviarSticker(urlSticker, urlAudio = null) {
         if (!salaActual) return;
-        database.ref(`chats_privados/${salaActual}/mensajes`).push({
+        const payload = {
             usuario: miNombre,
             avatar: miAvatar,
             mensaje: "",
             sticker: urlSticker,
             fecha: Date.now(),
             colorBurbuja: miColorBurbuja
-        });
+        };
+        if (urlAudio) {
+            payload.stickerAudio = urlAudio;
+        }
+        database.ref(`chats_privados/${salaActual}/mensajes`).push(payload);
         document.getElementById('panelStickers').style.display = 'none';
         verificarYSumarRachaAutomatico(miNombre);
     }
