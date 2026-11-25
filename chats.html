@@ -363,7 +363,7 @@
                         <button class="btn-main" onclick="document.getElementById('crearStickerInput').click()" style="padding: 4px 10px; font-size: 0.7rem; margin: 0;">+ Crear</button>
                     </div>
                     
-                    <input type="file" id="crearStickerInput" accept="image/*,image/gif" style="display: none;" onchange="procesarNuevoSticker(this)">
+                    <input type="file" id="crearStickerInput" accept="image/png,image/gif,video/mp4,video/webm,.mp4,.webm,.gif,.png" style="display: none;" onchange="procesarNuevoSticker(this)">
                     <input type="file" id="audioParaStickerInput" accept="audio/*" style="display: none;">
 
                     <div id="listaStickers" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 180px; overflow-y: auto; padding: 5px;">
@@ -790,17 +790,28 @@ document.getElementById('roomCode').addEventListener('input', function(e) {
                 ${datos.imagen ? `<img src="${datos.imagen}" style="width: 100%; border-radius: 10px; margin-top: 5px;">` : ''}
                 ${datos.video ? `<video src="${datos.video}" controls style="width: 100%; border-radius: 10px; margin-top: 5px; max-height: 250px; background: #000;"></video>` : ''}
                 ${datos.audio ? `<audio src="${datos.audio}" controls style="width: 100%; margin-top: 5px;"></audio>` : ''}
-                ${datos.sticker ? `
-    <div style="position: relative; display: inline-block; align-self: center;">
-        <img src="${datos.sticker}" class="chat-sticker" oncontextmenu="return false;" ondragstart="return false;">
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 2;"></div>
-        ${datos.stickerAudio ? `
-            <button type="button" class="btn-play-sticker" onclick="reproducirAudioSticker(this, 'audio-sticker-${id}')" title="Reproducir sonido">▶</button>
-            <audio id="audio-sticker-${id}" src="${datos.stickerAudio}" preload="none"></audio>
-        ` : ''}
-    </div>
-` : ''}
+                ${datos.sticker ? (() => {
+    const esVideoSticker =
+        datos.sticker.startsWith('data:video/') ||
+        /\.(mp4|webm)(\?.*)?$/i.test(datos.sticker);
+    const tieneAudio = esVideoSticker || Boolean(datos.stickerAudio);
+    const mediaId = `media-sticker-${id}`;
 
+    return `
+        <div style="position: relative; display: inline-block; align-self: center;">
+            ${esVideoSticker ? `
+                <video id="${mediaId}" src="${datos.sticker}" class="chat-sticker" autoplay loop muted playsinline oncontextmenu="return false;"></video>
+            ` : `
+                <img id="${mediaId}" src="${datos.sticker}" class="chat-sticker" oncontextmenu="return false;" ondragstart="return false;">
+                ${datos.stickerAudio ? `<audio id="audio-sticker-${id}" src="${datos.stickerAudio}" preload="none"></audio>` : ''}
+            `}
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 2;"></div>
+            ${tieneAudio ? `
+                <button type="button" class="btn-play-sticker" style="z-index: 10;" onclick="reproducirAudioSticker(this, '${id}', ${esVideoSticker})" title="Activar/desactivar sonido">▶</button>
+            ` : ''}
+        </div>
+    `;
+})() : ''}
 
                 <span class="msg-time">${new Date(datos.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             `;
@@ -1783,6 +1794,60 @@ database.ref(`chats_privados/${salaActual}/configuracion/banner`).on('value', (s
         document.getElementById('panelStickers').style.display = 'none';
         verificarYSumarRachaAutomatico(miNombre);
     }
+
+      function reproducirAudioSticker(btn, id, esVideoSticker) {
+    if (esVideoSticker) {
+        const video = document.getElementById(`media-sticker-${id}`);
+        if (!video) return;
+
+        // Silenciar otros videos de stickers si estaban con sonido
+        document.querySelectorAll('video[id^="media-sticker-"]').forEach(v => {
+            if (v.id !== `media-sticker-${id}`) {
+                v.muted = true;
+            }
+        });
+        document.querySelectorAll('.btn-play-sticker').forEach(b => {
+            if (b !== btn) {
+                b.textContent = "▶";
+                b.classList.remove('reproduciendo');
+            }
+        });
+
+        video.muted = !video.muted;
+        if (!video.muted) {
+            video.play().catch(() => {});
+            btn.textContent = "🔊";
+            btn.classList.add('reproduciendo');
+        } else {
+            btn.textContent = "▶";
+            btn.classList.remove('reproduciendo');
+        }
+        return;
+    }
+
+    const audio = document.getElementById(`audio-sticker-${id}`);
+    if (!audio || !audio.getAttribute('src')) return;
+
+    if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+        btn.textContent = "▶";
+        btn.classList.remove('reproduciendo');
+        return;
+    }
+
+    audio.currentTime = 0;
+    audio.play().then(() => {
+        btn.textContent = "⏸";
+        btn.classList.add('reproduciendo');
+        audio.onended = () => {
+            btn.textContent = "▶";
+            btn.classList.remove('reproduciendo');
+        };
+    }).catch((err) => {
+        console.error("Error al reproducir audio del sticker:", err);
+    });
+}
     </script>
 </body>
 </html>
